@@ -1,0 +1,4 @@
+*.npz *.npy *.ply *.spz *.usda *.usd* *.usdc *.zip
+*.mp4 *.png *.jpg *.log
+views_*/ 3dgs_*/ runs/ __pycache__/ .venv/ env/
+*.glb *.stl *.dae *.mjcf
