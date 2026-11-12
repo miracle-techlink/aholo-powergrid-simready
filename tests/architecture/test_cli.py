@@ -82,7 +82,9 @@ def test_canonical_workflow_cli_from_an_unrelated_directory(tmp_path):
 
 
 def test_single_package_is_imported_from_src_layout():
+    from importlib.metadata import version
+
     import simready
 
     assert str(REPOSITORY_ROOT / "simready_bridge") not in simready.__file__
-    assert simready.__version__ == "0.4.0"
+    assert simready.__version__ == version("simready-pipeline")

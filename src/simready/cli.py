@@ -5,6 +5,10 @@ import importlib
 from collections.abc import Sequence
 
 COMMANDS = {
+    "run": (
+        "simready.workflows.scene_pipeline",
+        "Run one reviewed scene from a prepared bundle or asset specification",
+    ),
     "simulation": (
         "simready.simulation.cli",
         "Scene bundles, Isaac workers and contact audits",

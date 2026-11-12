@@ -11,15 +11,9 @@ from simready.core.artifacts import digest, read_json, write_json
 from simready.simulation.asset_bundle import verify_bundle
 
 
-def run_scene_delivery(config_path, assets, output, python=None, dry_run=False):
-    config_path, assets, output = (
-        Path(p).resolve() for p in (config_path, assets, output)
-    )
-    config = read_json(config_path)
-    bundle = verify_bundle(assets)
-    if config.get("schema_version") != 1 or config["scene"] != bundle["scene"]:
+def validate_scene_config(config, scene):
+    if config.get("schema_version") != 1 or config["scene"] != scene:
         raise ValueError("Example and bundle scene must match")
-    executable = str(python or sys.executable)  # Keep virtualenv symlinks intact.
     render = config["render"]
     if any(
         type(render[k]) is not int or render[k] <= 0
@@ -28,6 +22,93 @@ def run_scene_delivery(config_path, assets, output, python=None, dry_run=False):
         raise ValueError("Render dimensions, frames and fps must be positive integers")
     if render["width"] % 2 or render["height"] % 2:
         raise ValueError("H.264 yuv420p dimensions must be even")
+    if scene == "substation" and render["fps"] != 25:
+        raise ValueError("Measured substation replay uses the frozen 25 fps sampling")
+
+
+def verify_scene_delivery(output, config):
+    """Check final receipts and their artifact bindings before reporting success."""
+    output = Path(output)
+    scene = config["scene"]
+    timing = read_json(output / "timing.json")
+    expected = (
+        ["observations", "render"]
+        if scene == "starbucks"
+        else ["observations", "physics", "audit", "render"]
+    )
+    if (
+        timing.get("status") != "COMPLETE"
+        or [item["name"] for item in timing["stages"]] != expected
+        or any(item["returncode"] != 0 for item in timing["stages"])
+    ):
+        raise ValueError("Delivery stages did not all complete")
+    name = (
+        "g2_starbucks_4k.mp4"
+        if scene == "starbucks"
+        else "navigation_vision_z1_stop.mp4"
+    )
+    video = output / "render" / name
+    if (
+        not video.is_file()
+        or not video.stat().st_size
+        or digest(video) != timing["video_sha256"]
+    ):
+        raise ValueError("Delivered video is missing, empty or changed")
+    render = config["render"]
+    if scene == "starbucks":
+        receipt = read_json(output / "render/delivery.json")
+        if (
+            receipt["frames"] != render["frames"]
+            or receipt["fps"] != render["fps"]
+            or receipt["resolution"] != [render["width"], render["height"]]
+        ):
+            raise ValueError("Cafe capture does not match the requested delivery")
+    else:
+        mission = output / "mission"
+        audit = read_json(mission / "audit.json")
+        receipt = read_json(output / "render/render.json")
+        if (
+            audit.get("passed") is not True
+            or not audit.get("checks")
+            or not all(value is True for value in audit["checks"].values())
+            or read_json(mission / "result.json").get("passed") is not True
+        ):
+            raise ValueError("Physical mission has no passing independent audit")
+        for field, path in (
+            ("result_sha256", "result.json"),
+            ("sensor_sha256", "sensors.jsonl"),
+            ("replay_sha256", "measured_replay.npz"),
+        ):
+            if audit[field] != digest(mission / path):
+                raise ValueError("Physical audit is not bound to current evidence")
+        if (
+            receipt["source_result_sha256"] != audit["result_sha256"]
+            or receipt["source_replay_sha256"] != audit["replay_sha256"]
+            or receipt["video_sha256"] != timing["video_sha256"]
+            or receipt["width"] != render["width"]
+            or receipt["height"] != render["height"]
+            or receipt["fps"] != 25
+            or receipt["frames"] <= 0
+        ):
+            raise ValueError("Physical replay receipt does not match audited evidence")
+    return {
+        "video": str(video),
+        "video_sha256": timing["video_sha256"],
+        "physics_validated": scene == "substation",
+    }
+
+
+def run_scene_delivery(
+    config_path, assets, output, python=None, dry_run=False, progress=None
+):
+    config_path, assets, output = (
+        Path(p).resolve() for p in (config_path, assets, output)
+    )
+    config = read_json(config_path)
+    bundle = verify_bundle(assets)
+    validate_scene_config(config, bundle["scene"])
+    executable = str(python or sys.executable)  # Keep virtualenv symlinks intact.
+    render = config["render"]
     common = [executable, "-m", "simready"]
     stages = [
         (
@@ -76,10 +157,6 @@ def run_scene_delivery(config_path, assets, output, python=None, dry_run=False):
         stages.append(("render", command))
         video = output / "render/g2_starbucks_4k.mp4"
     else:
-        if render["fps"] != 25:
-            raise ValueError(
-                "Measured substation replay uses the frozen 25 fps sampling"
-            )
         stages += [
             (
                 "physics",
@@ -141,6 +218,8 @@ def run_scene_delivery(config_path, assets, output, python=None, dry_run=False):
     env["PYTHONUNBUFFERED"] = "1"
     try:
         for name, command in stages:
+            if progress:
+                progress(name, "RUNNING")
             before = time.monotonic()
             with (output / f"{name}.log").open("w") as log:
                 code = subprocess.run(
@@ -150,6 +229,8 @@ def run_scene_delivery(config_path, assets, output, python=None, dry_run=False):
                 {"name": name, "wall_s": time.monotonic() - before, "returncode": code}
             )
             write_json(output / "timing.json", report)
+            if progress:
+                progress(name, "FAILED" if code else "COMPLETE")
             if code:
                 raise RuntimeError(
                     f"Stage {name} failed with exit {code}; see {name}.log"

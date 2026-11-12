@@ -25,5 +25,7 @@ jobs:
       - run: python -m compileall -q src/simready examples scripts legacy deploy
       - run: python -m build
       - run: simready --help
+      - run: simready run --help
+      - run: simready simulation --help
       - run: simready workflows --help
       - run: simready evaluation --help
