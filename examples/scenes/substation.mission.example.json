@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "task_id": "right_far_stop_spring_tool_estimated_facades",
+  "intent": "stop_simulated_load",
+  "prompt": "请停止变电站通道远端右侧白色控制柜对应的模拟负载。沿通道走近右侧柜面，用相机寻找上排绿、黄、红三盏指示灯下方的一排控制件；目标是下排左侧的小红色按钮，位于中央蘑菇形按钮左侧，与右侧绿色按钮成对。先确认目标唯一且在机械臂可达范围内，再停稳机身，让 Z1 末端沿柜面法线缓慢按压一次并回撤。只有记录到目标按钮的真实接触和有效行程，且模拟负载从 RUNNING 变为 STOPPED，才报告任务完成。找不到或存在歧义时停止操作并报告原因。不要按上排指示灯、中央蘑菇形按钮或绿色按钮。",
+  "function_hypothesis": "stop command for the cabinet-associated load; not a verified mains isolation device",
+  "real_device_function_verified": false,
+  "simulation_effect": {
+    "load_id": "right_far_demo_load",
+    "initial": "RUNNING",
+    "after_valid_target_press": "STOPPED"
+  },
+  "target_descriptor": {
+    "bank": "right",
+    "region": "far white operator panel",
+    "row": "lower",
+    "position": "left of central mushroom",
+    "color": "red"
+  },
+  "audit_target_id": "right_far_red",
+  "environment_manifest": "controls/manifest.json",
+  "scene_config": "scene/scene_config.json",
+  "spawn": [
+    2.7,
+    -0.04,
+    0.36
+  ],
+  "navigation": {
+    "map_dock_xy": [
+      4.08,
+      -0.16
+    ],
+    "yaw_rad": 0.0,
+    "max_forward_m_s": 0.4,
+    "max_lateral_m_s": 0.12,
+    "max_yaw_rad_s": 0.3,
+    "odometry": "simulated measured torso pose; no SLAM claim"
+  },
+  "camera": {
+    "resolution": [
+      1280,
+      720
+    ],
+    "focal_length_mm": 28.0,
+    "horizontal_aperture_mm": 36.0,
+    "head_offset_m": [
+      0.26,
+      0.0,
+      0.12
+    ]
+  },
+  "tool": {
+    "kind": "spring_plunger",
+    "flange_offset_m": [
+      0.1,
+      0,
+      0
+    ],
+    "tip_radius_m": 0.004,
+    "travel_m": 0.004,
+    "spring_N_m": 800.0,
+    "damping_N_s_m": 2.0,
+    "housing_mass_kg": 0.045,
+    "plunger_mass_kg": 0.008,
+    "geometry_and_parameters": "estimated simulation design; no rated electrical insulation; rigid elastomer contact proxy"
+  },
+  "contact": {
+    "max_force_N": 3.0,
+    "prepress_clearance_m": 0.035,
+    "approach_speed_m_s": 0.006,
+    "hold_s": 0.15,
+    "max_penetration_m": 0.0058
+  },
+  "scope": "Known-map simulated task with RGB-D target detection, free-base locomotion and Z1 contact; no real electrical command",
+  "policy_interface": "Structured task config interpreted by deterministic supervisor; natural language is not directly fed into the locomotion ONNX",
+  "appearance": {
+    "method": "source-conditioned geometric completion",
+    "source_fidelity_verified": false,
+    "user_authorized_estimation": true
+  },
+  "rig_report": "robot/lite3_z1.runtime.json",
+  "locomotion_policy": "robot/policy.onnx"
+}

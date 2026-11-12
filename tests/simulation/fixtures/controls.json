@@ -1,0 +1,166 @@
+{
+  "buttons": [
+    {
+      "id": "left_near_red",
+      "kind": "momentary",
+      "position": [
+        2.170482873916626,
+        0.519,
+        0.870098352432251
+      ],
+      "side": 1,
+      "source_times": [
+        79.0
+      ],
+      "metric_verified": false,
+      "function_verified": false,
+      "radius": 0.006468366176996368,
+      "color": "red",
+      "interaction": "press",
+      "source_center_px": [
+        187.77949709864603,
+        363.80722114764666
+      ],
+      "group": "left_near",
+      "world_center_on_panel": [
+        2.170482873916626,
+        0.519,
+        0.870098352432251
+      ],
+      "rest_center_world": [
+        2.170482873916626,
+        0.513,
+        0.870098352432251
+      ],
+      "base_prim": "/World/InteractiveAssets/Controls/left_near_red/Base",
+      "cap_prim": "/World/InteractiveAssets/Controls/left_near_red/Cap",
+      "joint_prim": "/World/InteractiveAssets/Controls/left_near_red/Joint",
+      "cap_height_m": 0.004,
+      "radius_m": 0.006468366176996368,
+      "rest_offset_m": 0.006,
+      "stroke_m": 0.004,
+      "press_depth_m": 0.0025,
+      "release_depth_m": 0.0007,
+      "press_force_N": 0.2,
+      "release_force_N": 0.05,
+      "inward_axis_world": [
+        0,
+        1,
+        0
+      ],
+      "semantic_definition": {
+        "states": [
+          "off",
+          "on"
+        ],
+        "initial": "off",
+        "transitions": {
+          "off->on": {
+            "action": "press"
+          },
+          "on->off": {
+            "action": "press"
+          }
+        },
+        "visual_feedback": {
+          "off": {
+            "color": [
+              0.72,
+              0.075,
+              0.055
+            ],
+            "emission": 0.0
+          },
+          "on": {
+            "color": [
+              0.72,
+              0.075,
+              0.055
+            ],
+            "emission": 0.0
+          }
+        }
+      },
+      "requires_latch": false
+    },
+    {
+      "id": "left_near_estop",
+      "kind": "estop",
+      "position": [
+        2.2173044681549072,
+        0.519,
+        0.8718536496162415
+      ],
+      "side": 1,
+      "source_times": [
+        79.0
+      ],
+      "metric_verified": false,
+      "function_verified": false,
+      "radius": 0.01,
+      "color": "red",
+      "interaction": "press_latch_explicit_reset",
+      "group": "left_near",
+      "world_center_on_panel": [
+        2.2173044681549072,
+        0.519,
+        0.8718536496162415
+      ],
+      "rest_center_world": [
+        2.2173044681549072,
+        0.513,
+        0.8718536496162415
+      ],
+      "base_prim": "/World/InteractiveAssets/Controls/left_near_estop/Base",
+      "cap_prim": "/World/InteractiveAssets/Controls/left_near_estop/Cap",
+      "joint_prim": "/World/InteractiveAssets/Controls/left_near_estop/Joint",
+      "cap_height_m": 0.004,
+      "radius_m": 0.01,
+      "rest_offset_m": 0.006,
+      "stroke_m": 0.004,
+      "press_depth_m": 0.0025,
+      "release_depth_m": 0.0007,
+      "press_force_N": 0.2,
+      "release_force_N": 0.05,
+      "inward_axis_world": [
+        0,
+        1,
+        0
+      ],
+      "semantic_definition": {
+        "states": [
+          "off",
+          "on"
+        ],
+        "initial": "off",
+        "transitions": {
+          "off->on": {
+            "action": "press"
+          },
+          "on->off": {
+            "action": "press"
+          }
+        },
+        "visual_feedback": {
+          "off": {
+            "color": [
+              0.72,
+              0.075,
+              0.055
+            ],
+            "emission": 0.0
+          },
+          "on": {
+            "color": [
+              0.72,
+              0.075,
+              0.055
+            ],
+            "emission": 0.0
+          }
+        }
+      },
+      "requires_latch": true
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-11-12",
+  "status": "CORRECTED_CLIENT_WINDOW_NOT_CLOUD_RUNTIME",
+  "new_reconstruction_submissions": 0,
+  "read_only_status_queries": 2,
+  "supersedes_interpretation": {
+    "file": "docs/benchmarks/substation_profile_20261112.json",
+    "field": "totals.historical_aholo_cloud_success_seconds",
+    "raw_value_preserved": 3610.902637,
+    "correct_label": "historical_client_submit_to_download_receipt_s"
+  },
+  "success": {
+    "world_id": "3FO4K4RMI0FI",
+    "input": {
+      "duration_s": 45.0,
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "bytes": 11314038,
+      "quality": "low",
+      "evidence": {
+        "path": "/home/nvidia/Desktop/simready_pipeline/data/mv_panel_45s.mp4",
+        "sha256": "7ab90b035791c251c4e35cfe6af5dcd24cbb84d4f450b215353471f15d1fee64"
+      }
+    },
+    "upload_s": 7.8,
+    "upload_in_old_60_min_window": false,
+    "client_submit_unix_s": 1794297519.202265,
+    "client_done_unix_s": 1794301130.104902,
+    "client_submit_to_download_receipt_s": 3610.9026370048523,
+    "server_create_unix_ms": 1794297496000,
+    "server_update_unix_ms": 1794297786000,
+    "server_create_to_last_update_s": 290.0,
+    "cross_clock_update_to_client_receipt_difference_s": 3344.1049020290375,
+    "cross_clock_submit_to_server_create_difference_s": 23.20226502418518,
+    "bjt": {
+      "server_create": "2026-11-10T15:58:16+08:00",
+      "client_submit": "2026-11-10T15:58:39.202265+08:00",
+      "server_update": "2026-11-10T16:03:06+08:00",
+      "client_done": "2026-11-10T16:58:50.104902+08:00"
+    },
+    "timestamps_are_kernel_timers": false,
+    "update_time_is_explicit_completion_time": false,
+    "queue_s": null,
+    "preprocessing_s": null,
+    "gpu_compute_s": null,
+    "export_s": null,
+    "monitor_offline_s": null,
+    "download_s": null,
+    "import_alignment_s": null,
+    "resume_first_query_succeeded": true,
+    "ply_bytes": 36997781,
+    "spz_bytes": 2907955
+  },
+  "failed_attempt": {
+    "world_id": "3FO4K4RMJIWY",
+    "server_create_to_last_update_s": 6.0,
+    "client_event_window_s": 5369.699111700058,
+    "original_submit_missing_world_id": true,
+    "submit_to_world_link_verified": false
+  },
+  "planning_only": {
+    "assumed_server_span_s": 290.0,
+    "upload_s": 7.8,
+    "historical_local_stage_sum_s": 912.7665610880067,
+    "known_terms_sum_s": 1210.5665610880067,
+    "excludes_unmeasured": [
+      "video_preparation",
+      "submit",
+      "completion_observation",
+      "download",
+      "model_import_and_alignment",
+      "new_scene_specific_review_and_repairs"
+    ],
+    "actual_fresh_video_e2e_measured": false,
+    "applies_to_full_91_second_normal_job": false
+  },
+  "evidence": [
+    {
+      "path": "/home/nvidia/Desktop/simready_pipeline/runs/aholo_panel/cost_ledger.jsonl",
+      "sha256": "2c1dc3720a38cf49a1b4b6a32da5dc4b42fec863b1ae4a53e469f29ce1c9334c"
+    },
+    {
+      "path": "/home/nvidia/Desktop/simready_pipeline/runs/aholo_panel/remote.json",
+      "sha256": "55cd97e57d167daf7d17630bed9a7ab048fa3b4fe6513e2cb1062aca39cd12fd"
+    },
+    {
+      "path": "/home/nvidia/Desktop/simready_pipeline/runs/aholo_panel.log",
+      "sha256": "6eadd45c30964e0bd958a0af62163d6d3973033e51e8a254dd1dde8b3a8ff05b"
+    },
+    {
+      "path": "/home/nvidia/algotithm/simready_infra_pr/runs/aholo_timing_audit_20261112/read_only_remote_status.json",
+      "sha256": "aada20d82f93e4ad8901121c6e70332eaa74125e0fcab5e0c322bfae743a3132"
+    },
+    {
+      "path": "/home/nvidia/Desktop/simready_pipeline/scripts/s1_aholo/submit_panel.py",
+      "sha256": "e4bdce66b5e159582339aa13494bc7fea37b966c4a07052fb4e5e684ebf227a7"
+    }
+  ],
+  "official_schema": "https://labs.aholo.ai/api-docs/en/openapi.json",
+  "limitations": [
+    "Server updateTime is last modification, not an explicitly documented compute/finished timer.",
+    "Historical client/server clock offset is unknown; cross-clock differences are not measured independent spans.",
+    "Success was 45s/low; do not generalize to 91s/normal or arbitrary new scenes.",
+    "Poller exit mechanism is confirmed; exact SSL failure time and underlying transport cause remain unknown. The failed reconstruction job reason remains unknown."
+  ],
+  "root_cause_followup": {
+    "schema_version": 1,
+    "status": "FAILURE_MECHANISM_CONFIRMED",
+    "root_cause": "Uncaught SSL EOF exception terminated the detached poller; no automatic restart until the resumed session launched a watchdog.",
+    "network_transport_root_cause": null,
+    "exact_exception_time": null,
+    "watchdog_command_to_download_receipt_s": 4.328902006149292,
+    "download_only_seconds": null,
+    "original_55_min_breakdown_known": false,
+    "no_new_cloud_calls_in_this_followup": true,
+    "evidence": {
+      "path": "/home/nvidia/algotithm/simready_infra_pr/runs/aholo_timing_audit_20261112/client_failure_timeline.json",
+      "sha256": "b16666a213fff499f47f7a7e887925a8af05e7292ab65f8b46f6c635e3116258"
+    }
+  }
+}

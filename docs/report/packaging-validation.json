@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "status": "IN_PROGRESS",
+  "optimization_experiments": "paused_by_user",
+  "historical_results": "evidence.json",
+  "notes": "Functional packaging checks; final evidence replaces this status before release."
+}

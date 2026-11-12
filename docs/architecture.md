@@ -12,6 +12,11 @@ flowchart TD
   W --> E[evaluation：验收]
   W --> X[execution：执行]
   W --> K[experience：经验]
+  W --> S[simulation：场景与控制]
+  W --> I
+  S --> X
+  S --> C
+  S --> G
   K --> E
   A --> X
   E --> X
@@ -33,7 +38,8 @@ flowchart TD
 
 | 模块 | 内部文件 | 输入 → 输出 |
 |---|---|---|
-| `ingestion` | `video_frames.py`、`cli.py` | 视频和抽帧参数 → 帧、来源哈希、切分清单 |
+| `simulation` | `asset_bundle.py`、`substation_mission.py`、`mission_audit.py`、`mission_video.py`、`cafe_video.py` | 可迁移资产与任务配置 → 实测控制、审计和原生录像 |
+| `ingestion` | `video_frames.py`、`aholo_reconstruction.py`、`cli.py` | 视频和抽帧参数 → 帧、来源哈希、切分清单 |
 | `agents` | `contracts.py`、`provider_factory.py`、`prompting.py`、`token_usage.py`、`providers/` | 缺陷/提案/经验摘要 → `RepairDecision` 与 token usage |
 | `repair` | `planning.py`、`plugin_registry.py`、`cli.py` | 缺陷和能力目录 → 建议；已启用插件和有界参数 → 可信任务 DAG |
 | `execution` | `task_schema.py`、`task_graph.py`、`task_worker.py`、`resource_pool.py`、`processes.py`、`artifact_cache.py` | 任务计划和设备清单 → 已校验产物、日志、资源/耗时记录 |
@@ -45,11 +51,16 @@ flowchart TD
 
 `repair_loop` 管理预算、选择、接受/回退和经验写入；`repair_step` 执行并验收一轮，不自行发布候选或晋升 Skill。`task_graph` 只调度任务；`task_worker` 负责一个任务的进程、产物校验与缓存发布。SQLite schema 与事务统一归 `experience.database`，EpisodeStore 和 SkillLibrary 不再分别假设数据库的归属。
 
+运行时性能优化使用同样的依赖方向：`workflows.performance_loop` 编排冻结实验，`evaluation.performance_video` 在独立进程重算视频质量，`evaluation.performance_gate` 固定阈值并比较耗时，`experience.performance` 保存限定 benchmark 的运行配方与失败记忆。它不把一次场景提速自动晋升为跨场景 Skill。协议与使用方式见 [性能 RSI 手册](benchmarks/runtime_rsi.md)。
+
+`execution.worker_groups` 管理一个父租约下的有限并发；`remote_polling` 负责已有远端作业的状态监控，`process_supervision` 负责自己的 worker 崩溃恢复与总超时。供应商协议、提交收据和资产下载放在 `ingestion.aholo_reconstruction`，通过 `simready ingestion aholo` 调用；执行层不依赖 Aholo 客户端或业务状态机。试验结果与恢复用法见 [15 分钟优化账本](benchmarks/substation_goal15.md)。
+
 ## 公开 Python API
 
 | 入口 | 作用 |
 |---|---|
 | `simready.workflows.run_repair_workflow` | 完整开发修复闭环 |
+| `simready.workflows.performance_loop.run_performance_workflow` | 固定工作量的性能实验、质量门槛、回退与经验复用 |
 | `simready.execution.run_task_graph` | 单机任务 DAG 执行 |
 | `simready.agents.create_decision_provider` | 构造明确指定的决策提供方 |
 | `simready.repair.RepairPluginRegistry` | 加载并绑定可执行修复插件 |
@@ -83,6 +94,6 @@ JSON protocol/candidate/plugin/episode 数据格式和 SQLite schema 在 v0.4 �
 
 ## 当前业务链路与历史实验
 
-原视频可直接提交 Aholo 获得高斯空间底稿；抽帧也可供 VGGT 位姿/深度→gsplat 分支与参考观测使用。对齐、资产分割、清晰来源选择、几何/PBR/碰撞/关节建立、Lite3+Z1 导航与按压，是完整业务目标中的 worker。当前仓库保留部分历史代码，尚未把这些 worker 全部纳入新闭环。
+原视频可直接提交 Aholo 获得高斯空间底稿；抽帧也可供 VGGT 位姿/深度→gsplat 分支与参考观测使用。对齐、资产分割、清晰来源选择、几何/PBR/碰撞/关节建立、Lite3+Z1 导航与按压，是完整业务目标中的 worker。当前已将两个场景的控制、审计、录像迁入 simulation，并封装 Aholo 恢复客户端；完整资产化算法仍有历史代码和场景准备依赖，尚未全部纳入自动修复闭环。
 
 历史代码集中在 `legacy/`，运行时禁止导入它。修复历史算法需要另做数据与 GPU 回归；不能因目录更清楚就声称真实场景质量已提升。当前结果仍不授予生产发布权限。

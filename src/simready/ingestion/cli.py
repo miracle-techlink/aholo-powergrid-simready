@@ -1,12 +1,22 @@
 import argparse
 import json
+import sys
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "aholo":
+        from simready.ingestion.aholo_reconstruction import main as aholo_main
+
+        return aholo_main(argv[1:])
     parser = argparse.ArgumentParser(
-        description="Extract filtered, deduplicated video observations."
+        description="Extract video observations or submit/resume Aholo reconstruction."
     )
-    command = parser.add_subparsers(dest="command", required=True).add_parser("extract")
+    subcommands = parser.add_subparsers(dest="command", required=True)
+    subcommands.add_parser(
+        "aholo", help="Receipt-based cloud reconstruction and monitoring"
+    )
+    command = subcommands.add_parser("extract")
     command.add_argument("--video", required=True)
     command.add_argument("--out", required=True)
     command.add_argument("--fps", type=float, default=2)

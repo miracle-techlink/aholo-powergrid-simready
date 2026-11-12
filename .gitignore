@@ -40,3 +40,13 @@ dist/
 build/
 .infra-cache/
 .infra-locks/
+
+# Curated report illustrations; raw data stays excluded.
+!docs/report/figures/*.jpg
+!docs/report/figures/*.png
+docs/report/*.aux
+docs/report/*.out
+docs/report/*.toc
+docs/report/*.log
+docs/report/main.pdf
+docs/report/main.tex

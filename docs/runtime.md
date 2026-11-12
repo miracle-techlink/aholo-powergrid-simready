@@ -1,11 +1,11 @@
 # Agent、Memory、Skill 与修复闭环
 
-运行时只让 Agent 从已登记的修复方案中选择；任务执行、资源分配与验收由宿主代码完成。当前交付的是可运行的框架和合成场景示例，真实场景的重建、渲染、物理采集 worker 仍需适配。
+运行时只让 Agent 从已登记的修复方案中选择；任务执行、资源分配与验收由宿主代码完成。当前包含修复框架、合成场景示例、Aholo 恢复客户端，以及星巴克/变电站专用仿真 worker。它们的资产准备仍有场景条件，尚未形成任意视频全自动资产化能力。
 
 ```mermaid
 flowchart TD
   V[视频] --> F[ingestion：抽帧 / 筛选 / 去重 / 来源清单]
-  F --> R[重建 worker：Aholo 或 VGGT→gsplat；待适配]
+  F --> R[重建 worker：Aholo 已封装 / VGGT→gsplat 研究分支]
   R --> C[Candidate：模型 / 图像 / 资产图 / SHA256]
   C --> O[冻结开发协议 → 独立观测进程]
   O --> D[Scorecard + Defects]

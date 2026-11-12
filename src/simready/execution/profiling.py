@@ -21,6 +21,7 @@ def profile_command(
     token_mode: str = "unknown",
     usage_file: PathLike | None = None,
     metadata: JsonObject | None = None,
+    pass_fds: Sequence[int] = (),
 ) -> JsonObject:
     """Run a command once; record failures and unknown usage without claiming zero.
 
@@ -58,6 +59,7 @@ def profile_command(
             stdout=directory / "stdout.log",
             stderr=directory / "stderr.log",
             env=None if env is None else dict(env),
+            pass_fds=tuple(pass_fds),
         )
         report.update(
             status="SUCCESS" if process.returncode == 0 else "FAILED",

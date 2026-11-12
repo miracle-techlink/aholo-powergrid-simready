@@ -1,0 +1,4 @@
+digraph G {graph [fontname="Noto Sans CJK SC",bgcolor="white",pad="0.25",nodesep="0.25",ranksep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#ecf4fa",color="#537b94",fontname="Noto Sans CJK SC",fontsize=12,margin="0.18,0.12"]; edge [color="#537b94",arrowsize=0.7];rankdir=TB; video[label="原视频 · 时间戳 · 来源哈希"]; obs[label="抽帧 · 清晰度 · 去重 · 留出观测"]; cloud[label="Aholo 高斯底稿
+receipt / 断线恢复"]; vggt[label="独立 VGGT → gsplat v3
+未用于当前交付",fillcolor="#f4eeee"]; align[label="格式 / 坐标 / 地面 / 尺度估计"]; asset[label="SAM / 多帧纹理 / 独立资产
+可见层 + 物理层 + 交互层"]; task[label="导航 → RGB-D → 规划 → 接触"]; audit[label="独立验收 · 证据哈希",fillcolor="#e4f3e9"]; capture[label="实测轨迹回放 → 原生视频 → 交付"]; loop[label="标准观测 → 缺陷 → 插件修复"]; video->obs;obs->cloud;obs->vggt;cloud->align;align->asset;asset->task;task->audit;audit->capture;asset->loop;loop->asset;}

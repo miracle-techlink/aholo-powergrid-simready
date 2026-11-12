@@ -1,0 +1,20 @@
+# NVIDIA images are obtained separately and retain their original license.
+ARG ISAAC_IMAGE=nvcr.io/nvidia/isaac-sim:6.1.0
+FROM ${ISAAC_IMAGE} AS render
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+RUN /isaac-sim/python.sh -m pip install --no-cache-dir \
+    "numpy>=2,<3" "scipy>=1.10" "Pillow>=9.1" "opencv-python-headless>=4.8" "requests>=2.31"
+WORKDIR /workspace
+ENV PYTHONPATH=/workspace/src
+ENTRYPOINT ["/isaac-sim/python.sh"]
+CMD ["-m", "simready.simulation.environment_check"]
+
+FROM render AS physics
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+ARG ISAACLAB_VERSION=3.0.0
+RUN /isaac-sim/python.sh -m pip install --no-cache-dir \
+    "isaaclab==${ISAACLAB_VERSION}" "onnxruntime>=1.18"
+CMD ["-m", "simready.simulation.environment_check", "--require-lab"]

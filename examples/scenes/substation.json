@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "scene": "substation",
+  "observation_fps": 2,
+  "render": {"width": 1920, "height": 1080, "frames": 714, "fps": 25},
+  "scope": "Known-map Lite3 navigation, RGB-D target localization, Z1 physical press and independent contact audit; replay duration follows measured physics"
+}
