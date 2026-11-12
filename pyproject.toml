@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "simready-pipeline"
-version = "0.5.0"
+dynamic = ["version"]
 description = "Video-to-interactive simulation: portable Isaac workers, bounded agent repair and evidence-bound evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,6 +30,9 @@ simready-ingest = "simready.compat_cli:ingest_main"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["simready*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "simready.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "legacy/scene_evaluation"]

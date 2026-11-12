@@ -1,35 +1,36 @@
-# 视频到可交互仿真场景：完整 Pipeline 技术报告
+# 视频到可交互仿真场景：方法与复现 · 修订版
 
-本项目将真实视频观测、高斯重建、坐标对齐、原片约束的资产修复、USD 场景组合与机器人任务连接起来，并分别记录外观、碰撞、交互状态和来源证据。本次交付包括 **16 页中文技术报告、12 幅配图**、模块化源码、两个场景示例，以及本机、Docker 和 SSH 启动方式。
+v0.6.0 重写了技术报告的方法叙事，并新增 `simready run` 统一场景入口。报告共 18 页、8 图，以 M1–M6 六个阶段说明输入、处理方法、产物和证据，将当前可执行流程、离线资产准备与 VGGT→gsplat 研究支路分开。
 
-变电站的历史接受任务由 Lite3 与 Z1 完成已知地图导航、RGB-D 目标定位、物理按压和回撤，记录一次有效接触，通过 20 项独立审计，生成 28.56 秒原生 1080p 视频。星巴克提供 30 秒原生 4K 的 G2 运动编排演示；该案例不作为自主导航证据。
+三张原生矢量图分别解释整体数据依赖、Agent 修复决策与独立验收、机器人控制与测量回路。PDF 为每张核心图设置横向专页，源码保留可重建的图形。资产表示统一为外观、碰撞、交互三个运行层，来源证据贯穿各阶段。
 
-新增机器人设备接口统一 `describe`、`observe` 和 `command`：G2 仅提供 USD `root_pose`，Lite3+Z1 提供物理 `joint_drive`。独立 Lite3、独立 Z1 目前是绑定模板与 CPU 合同验证，没有独立构型的 GPU 任务成功证据。新构型仍需关节映射、控制策略、安装/TCP 标定与任务验收；导航、感知和规划尚未统一为任意机器人的通用运行时。
+统一入口从已准备的星巴克或变电站 bundle 开始，或先导出已有 bundle spec，再执行来源核验、任务和录像。它生成独立运行计划与汇总，不自动下载第三方资产、安装 Isaac SDK 或把新视频全自动资产化。
 
-## 发布地址
+## 阅读与运行
 
-- [技术报告发布页](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13)
-- [PDF 直接下载](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13/simready-technical-report-zh.pdf)
-- [GitHub 代码仓库](https://github.com/miracle-techlink/aholo-powergrid-simready)
-- [场景启动示例](https://github.com/miracle-techlink/aholo-powergrid-simready/tree/main/examples/scenes)
-- [机器人接入示例](https://github.com/miracle-techlink/aholo-powergrid-simready/tree/main/examples/robots)
+- [修订版技术报告](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v2)
+- [修订版 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v2/simready-technical-report-zh.pdf)
+- [架构图独立 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v2/simready-architecture-figures.pdf)
+- [架构图与生成源码 ZIP](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v2/simready-architecture-figures.zip)
+- [README 与统一入口](https://github.com/miracle-techlink/aholo-powergrid-simready)
+- [场景准备](https://github.com/miracle-techlink/aholo-powergrid-simready/tree/main/examples/scenes)
+- [机器人接入](https://github.com/miracle-techlink/aholo-powergrid-simready/tree/main/examples/robots)
+- [保留的首版报告](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13)
 
-## 本次交付
+## 本次一键运行验证
 
-- `simready-pipeline` v0.5.0：10 个职责明确的模块，仿真 worker 迁入包内，新增能力声明式机器人设备接口。
-- 星巴克、变电站配置与 USD 依赖导出工具，保留输入哈希、独立输出、阶段日志和时间账本。
-- 本机、Docker、SSH 入口及 Isaac 镜像定义；实际核验范围由 `packaging-validation.json` 列明。
-- Aholo receipt 恢复客户端、独立验收、Agent/Memory/Skill 和冻结性能实验代码。
-- PDF、Markdown、原生图源、公开指标与封装核验记录。
+- 变电站完成包与环境检查、抽帧、物理任务、20/20 独立审计及原生回放：模拟 28.508 秒、位移 1.294082 米、一次按压；新视频为 1920×1080、25 fps、713 帧、28.52 秒。
+- 星巴克使用最终源码完成 640×360、30 fps、8 帧短预览，验证 G2 编排入口；未重跑完整 4K 视频，不代表物理导航。
+- CPU 回归为 297 passed、1 skipped；Ruff、格式、编译和架构检查通过。已有 bundle spec 实际导出 30 个文件，缺少 Isaac 的解释器在环境检查处按预期拒绝，未执行 GPU。
 
-## 复现与能力范围
+变电站与星巴克入口总 wall 分别为 1095.164 秒、281.670 秒，包含冷 shader 和启动检查，不含新重建或此前资产准备；这是功能验证，不作加速比较。变电站整轮运行绑定 `10c250b` 的 96 个源码文件，随后仅修改两处失败分支保护并通过 5 个 CPU 负例；控制、物理和渲染未变，未重跑整轮变电站。完整记录见 [v0.6 验证清单](https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/docs/report/one-command-validation.json)。
 
-已有资产的本机封装复现总 wall 时间为 756.632 秒，包含抽帧、物理、审计和录像，不含云重建或资产再处理，不作为加速指标。统一设备接口在该次完整运行后新增，后续验证单独记录。
+## 历史证据与能力范围
 
-最终 Lite3+Z1 接口的 Docker 物理回归通过 20/20 项审计，未重录视频；G2 完成初版接口的 8 帧低分辨率预览及最终接口的真实 USD 位姿核对。完整物理回归使用依赖修复前镜像和已有资产包。最终镜像仅补做依赖与 Kit 启动检查，新导出包仅补做 CPU 迁移验证，三者最终组合尚未完成完整 GPU 运行。版本、哈希和验证范围保存在 `packaging-validation.json`。
+历史变电站接受任务由 Lite3+Z1 完成已知地图接近、RGB-D 目标定位、接触按压与回撤，通过 20 项独立审计并生成 714 帧原生 1080p 视频。星巴克历史视频为 900 帧原生 4K 的 G2 运动编排，不作为物理导航证据。旧测量保持原版本归属，没有被重报为 v0.6.0 新入口的实验。
 
-本次 Aholo 核验只对已有云任务执行只读 GET 和 receipt 续接，没有提交新的付费重建，也未测得新视频重建 E2E。远端 SSH 尚未执行完整任务。
+G2 设备端口仅提供 USD `root_pose`；Lite3+Z1 提供物理 `joint_drive`。独立 Lite3/Z1 为绑定模板与 CPU 合同验证；新构型仍需策略、关节映射、安装/TCP、传感器标定及任务验收。导航、感知和规划尚未统一为任意机器人的通用任务运行时。
 
-柜体补建、尺度和物理参数仍有估计部分。任意新视频全自动资产化、G2 物理导航、跨机器人通用任务运行时、真实电气操作、远端服务器完整复现与 15 分钟全工作量目标仍未完成或未获验证。性能优化保持暂停。
+M3 仍有离线配准、补建和物理参数准备；未观测面与尺度保留估计标记。Aholo 供应商内部训练不由本项目实现，DINOv2 用于冻结特征核查，RSI 复用有证据的参数配方，不更新基础模型权重。15 分钟全工作量目标未达，性能优化继续暂停。
 
-源码中的 MIT 许可不重新授权原视频、机器人模型和策略权重，这些材料需按各自许可准备。场景示例给出公开的数据合同和本地使用入口；发布包不含第三方大资产。
+此前包装核验详见 `docs/report/packaging-validation.json`，与本次入口验证独立记录。SSH 尚无远端完整任务证据。原创代码采用 MIT，第三方视频、机器人模型、权重和 SDK 按各自许可准备。本次以新 tag 发布，不覆盖旧 Release。

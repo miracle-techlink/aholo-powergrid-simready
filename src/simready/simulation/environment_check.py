@@ -20,17 +20,18 @@ def main():
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
             versions[package] = None
-    passed = bool(importlib.util.find_spec("isaacsim"))
+    required = ["isaacsim", "numpy", "PIL", "pxr"]
     if args.require_lab:
-        passed = passed and all(
-            importlib.util.find_spec(p)
-            for p in ("isaaclab", "isaaclab_physx", "onnxruntime", "cv2")
-        )
+        required += ["isaaclab", "isaaclab_physx", "onnxruntime", "cv2", "scipy"]
+    missing = [name for name in required if not importlib.util.find_spec(name)]
+    ffmpeg = bool(shutil.which("ffmpeg"))
+    passed = not missing and ffmpeg
     result = {
         "platform": platform.platform(),
         "python": platform.python_version(),
         "packages": versions,
-        "ffmpeg": bool(shutil.which("ffmpeg")),
+        "ffmpeg": ffmpeg,
+        "missing_modules": missing,
         "kit_launched": False,
     }
     if passed and args.launch:

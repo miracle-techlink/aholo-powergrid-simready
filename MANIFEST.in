@@ -5,5 +5,5 @@ recursive-include legacy *.py *.md *.yaml
 recursive-include scripts *.py
 recursive-include tests *.py *.json
 recursive-include deploy Dockerfile .dockerignore *.md *.py
-recursive-include docs/report/figures *.pdf *.jpg
+recursive-include docs/report/figures *.pdf *.jpg *.png
 include THIRD_PARTY_NOTICES.md

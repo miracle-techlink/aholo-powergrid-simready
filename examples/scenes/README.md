@@ -2,6 +2,46 @@
 
 两个配置使用**已配准、已修复的场景资产**复现视频。它们会核验原片哈希并抽帧，再执行场景任务。新视频云重建另走 `simready ingestion aholo`；不会把原场景的机器人坐标直接套在新重建上。
 
+## 推荐入口：一条命令执行到视频与审计
+
+在仓库中安装 `python -m pip install -e .`，按下文准备 `data/{scene}/bundle.json`，并按[部署说明](../../docs/deployment.md)准备 Isaac 镜像后：
+
+```bash
+simready run --scene substation --accept-eula
+# 或运行星巴克；两个 GPU 任务顺序执行。
+simready run --scene starbucks --accept-eula
+```
+
+默认使用 Docker，自动创建 `runs/{scene}-时间戳-唯一编号/`。不再需要自行选择配置文件或串接各阶段。入口依次核验资产、检查 SDK/ffmpeg、抽帧、执行任务、独立审计和录像，最后核对交付文件。变电站审计失败会停止录像；星巴克只执行编排运动与渲染。
+
+```text
+runs/{scene}-…/
+├── run-plan.json          输入、执行范围和配置
+├── summary.json           COMPLETE / FAILED、失败阶段、视频路径与哈希
+└── execution/
+    ├── environment.json  实际 worker 环境
+    ├── launch.json       启动命令与退出状态
+    └── delivery/
+        ├── timing.json   各阶段耗时
+        ├── observations/
+        ├── mission/      仅变电站：审计、传感器和实测轨迹
+        └── render/       MP4 与渲染凭据
+```
+
+已有完整资产清单时，可将导出与执行合成一次调用：
+
+```bash
+simready run --scene substation --bundle-spec /path/to/substation.bundle.json \
+  --bundle-python /path/to/isaac/python --accept-eula
+# 只检查计划，不导出、不启动 GPU、不创建输出目录：
+simready run --scene substation --dry-run
+# 使用已经安装的本机 Isaac 环境：
+simready run --scene substation --backend local \
+  --python /path/to/isaac/python --accept-eula
+```
+
+`--assets` 可覆盖默认资产目录，`--config` 可覆盖场景/渲染配置，`--out` 可指定尚不存在的输出目录。`--bundle-spec` 打包的是已准备的场景产物，不会执行新视频重建或自动补齐缺失资产。下面保留资产准备方法和底层入口，供调试单独阶段使用。
+
 ## 1. 准备资产包
 
 将 `starbucks.bundle.example.json` 或 `substation.bundle.example.json` 复制到自己的素材目录，填写真实路径。相对路径以 JSON 所在目录为基准；绝对路径仅用于导出输入，不留在导出的 USD 依赖中。
