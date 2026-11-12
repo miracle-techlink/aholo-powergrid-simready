@@ -17,4 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 ARG ISAACLAB_VERSION=3.0.0
 RUN /isaac-sim/python.sh -m pip install --no-cache-dir \
     "isaaclab==${ISAACLAB_VERSION}" "onnxruntime>=1.18"
+RUN /isaac-sim/python.sh -m pip install --no-cache-dir joblib
+COPY repair_sdk_urllib3.py /opt/simready/repair_sdk_urllib3.py
+RUN /isaac-sim/python.sh /opt/simready/repair_sdk_urllib3.py
+# The SDK prebundles optional packages without complete pip metadata. Validate
+# the actual worker imports and GPU path with doctor and the scene smoke tests.
 CMD ["-m", "simready.simulation.environment_check", "--require-lab"]

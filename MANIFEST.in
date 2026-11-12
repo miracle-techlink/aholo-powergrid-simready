@@ -4,6 +4,6 @@ recursive-include examples *.py *.json *.md
 recursive-include legacy *.py *.md *.yaml
 recursive-include scripts *.py
 recursive-include tests *.py *.json
-recursive-include deploy Dockerfile .dockerignore *.md
+recursive-include deploy Dockerfile .dockerignore *.md *.py
 recursive-include docs/report/figures *.pdf *.jpg
 include THIRD_PARTY_NOTICES.md

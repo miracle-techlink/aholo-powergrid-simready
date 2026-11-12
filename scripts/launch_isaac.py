@@ -6,7 +6,18 @@ import os
 import shlex
 import subprocess
 import sys
+import uuid
 from pathlib import Path
+
+
+def reserve_receipt(output):
+    """Reserve a fresh receipt; a failed retry cannot overwrite prior evidence."""
+    path = output / "launch.json"
+    while True:
+        try:
+            return path, path.open("x")
+        except FileExistsError:
+            path = output / f"launch-{uuid.uuid4().hex}.json"
 
 
 def main():
@@ -45,6 +56,11 @@ def main():
     )
     parser.add_argument("--doctor", action="store_true")
     parser.add_argument(
+        "--require-lab",
+        action="store_true",
+        help="Require the physics worker dependencies in doctor mode",
+    )
+    parser.add_argument(
         "--launch-smoke",
         action="store_true",
         help="Start Kit for 10 updates in doctor mode",
@@ -55,6 +71,7 @@ def main():
         container_command,
         execute_container,
         remote_command,
+        validate_paths,
     )
 
     if Path(args.config).is_absolute() or ".." in Path(args.config).parts:
@@ -81,7 +98,7 @@ def main():
             "--gpu",
             args.gpu,
         ]
-        for flag in ("accept_eula", "doctor", "launch_smoke"):
+        for flag in ("accept_eula", "doctor", "launch_smoke", "require_lab"):
             if getattr(args, flag):
                 command.append("--" + flag.replace("_", "-"))
         command = remote_command(args.ssh_host, command)
@@ -90,9 +107,17 @@ def main():
             parser.error(
                 "Pass --accept-eula after accepting the NVIDIA Isaac Sim license"
             )
-        args.repo = args.repo.resolve()
-        args.assets = args.assets.resolve()
-        args.out = args.out.resolve()
+        try:
+            args.repo, args.assets, args.out = validate_paths(
+                args.repo, args.assets, args.out
+            )
+        except ValueError as error:
+            parser.error(str(error))
+        delivery = args.out / "delivery"
+        if not args.doctor and (delivery.exists() or delivery.is_symlink()):
+            parser.error(
+                "Output already contains delivery; select a fresh run directory"
+            )
         if not args.dry_run:
             args.out.mkdir(parents=True, exist_ok=True)
             for subdir in (".isaac-home", ".isaac-cache", ".isaac-data", ".isaac-logs"):
@@ -118,6 +143,8 @@ def main():
                 else str(args.out / "delivery"),
             ]
         )
+        if args.doctor and args.require_lab:
+            worker += ["--require-lab"]
         if args.doctor and args.launch_smoke:
             worker += ["--launch"]
         if args.backend == "docker":
@@ -134,24 +161,40 @@ def main():
     print(shlex.join(command), flush=True)
     if args.dry_run:
         return 0
-    if args.backend == "docker":
-        code = execute_container(command)
-    else:
-        from simready.execution.isaac_environment import isaac_environment
-
-        env = isaac_environment()
-        env["PYTHONPATH"] = (
-            str(args.repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
-        )
-        env["OMNI_KIT_ACCEPT_EULA"] = "YES"
-        code = subprocess.run(command, env=env, check=False).returncode
+    receipt = None
+    record = {
+        "backend": args.backend,
+        "argv": command,
+        "returncode": None,
+        "status": "RUNNING",
+    }
     if args.backend != "ssh":
-        (args.out / "launch.json").write_text(
-            json.dumps(
-                {"backend": args.backend, "argv": command, "returncode": code}, indent=2
+        receipt_path, receipt = reserve_receipt(args.out)
+        receipt.write(json.dumps(record, indent=2) + "\n")
+        receipt.flush()
+        print(f"Launch receipt: {receipt_path}", flush=True)
+    try:
+        if args.backend == "docker":
+            code = execute_container(command)
+        else:
+            from simready.execution.isaac_environment import isaac_environment
+
+            env = isaac_environment()
+            env["PYTHONPATH"] = (
+                str(args.repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
             )
-            + "\n"
-        )
+            env["OMNI_KIT_ACCEPT_EULA"] = "YES"
+            code = subprocess.run(command, env=env, check=False).returncode
+        record.update(returncode=code, status="COMPLETE" if code == 0 else "FAILED")
+    except BaseException as error:
+        record.update(status="INTERRUPTED", error=type(error).__name__)
+        raise
+    finally:
+        if receipt is not None:
+            receipt.seek(0)
+            receipt.write(json.dumps(record, indent=2) + "\n")
+            receipt.truncate()
+            receipt.close()
     return code
 
 

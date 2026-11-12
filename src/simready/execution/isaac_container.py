@@ -10,15 +10,29 @@ from pathlib import Path
 DEFAULT_IMAGE = "simready-isaac:6.1.0"
 
 
+def validate_paths(repo, assets, output):
+    """Resolve aliases and reject output scopes that can mutate input trees."""
+    repo, assets, output = (
+        Path(p).expanduser().resolve() for p in (repo, assets, output)
+    )
+    if not repo.is_dir() or not assets.is_dir():
+        raise ValueError("Repository and asset directories must exist")
+    if output.is_relative_to(assets) or assets.is_relative_to(output):
+        raise ValueError("Output and asset directories must not overlap")
+    if repo.is_relative_to(output):
+        raise ValueError("Output must not equal or contain the repository")
+    if any(any(c in str(p) for c in (",", "\n", "\r")) for p in (repo, assets, output)):
+        raise ValueError("Worker paths cannot contain commas or newlines")
+    return repo, assets, output
+
+
 def container_command(
     *, repo, assets, output, image=DEFAULT_IMAGE, gpu="0", worker=None
 ):
     """Return a mount-scoped Docker command; input directories are read-only."""
-    paths = [Path(p).expanduser().absolute() for p in (repo, assets, output)]
-    if not all(p.is_dir() for p in paths):
-        raise ValueError("Repository, asset and output directories must exist")
-    if any(any(c in str(p) for c in (",", "\n", "\r")) for p in paths):
-        raise ValueError("Docker mount paths cannot contain commas or newlines")
+    paths = validate_paths(repo, assets, output)
+    if not paths[2].is_dir():
+        raise ValueError("Output directory must exist")
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.:/@-]*", image):
         raise ValueError("Invalid container image")
     if not re.fullmatch(r"(?:[0-9]+|GPU-[a-zA-Z0-9-]+)", gpu):
@@ -29,6 +43,9 @@ def container_command(
         "run",
         "--rm",
         "--init",
+        # The upstream healthcheck expects a long-lived app and its default
+        # log directory. A one-shot worker reports success via exit/evidence.
+        "--no-healthcheck",
         "--name",
         name,
         "--label",

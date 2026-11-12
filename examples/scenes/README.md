@@ -29,7 +29,9 @@ export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
   --spec /path/to/substation.bundle.json --out data/substation
 ```
 
-导出递归复制 USD 层、纹理、网格和策略，重写成包内相对引用，记录重写前后哈希。没有找到的依赖会报错，不静默忽略。包内仅保留必要控制规格，不复制整个工作目录。第三方模型需要用户自行取得相应授权；本次公开 Release 不分发这些资产包。
+导出递归复制 USD 层、纹理、网格和策略，重写成包内相对引用，记录重写前后哈希。除下述 SDK 白名单外，没有找到的依赖会报错，不静默忽略。包内仅保留必要控制规格，不复制整个工作目录。第三方模型需要用户自行取得相应授权；本次公开 Release 不分发这些资产包。
+
+本地自定义 MDL 仅支持 **UTF-8 自包含模块**；含 `import`、限定模块名 `::` 或纹理、`light_profile`、`bsdf_measurement` 资源类型时明确拒绝，不递归解析 MDL 内部依赖，也不编译材质。相对 USD 层存在的本地 MDL 优先复制，包括同名 `OmniPBR.mdl`；仅当没有本地文件时，SDK 白名单中的 `OmniPBR.mdl` 可保留外部依赖，未知缺失模块失败。该支持范围不代表任意 MDL 材质均可迁移。
 
 ## 2. 启动星巴克视频
 
@@ -61,4 +63,4 @@ python scripts/launch_isaac.py --backend ssh --ssh-host rtx-server \
   --config examples/scenes/substation.json --accept-eula
 ```
 
-详细环境安装、资产同步和验证范围见 [部署说明](../../docs/deployment.md)。现有接受任务的复现不调用 LLM；如另行启用修复工作流，Agent token 与确定性 worker 的 GPU 时间分别统计。
+详细环境安装、资产同步和验证范围见 [部署说明](../../docs/deployment.md)。远端 SSH 尚未执行完整任务；此处提供启动方式示例。现有接受任务的复现不调用 LLM；如另行启用修复工作流，Agent token 与确定性 worker 的 GPU 时间分别统计。

@@ -17,12 +17,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install '.[test,dev]'
-      - run: ruff check src/simready tests examples scripts
+      - run: ruff check src/simready tests examples scripts deploy
       - run: ruff check legacy --select E9,F63,F7,F82
-      - run: ruff format --check src/simready tests examples scripts legacy
+      - run: ruff format --check src/simready tests examples scripts legacy deploy
       - run: python scripts/check_architecture.py
       - run: python -m pytest -q
-      - run: python -m compileall -q src/simready examples scripts legacy
+      - run: python -m compileall -q src/simready examples scripts legacy deploy
       - run: python -m build
       - run: simready --help
       - run: simready workflows --help

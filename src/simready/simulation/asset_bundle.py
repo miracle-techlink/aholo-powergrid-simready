@@ -2,14 +2,59 @@
 
 This packages existing reconstruction/repair outputs; it does not invent assets.
 Run with a Python environment containing OpenUSD (pxr).
+
+Custom MDL support is deliberately limited to self-contained UTF-8 modules.
+MDL imports, qualified module names and resource types require an MDL dependency
+resolver, which this exporter does not implement; such modules fail explicitly.
+Only the SDK modules in SDK_MDL_MODULES may remain external to a bundle.
 """
 
 import argparse
+import hashlib
 import os
+import re
 import shutil
 from pathlib import Path
 
 from simready.core.artifacts import digest, read_json, write_json
+
+# Verified SDK module used by the reviewed scene assets. A local module with
+# this name still takes precedence and must pass the custom-module checks.
+SDK_MDL_MODULES = frozenset({"OmniPBR.mdl"})
+MDL_RESOURCE_TYPES = frozenset(
+    {
+        "texture_2d",
+        "texture_3d",
+        "texture_cube",
+        "texture_ptex",
+        "light_profile",
+        "bsdf_measurement",
+    }
+)
+
+
+def validate_self_contained_mdl(source):
+    """Conservatively reject MDL dependencies; this is not a shader compiler."""
+    message = (
+        "Custom MDL must be a self-contained UTF-8 module; MDL imports, "
+        "qualified module names and resource types are not supported: "
+        f"{source}"
+    )
+    try:
+        text = source.read_text(encoding="utf-8")
+    except UnicodeError as error:
+        raise ValueError(message) from error
+    # Skip complete comments and strings so documentation and annotations do
+    # not become false dependencies. Tokens in actual code are conservative:
+    # even SDK imports and empty texture parameters require a richer adapter.
+    tokens = re.findall(
+        r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\[\s\S]|[^"\\])*"|[A-Za-z_][A-Za-z_0-9]*|::',
+        text,
+    )
+    if any(
+        token in MDL_RESOURCE_TYPES or token in {"import", "::"} for token in tokens
+    ):
+        raise ValueError(message)
 
 
 class BundleExporter:
@@ -27,12 +72,21 @@ class BundleExporter:
             return self.copied[source]
         if not source.is_file():
             raise FileNotFoundError(source)
+        is_usd = source.suffix.lower() in (".usd", ".usda", ".usdc")
+        if source.suffix.lower() == ".mdl":
+            validate_self_contained_mdl(source)
         sha = digest(source)
-        target = self.output / "assets" / sha[:20] / source.name
+        asset_id = sha[:20]
+        if is_usd:
+            # Equal USD bytes can resolve relative references differently in
+            # different source directories. Keep those contexts distinct, but
+            # never write the original host path into the exported bundle.
+            asset_id += "-" + hashlib.sha256(os.fsencode(source)).hexdigest()[:20]
+        target = self.output / "assets" / asset_id / source.name
         target.parent.mkdir(parents=True, exist_ok=True)
         self.copied[source] = target
         self.sources[str(target.relative_to(self.output))] = sha
-        if source.suffix.lower() in (".usd", ".usda", ".usdc"):
+        if is_usd:
             original = Sdf.Layer.FindOrOpen(str(source))
             if original is None:
                 raise ValueError(f"Cannot open USD: {source}")
@@ -42,10 +96,14 @@ class BundleExporter:
             def remap(value):
                 if not value:
                     return value
-                # Built-in MDL modules resolve through Kit's search path.
-                if value.endswith(".mdl") and "/" not in value:
-                    return value
                 resolved = Sdf.ComputeAssetPathRelativeToLayer(original, value)
+                if value.lower().endswith(".mdl"):
+                    local = source.parent / value
+                    if local.is_file():
+                        resolved = str(local)
+                    elif value in SDK_MDL_MODULES and not Path(resolved).is_file():
+                        # Only an explicitly known SDK module may stay external.
+                        return value
                 dependency = self.copy(resolved)
                 return os.path.relpath(dependency, target.parent)
 

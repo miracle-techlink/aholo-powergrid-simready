@@ -118,7 +118,7 @@ def main():
 \usepackage[margin=1.7cm]{geometry}
 \usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,fancyhdr}
 \usepackage[colorlinks,linkcolor=blue!50!black,urlcolor=blue!50!black,bookmarksnumbered]{hyperref}
-\hypersetup{pdftitle={视频到可交互仿真场景：完整Pipeline技术报告},pdfauthor={SimReady Pipeline},pdfsubject={视频重建、资产修复、Lite3与Z1控制、独立验收与RSI}}
+\hypersetup{pdftitle={视频到可交互仿真场景：完整Pipeline技术报告},pdfauthor={SimReady Pipeline},pdfsubject={视频重建、资产修复、机器人设备接口、独立验收与RSI}}
 \setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
 \renewcommand{\arraystretch}{1.16}
 \captionsetup{font=small,labelfont=bf,justification=justified,singlelinecheck=false,skip=6pt}
