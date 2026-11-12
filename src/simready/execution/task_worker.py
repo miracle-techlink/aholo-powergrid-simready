@@ -41,6 +41,7 @@ def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
     output = task_dir / "files"
     record = dict(
         task_id=task["id"],
+        started_unix_s=time.time(),
         scene_id=task["scene_id"],
         stage=task["stage"],
         key=key,
@@ -144,6 +145,7 @@ def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
         record["error"] = f"{type(error).__name__}: {error}"
     finally:
         lease.close()
+        record["ended_unix_s"] = time.time()
         record["worker_wall_seconds"] = time.monotonic() - started
         # Missing output directory can itself be the original worker error.
         write_json(task_dir / "result.json", record)

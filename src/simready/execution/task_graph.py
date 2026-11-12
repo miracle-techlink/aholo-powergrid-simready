@@ -81,6 +81,7 @@ def run_task_graph(
     ]
     engine = object_digest({p.name: digest(p) for p in engine_files})
     started = time.monotonic()
+    started_unix_s = time.time()
     deadline = started + wall_timeout_s if wall_timeout_s is not None else float("inf")
     pending = {t["id"]: t for t in plan["tasks"]}
     results, running, ready_at, prepared = {}, {}, {}, {}
@@ -204,6 +205,8 @@ def run_task_graph(
         if all(r["status"] == "SUCCESS" for r in results.values())
         else "FAILED",
         wall_seconds=time.monotonic() - started,
+        started_unix_s=started_unix_s,
+        ended_unix_s=time.time(),
         tasks=results,
         cache_hits=sum(r.get("cache_hit", False) for r in results.values()),
         release_authorized=False,
