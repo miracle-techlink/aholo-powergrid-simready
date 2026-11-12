@@ -169,3 +169,34 @@ def test_failed_retry_creates_new_receipt_without_overwriting_success(
     assert len(retries) == 1
     report = json.loads(retries[0].read_text())
     assert report["returncode"] == 2 and report["status"] == "FAILED"
+
+
+@pytest.mark.parametrize(
+    "error_type,status",
+    [(FileNotFoundError, "FAILED"), (KeyboardInterrupt, "INTERRUPTED")],
+)
+def test_launch_errors_are_distinguished_from_interruptions(
+    tmp_path, monkeypatch, error_type, status
+):
+    from simready.execution.isaac_launcher import launch_worker
+
+    repo, assets, output = (tmp_path / name for name in ("repo", "assets", "out"))
+    repo.mkdir()
+    assets.mkdir()
+
+    def fail(*args, **kwargs):
+        raise error_type("fixture launch failure")
+
+    monkeypatch.setattr("simready.execution.isaac_launcher.subprocess.run", fail)
+    with pytest.raises(error_type):
+        launch_worker(
+            ["-c", "pass"],
+            repo=repo,
+            assets=assets,
+            output=output,
+            backend="local",
+        )
+    receipt = json.loads((output / "launch.json").read_text())
+    assert receipt["status"] == status
+    assert receipt["error"] == error_type.__name__
+    assert receipt["returncode"] is None

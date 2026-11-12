@@ -13,6 +13,16 @@ from simready.workflows.scene_delivery import run_scene_delivery, verify_scene_d
 
 def execute_scene(assets, output):
     output = Path(output).resolve()
+    for name in (
+        "pipeline-status.json",
+        "plan.json",
+        "environment.json",
+        "environment.stderr.log",
+        "delivery",
+    ):
+        path = output / name
+        if path.exists() or path.is_symlink():
+            raise FileExistsError(f"Refusing to overwrite existing execution: {path}")
     config = read_json(output / "scene.json")
     start = time.monotonic()
     state = {

@@ -125,6 +125,9 @@ def launch_worker(
         )
         record.update(returncode=code, status="COMPLETE" if code == 0 else "FAILED")
         return code
+    except Exception as error:
+        record.update(status="FAILED", error=type(error).__name__)
+        raise
     except BaseException as error:
         record.update(status="INTERRUPTED", error=type(error).__name__)
         raise

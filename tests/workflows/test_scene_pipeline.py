@@ -634,3 +634,40 @@ raise SystemExit(main(sys.argv[1:]))
     )
     assert result.returncode == 0, result.stderr
     assert not (tmp_path / "runs").exists()
+
+
+@pytest.mark.parametrize("previous", ["complete", "partial", "dangling_status_link"])
+def test_internal_worker_rejects_previous_execution_before_any_writes(
+    tmp_path, monkeypatch, previous
+):
+    assets = make_bundle(tmp_path / "assets")
+    execution = tmp_path / "execution"
+    execution.mkdir()
+    write_json(execution / "scene.json", scene_pipeline.SCENE_PRESETS["starbucks"])
+    if previous == "complete":
+        write_json(execution / "plan.json", {"prior_plan": "preserve"})
+        write_json(execution / "pipeline-status.json", {"status": "COMPLETE"})
+        write_json(execution / "environment.json", {"passed": True})
+        (execution / "delivery").mkdir()
+        (execution / "delivery/evidence.txt").write_text("preserve")
+    elif previous == "partial":
+        write_json(execution / "plan.json", {"partial_plan": "preserve"})
+    else:
+        (execution / "pipeline-status.json").symlink_to(tmp_path / "missing")
+    names = sorted(p.name for p in execution.iterdir())
+    before = {p.name: p.read_bytes() for p in execution.iterdir() if p.is_file()}
+    monkeypatch.setattr(
+        scene_execution,
+        "run_scene_delivery",
+        lambda *a, **k: pytest.fail("reused output reached planning or execution"),
+    )
+    with pytest.raises(FileExistsError, match="existing execution"):
+        scene_execution.execute_scene(assets, execution)
+    assert sorted(p.name for p in execution.iterdir()) == names
+    assert {
+        p.name: p.read_bytes() for p in execution.iterdir() if p.is_file()
+    } == before
+    if previous == "complete":
+        assert (execution / "delivery/evidence.txt").read_text() == "preserve"
+    elif previous == "dangling_status_link":
+        assert (execution / "pipeline-status.json").is_symlink()
