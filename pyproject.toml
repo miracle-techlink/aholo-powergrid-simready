@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simready-pipeline"
+version = "0.2.0"
+description = "Resource-aware scene DAG execution and evidence-bound reconstruction evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = []
+
+[project.optional-dependencies]
+benchmark = ["numpy>=1.24", "scipy>=1.10", "Pillow>=9"]
+test = ["pytest>=7", "numpy>=1.24", "scipy>=1.10", "Pillow>=9", "scikit-image>=0.20"]
+
+[project.scripts]
+simready-infra = "simready_bridge.infra.__main__:main"
+simready-benchmark = "simready_bridge.benchmark.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["simready_bridge*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "scene_bench"]
+pythonpath = ["."]

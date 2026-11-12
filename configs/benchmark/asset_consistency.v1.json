@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "scope": "Category-independent source-to-reconstruction asset and scene-graph consistency",
+  "identity_policy": "Match source-indexed IDs only within the same scene, survey scope and registered coordinate frame. Cross-scene reuse applies to rules, not object IDs.",
+  "asset_levels": {
+    "structure": ["floor", "wall", "ceiling", "stairs", "opening", "partition"],
+    "object": ["cabinet", "transformer", "machine", "rack", "table", "chair", "container", "pipe"],
+    "part": ["door", "drawer", "handle", "hinge", "valve", "gauge", "display", "lamp", "button", "wheel", "socket"]
+  },
+  "category_examples_are_not_a_closed_vocabulary": true,
+  "dimensions": [
+    {"id": "inventory", "checks": ["missing", "unmatched", "duplicate identity", "category"], "implemented": "ID/category comparison; unmatched is extra only when source inventory is complete"},
+    {"id": "shape_pose", "checks": ["position", "orientation", "dimensions", "outline", "local shape"], "implemented": "Registered centres, dimensions and quaternion orientation; contour/shape collectors pending"},
+    {"id": "appearance", "checks": ["material class", "colour", "texture", "markings"], "implemented": "Provided material labels plus existing ROI pixels; automatic attribute extraction pending"},
+    {"id": "hierarchy", "checks": ["part belongs to correct parent", "part completeness"], "implemented": "Parent and structure/object/part comparison"},
+    {"id": "relations", "checks": ["supported_by", "inside", "connected_to", "adjacent_to", "part_of"], "implemented": "Provided relation-set comparison; geometric relation inference pending"},
+    {"id": "state", "checks": ["door open/closed", "drawer position state", "valve state", "light on/off"], "implemented": "Provided state-label comparison; capture states must be aligned"},
+    {"id": "interaction", "checks": ["openable", "slidable", "rotatable", "pressable", "graspable", "supporting", "traversable"], "implemented": "Provided affordance-label comparison only; physical proof stays in physics/task tracks"},
+    {"id": "coverage_uncertainty", "checks": ["visible", "occluded", "unobserved", "unknown class or attribute"], "implemented": "Explicit inventory completeness and required-property gaps; automatic visibility collector pending"}
+  ],
+  "reference_policy": {
+    "required_fields_by_level": {
+      "structure": ["category", "level", "parent_id", "center_m", "size_m", "rotation_xyzw", "material_class"],
+      "object": ["category", "level", "parent_id", "center_m", "size_m", "rotation_xyzw", "material_class", "state", "affordances"],
+      "part": ["category", "level", "parent_id", "center_m", "size_m", "rotation_xyzw", "material_class", "state", "affordances"]
+    },
+    "relations_required": true
+  },
+  "threshold_policy": "Freeze tolerance by category, scale, visibility and task before scoring; do not apply button tolerances to walls or furniture.",
+  "unknown_policy": "Unknown source properties and incomplete inventory require evidence. An empty affordance list means explicitly no supported interaction, not missing annotation.",
+  "cross_scene_tests": {
+    "dimensions": ["scene family", "asset category", "asset size", "material", "occlusion", "capture state"],
+    "report": ["per scene", "per category", "per level", "worst critical asset", "unsupported coverage"],
+    "current_status": "Synthetic schema/unit cases only; real cross-scene generalization unverified"
+  }
+}
