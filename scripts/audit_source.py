@@ -4,9 +4,9 @@ import argparse
 import ast
 from pathlib import Path
 
-from simready_bridge.artifacts import digest, write_json
+from simready.core.artifacts import digest, write_json
 
-ROOTS = ("simready_bridge", "legacy", "examples", "tests", "scripts")
+ROOTS = ("src/simready", "legacy", "examples", "tests", "scripts")
 
 
 def inventory(root):
