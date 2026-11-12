@@ -229,16 +229,17 @@ def test_invalid_inputs_do_not_start_processes_or_overwrite_output(
 def test_wheel_style_local_import_path_and_docker_checkout_requirement(
     tmp_path, monkeypatch
 ):
-    from simready.execution.isaac_launcher import (
-        package_source_root,
-        worker_environment,
-    )
+    from simready.execution import isaac_launcher
 
     empty = tmp_path / "not-a-checkout"
     empty.mkdir()
-    assert worker_environment(empty)["PYTHONPATH"].split(":")[0] == str(
-        package_source_root()
-    )
+    host_packages = tmp_path / "python3.14/site-packages"
+    (host_packages / "simready").mkdir(parents=True)
+    monkeypatch.setattr(isaac_launcher, "package_source_root", lambda: host_packages)
+    monkeypatch.delenv("PYTHONPATH", raising=False)
+    # Without an owned staging directory, a wheel install must never expose
+    # the host interpreter's site-packages to the selected Isaac interpreter.
+    assert "PYTHONPATH" not in isaac_launcher.worker_environment(empty)
     assets = make_bundle(tmp_path / "assets")
     output = tmp_path / "out"
     assert (
