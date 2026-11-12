@@ -19,6 +19,13 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.ruff_cache/
+.codex/
+auth.json
+*_auth.json
+storage_state*.json
+*.sqlite
+*.sqlite-*
 *.egg-info/
 .venv/
 env/

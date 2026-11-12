@@ -1,13 +1,20 @@
 """Cooperative, exclusive device leases shared by processes on one Linux host."""
+
 import fcntl
 import glob
-from pathlib import Path
 import threading
+from pathlib import Path
 
 
 class Lease:
     def __init__(self, pool, resources, gpu=None, handle=None):
-        self.pool, self.resources, self.gpu, self.handle = pool, resources, gpu, handle
+        self.pool, self.resources, self.gpu, self.handle = (
+            pool,
+            dict(resources),
+            gpu,
+            handle,
+        )
+        self.closed = False
 
     @property
     def pass_fds(self):
@@ -17,21 +24,24 @@ class Lease:
 
     def close(self):
         with self.pool.guard:
-            self.pool.cpu += self.resources.get('cpu', 1)
-            self.pool.ram += self.resources['ram_gb']
-            if self.resources['kind'] == 'cloud':
+            if self.closed:
+                return
+            self.closed = True
+            self.pool.cpu += self.resources.get("cpu", 1)
+            self.pool.ram += self.resources["ram_gb"]
+            if self.resources["kind"] == "cloud":
                 self.pool.cloud += 1
             if self.handle:
                 self.handle.close()
-                self.pool.busy.remove(self.gpu['uuid'])
+                self.pool.busy.remove(self.gpu["uuid"])
 
 
 class ResourcePool:
-    def __init__(self, inventory, lock_dir, legacy_glob='/tmp/*.gpu.lock'):
-        self.cpu = inventory['cpu_slots']
-        self.ram = inventory['ram_gb']
-        self.cloud = inventory.get('cloud_slots', 0)
-        self.gpus = inventory.get('gpus', [])
+    def __init__(self, inventory, lock_dir, legacy_glob="/tmp/*.gpu.lock"):
+        self.cpu = inventory["cpu_slots"]
+        self.ram = inventory["ram_gb"]
+        self.cloud = inventory.get("cloud_slots", 0)
+        self.gpus = inventory.get("gpus", [])
         self.busy = set()
         self.guard = threading.Lock()
         self.directory = Path(lock_dir)
@@ -40,32 +50,35 @@ class ResourcePool:
 
     def acquire(self, resources):
         with self.guard:
-            if resources.get('cpu', 1) > self.cpu or resources['ram_gb'] > self.ram:
+            if resources.get("cpu", 1) > self.cpu or resources["ram_gb"] > self.ram:
                 return None
-            kind = resources['kind']
-            if kind == 'cloud' and self.cloud < 1:
+            kind = resources["kind"]
+            if kind == "cloud" and self.cloud < 1:
                 return None
             handle = gpu = None
-            if kind in ('cuda', 'rtx'):
+            if kind in ("cuda", "rtx"):
                 if self.legacy_glob and glob.glob(self.legacy_glob):
                     return None
                 for candidate in self.gpus:
-                    if (kind not in candidate['capabilities'] or candidate['uuid'] in self.busy
-                            or candidate['vram_gb'] < resources['vram_gb']):
+                    if (
+                        kind not in candidate["capabilities"]
+                        or candidate["uuid"] in self.busy
+                        or candidate["vram_gb"] < resources["vram_gb"]
+                    ):
                         continue
-                    attempt = (self.directory / f'{candidate["uuid"]}.lease').open('a+')
+                    attempt = (self.directory / f"{candidate['uuid']}.lease").open("a+")
                     try:
                         fcntl.flock(attempt.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                     except BlockingIOError:
                         attempt.close()
                         continue
                     handle, gpu = attempt, candidate
-                    self.busy.add(gpu['uuid'])
+                    self.busy.add(gpu["uuid"])
                     break
                 if handle is None:
                     return None
-            self.cpu -= resources.get('cpu', 1)
-            self.ram -= resources['ram_gb']
-            if kind == 'cloud':
+            self.cpu -= resources.get("cpu", 1)
+            self.ram -= resources["ram_gb"]
+            if kind == "cloud":
                 self.cloud -= 1
             return Lease(self, resources, gpu, handle)

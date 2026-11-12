@@ -2,7 +2,7 @@
 
 本项目把真实视频转换为三维场景、独立资产和机器人可交互的仿真环境，再用冻结观测协议检查修复是否有效。当前样例是变电站/配电房中的 Lite3 四足 + Z1 机械臂。
 
-**本仓库目前提供历史重建实验代码，以及可运行的多场景任务调度与统一 benchmark 基础。完整视频→交付的自动化 worker 适配仍在进行。** 原始视频、训练权重、机器人模型与交付 USD 不包含在源码仓库中。
+**本仓库提供可运行的 Agent 修复闭环、Codex/Responses 接口、持久 Memory、版本化 Skill、多场景 DAG 调度与统一 benchmark；历史实验统一放在 `legacy/`。完整视频→交付的真实 worker 适配仍在进行。** 原始视频、训练权重、机器人模型与交付 USD 不包含在源码仓库中。
 
 ## 当前真实链路
 
@@ -82,28 +82,51 @@ python scripts/benchmark_infra.py --out runs/scheduler-benchmark.json
 
 测试同时比较串行、4 路并行和缓存复用，要求所有产物哈希相同。本机记录为 4.57 秒 → 1.20 秒，约 3.82 倍；16 个阶段缓存命中时为 0.012 秒。结果只代表合成 CPU 调度能力；真实 CUDA、Isaac 与端到端加速尚未测量。[已记录的测试结果](docs/benchmarks/scheduler_cpu_20261112.json)
 
+## Agent 闭环与复用
+
+```bash
+# 无 API 费用：三个合成场景依次学习、验证、复用。
+python examples/agent/run_demo.py --out runs/agent-demo
+
+# 使用本机 Codex 已登录账号；doctor 不打印凭据。
+codex login
+simready-pipeline doctor
+python examples/agent/run_demo.py --out runs/codex-demo --provider codex --scenes 1
+
+# CPU 视频抽帧，需要 ffmpeg。
+simready-ingest --video /path/source.mp4 --out runs/frames
+```
+
+已实测 Codex CLI 0.167.0 的账号调用。另有 `ResponsesProvider` 通过 API key 接入，HTTP 合同使用 mock 验证。Agent 选择已登记插件；独立验收决定接受或回退；成功经验在跨场景回归后晋升为 Skill，再进入后续场景。完整接口、配置、架构图和已验证范围见 [Agent Runtime](docs/AGENT_RUNTIME.md)。
+
 ## 模块边界
 
 | 路径 | 当前职责 |
 |---|---|
-| `simready_bridge/artifacts.py` | 无数值依赖的内容哈希与并发安全 JSON 写入 |
-| `simready_bridge/infra/` | 任务合同、按设备租约、资源预算、DAG、缓存和耗时 |
-| `simready_bridge/benchmark/` | 观测、通用资产图比较、缺陷、修复计划、独立进程验收 |
-| `configs/benchmark/` | 质量合同、跨场景资产一致性和插件注册 |
-| `examples/`、`tests/` | 可重现合成示例与故障/隔离测试 |
-| `s0_ingest/`、`s1_aholo/` | 历史抽帧与云重建脚本，需要本地参数适配 |
-| `rsi_3dgs/`、`scene_bench/` | 历史修复/评分实验；协议与新 benchmark 不混算 |
-| `warehouse_3dgs/` | 历史仓库采集、训练、渲染与 USD 工具 |
-| `submission_template/` | 历史参赛提交流程，与场景运行时独立 |
+| `simready_bridge/ingest/` | 可复用抽帧、筛选、逐位去重、train/heldout 来源清单 |
+| `simready_bridge/agent/` | Rules、Codex CLI、Responses API 的统一决策接口 |
+| `simready_bridge/pipeline/` | 有预算的观测→修复→验收循环 |
+| `simready_bridge/plugins/` | 版本绑定的可信任务模板、参数边界与候选动作 |
+| `simready_bridge/memory/`、`skills/` | SQLite 经验、版本化配方、晋升、检索、退役 |
+| `simready_bridge/infra/` | CPU/CUDA/RTX/云配额、设备租约、DAG、缓存和耗时 |
+| `simready_bridge/benchmark/` | 观测、通用资产图、缺陷、独立验收与候选比较 |
+| `simready_bridge/artifacts.py`、`process.py`、`geometry.py` | 严格 JSON、哈希、进程清理、坐标约定 |
+| `configs/`、`examples/`、`tests/` | 合同、可重现示例和回归测试 |
+| `legacy/s0_ingest/` | 旧抽帧入口，转调新的 ingest CLI |
+| `legacy/s1_aholo/` | Aholo 上传、提交、轮询、下载；仍需提供独立客户端 |
+| `legacy/rsi_3dgs/`、`legacy/scene_bench/` | 历史修复与评分；不与新 benchmark 混算 |
+| `legacy/warehouse_3dgs/`、`legacy/submission_template/` | 历史 GPU 实验、USD 工具与参赛提交流程 |
 
-此仓库目前没有 `s2_vggt` 至 `s5_eval` 的完整本地脚本快照，不能按这些不存在的路径复现。历史目录保留原行为，逐步通过 worker 适配器迁移，避免一次性重写丢失验证证据。
+安装包只包含 `simready_bridge`，不自动导入旧 Isaac/训练/提交脚本。历史模块从仓库根目录用 `python -m legacy.…` 运行，依赖独立环境与数据。此仓库没有 `s2_vggt` 至 `s5_eval` 的完整本地快照，不能按这些路径复现。[目录迁移与审查记录](docs/CODE_AUDIT.md)
 
 ## 已实现与待完成
 
 已实现：按设备独占而非整机全局互斥、CPU/RAM/云端并发预算、依赖失败传播、超时终止本任务进程组、输入/输出内容绑定缓存、每阶段日志、独立进程重新计算观测，以及结构/物体/零件/关系层面的资产一致性。
 
-待完成：真实 VGGT/gsplat/Difix/Isaac worker 接入、跨机调度、模型热驻留、自动完整视角采集、物理/任务采集器、真实参考资产提取、密封多场景数据集、生产阈值标定与发布权限隔离。修复插件当前只生成计划，不自动执行。所有验收报告保留 `release_authorized=false`。
+待完成：真实 VGGT/gsplat/Difix/Isaac worker 接入、跨机调度、模型热驻留、自动完整视角采集、物理/任务采集器、真实参考资产提取、密封多场景数据集、生产阈值标定与发布权限隔离。新闭环已能执行可信插件 DAG，当前提供的端到端插件是合成校准示例；真实场景插件目录仍为待接入状态。所有验收报告保留 `release_authorized=false`。
 
+- [Agent 接口、Memory/Skill 生命周期与架构图](docs/AGENT_RUNTIME.md)
+- [全仓审查、缺陷修复与验证边界](docs/CODE_AUDIT.md)
 - [Infra 架构、任务接口、集群方案与底层优化](docs/INFRA_DESIGN.md)
 - [耗时审计、代码冗余与可验证的优化顺序](docs/PERFORMANCE_AUDIT.md)
 - [统一 benchmark 与通用资产一致性](docs/BENCHMARK.md)

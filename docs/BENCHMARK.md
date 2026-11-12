@@ -1,6 +1,6 @@
 # 统一观测、缺陷与验收
 
-`configs/benchmark/suite.v1.json` 的 schema 为 1，benchmark 版本为 `real2sim-bench/0.2`。这是项目内部的开发验收协议，不是已经发布的公共 benchmark，也没有商业交付认证。
+`configs/benchmark/suite.v1.json` 的 schema 为 1，benchmark 版本为 `real2sim-bench/0.3`。这是项目内部的开发验收协议，不是已经发布的公共 benchmark，也没有商业交付认证。
 
 ## 资产一致性覆盖整个场景
 
@@ -47,4 +47,4 @@ python -m simready_bridge.benchmark run \
 
 现阶段尚缺：自动完整视角与真实覆盖测量、可信渲染/源资产提取、LPIPS/时序/物理/任务采集适配器、USD 全依赖闭包验证、跨场景密封数据集及阈值标定。新解释器进程仅提供状态分离，没有 OS 权限隔离；最终发布权必须放到另一服务。所有报告保留 `release_authorized=false`。
 
-`scene_bench/` 与 `rsi_3dgs/` 是保留的历史实验模块，其指标定义与本协议并不完全一致；不混算成绩。后续应以新协议为边界逐个迁移采集器，再退役重复的旧观测/评分代码。
+`legacy/scene_bench/` 与 `legacy/rsi_3dgs/` 是保留的历史实验模块，其指标定义与本协议并不完全一致；不混算成绩。后续应以新协议为边界逐个迁移采集器，再退役重复的旧观测/评分代码。
