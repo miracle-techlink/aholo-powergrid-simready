@@ -201,7 +201,27 @@ def run(a, apps):
         return x.detach().cpu().numpy() if hasattr(x, "detach") else x.numpy()
 
     names, bodies = list(robot.joint_names), list(robot.body_names)
-    li, ai = [names.index(n) for n in legs], [names.index(n) for n in arms]
+    from simready.simulation.robot_interface import (
+        JointDriveTarget,
+        articulation_interface,
+    )
+
+    passive_names = [tool_info["joint_name"]] if tool_info else []
+    robot_port = articulation_interface(
+        robot,
+        robot_id="lite3_z1",
+        components=("mobile_base", "arm") + (("passive_tool",) if tool_info else ()),
+        groups={"base": legs, "arm": arms},
+        passive_joints=passive_names,
+        joint_units={
+            **{n: "rad" for n in [*legs, *arms]},
+            **{n: "m" for n in passive_names},
+        },
+        quaternion_order="xyzw",
+    )
+    write_json(a.out / "robot_interface.json", robot_port.describe())
+    bound_names = tuple(names)
+    li, ai = robot_port.joint_indices(legs), robot_port.joint_indices(arms)
     tool_i = bodies.index(tool_body.rsplit("/", 1)[-1])
     spring_i = names.index(tool_info["joint_name"]) if tool_info else None
     q0 = torch.tensor([[home[n] for n in names]], device=robot.device)
@@ -436,6 +456,7 @@ def run(a, apps):
         MODULE_DIR / "arm_planner.py",
         MODULE_DIR / "panel_controls.py",
         MODULE_DIR / "press_tool.py",
+        MODULE_DIR / "robot_interface.py",
     ]:
         shutil.copy2(source, a.out / "code_used" / source.name)
     phase = "STAND"
@@ -636,9 +657,12 @@ def run(a, apps):
                 ]
                 # Apply only Z1 joint gravity torques; no root force/pose writes.
                 effort[:, ai] = torch.as_tensor(gravity[ai], device=robot.device)
-                robot.set_joint_position_target(target)
-                robot.set_joint_effort_target(torch.clamp(effort, -limits, limits))
-                robot.write_data_to_sim()
+                robot_port.command(
+                    "joint_drive",
+                    JointDriveTarget(
+                        bound_names, target, torch.clamp(effort, -limits, limits)
+                    ),
+                )
                 sim.step(render=False)
                 robot.update(dt)
                 caps.update(dt)

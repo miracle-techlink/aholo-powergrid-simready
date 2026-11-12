@@ -281,6 +281,13 @@ def main():
             rig = UsdGeom.Xform.Define(stage, "/World/TourRig")
             rig_t = rig.AddTranslateOp()
             rig_r = rig.AddRotateZOp()
+            from simready.simulation.robot_interface import (
+                RootPoseTarget,
+                kinematic_usd_interface,
+            )
+
+            robot_port = kinematic_usd_interface(rig_t, rig_r, robot_id="g2")
+            atomic_json(args.out / "robot_interface.json", robot_port.describe())
             robot = stage.DefinePrim("/World/TourRig/G2", "Xform")
             robot.GetReferences().AddReference(str(args.robot.resolve()))
             cam.CreateFocalLengthAttr(18.0)
@@ -390,8 +397,9 @@ def main():
                     if replay is not None
                     else z + 0.01
                 )
-                rig_t.Set(Gf.Vec3d(x, y, robot_z))
-                rig_r.Set(yaw)
+                robot_port.command(
+                    "root_pose", RootPoseTarget((x, y, robot_z), math.radians(yaw))
+                )
                 if prev is not None:
                     distance += math.hypot(x - prev[0], y - prev[1])
                 prev = (x, y)
