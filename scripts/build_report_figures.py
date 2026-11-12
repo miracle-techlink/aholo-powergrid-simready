@@ -67,6 +67,11 @@ def main():
     for extension in ("pdf", "svg"):
         figure.savefig(figures / f"timing.{extension}")
 
+    for source in figures.glob("*.svg"):
+        source.write_text(
+            "\n".join(line.rstrip() for line in source.read_text().splitlines()) + "\n"
+        )
+
 
 if __name__ == "__main__":
     main()
