@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "real2sim-bench-v0.2",
+  "status": "development_harness_with_partial_collectors",
+  "release_enabled": false,
+  "description": "Project-specific benchmark suite, not a claim of an existing public standard or a complete dataset.",
+  "candidate_types": ["aholo_gaussians", "vggt_gsplat", "mesh_pbr", "hybrid"],
+  "asset_consistency_spec": "asset_consistency.v1.json",
+  "stages": ["initial_reconstruction", "repair_round", "final_candidate"],
+  "profiles": {
+    "reconstruction": ["source", "coverage", "appearance", "geometry"],
+    "simready": ["source", "coverage", "appearance", "geometry", "instances", "physics", "tasks", "delivery"],
+    "observer_calibration": ["coverage", "appearance"]
+  },
+  "scoring": {
+    "acceptance": "ALL_REQUIRED_CHECKS_PASS",
+    "statuses": ["PASS", "FAIL", "INCOMPLETE", "INVALID"],
+    "aggregate_quality_score": null,
+    "critical_failures_can_be_compensated": false,
+    "report_per_asset_and_view": true,
+    "report_mean_p10_and_worst_region": true,
+    "report_missing_evidence_with_failures": true
+  },
+  "dataset_tracks": [
+    {"id": "synthetic_gold", "role": "Known cameras, metric depth, instances and injected faults", "current": "Warehouse capture exists; common adapters and asset labels still required"},
+    {"id": "real_panel", "role": "Original source fidelity and real capture failure modes", "current": "One room; no independent metric ground truth or sealed scene split"},
+    {"id": "unseen_scenes", "role": "Cross-scene transfer across rooms, warehouses, industrial sites, asset categories, materials and states", "current": "Not collected"},
+    {"id": "observer_faults", "role": "False acceptance/rejection calibration", "current": "Unit fixtures only; not a representative calibration corpus"},
+    {"id": "public_reference", "role": "External NVS/geometry comparisons under each original protocol", "current": "Not downloaded or evaluated", "sources": ["https://github.com/graphdeco-inria/gaussian-splatting", "https://scannetpp.mlsg.cit.tum.de/scannetpp/"]}
+  ],
+  "split_policy": {
+    "levels": ["scene", "capture_session", "frame_and_state_group"],
+    "partitions": ["fit", "development", "sealed_release"],
+    "fit_includes": ["reconstruction", "camera_fitting", "texture_fitting", "skill_learning"],
+    "adjacent_frames_are_not_cross_scene_generalization": true,
+    "sealed_feedback_to_repair_agent": false,
+    "sealed_query_budget_and_rotation": "Must be fixed before release campaign"
+  },
+  "measurement_policy": {
+    "reference_camera_alignment": "Frozen before candidate evaluation; estimated and measured poses reported separately",
+    "rgb": "8-bit RGB sRGB [0,1], no automatic resize/exposure fit; source-driven fixed crops",
+    "psnr": "-10 log10 RGB MSE; capped at 120 dB for exact-match serialization",
+    "ssim": "11x11 Gaussian sigma 1.5, population covariance, valid window, channel mean",
+    "lpips": "Must pin network/weights/preprocessing; collector not yet connected",
+    "depth": "Metres, independent reference required; missing predicted depth penalized separately",
+    "instances": "All structures, objects and parts: identity, category, pose, dimensions, material labels, parent, spatial relations, state and affordance labels. Automatic source graph extraction remains pending.",
+    "temporal": "State/visibility/motion-compensated consistency required; collector not yet connected",
+    "physics": "Independent raw contact, joint, collision and negative-control probes required",
+    "tasks": "Predeclared seeds and perturbations, all failures retained, success-rate confidence interval",
+    "cost": "Separate wall time, GPU time, token usage, cached tokens, retries and provider cost; missing is null",
+    "thresholds": "Calibrate by asset/task and capture domain; inherited 22dB/5cm are development references only"
+  },
+  "coverage_requirements": ["Source-aligned views", "Global navigable views", "Structure/object/part front and oblique views", "Critical-asset and relation closeups", "Robot sensor/task views"],
+  "not_yet_implemented": ["Automatic viewpoint generation and measured surface coverage", "Trusted renderer and source-instance extraction", "Physics/task collector adapters", "Full dependency-closure and video validators", "OS-level verifier isolation and publisher authority", "Repair plugin execution and candidate promotion", "Calibrated production thresholds and sealed multi-scene dataset"]
+}

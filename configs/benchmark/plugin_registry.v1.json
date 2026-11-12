@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "execution_enabled": false,
+  "plugins": [
+    {
+      "plugin_id": "diagnose_registration",
+      "priority": 10,
+      "handles": [
+        "appearance_mismatch",
+        "reprojection_error"
+      ],
+      "requires": [
+        "source_frames",
+        "camera_binding",
+        "scene_state_groups"
+      ],
+      "writes": [
+        "camera_hypotheses"
+      ],
+      "invalidates": [
+        "geometry",
+        "appearance",
+        "instances",
+        "perception",
+        "tasks"
+      ],
+      "adapter_status": "pending",
+      "legacy_entrypoint": "scripts/fit_panel_reference_atlas.py",
+      "note": "Diagnose alignment before assuming blur; legacy entrypoint has manual anchors.",
+      "legacy_entrypoint_available_in_this_repository": false
+    },
+    {
+      "plugin_id": "repair_local_geometry",
+      "priority": 20,
+      "handles": [
+        "geometry_mismatch",
+        "surface_hole"
+      ],
+      "requires": [
+        "registered_multiview_observations",
+        "protected_asset_envelopes"
+      ],
+      "writes": [
+        "geometry"
+      ],
+      "invalidates": [
+        "appearance",
+        "instances",
+        "collision",
+        "perception",
+        "physics",
+        "tasks"
+      ],
+      "adapter_status": "pending",
+      "legacy_entrypoint": "scripts/build_panel_estimated_facades.py",
+      "note": "Source recovery and labelled noncritical estimation must remain separate modes.",
+      "legacy_entrypoint_available_in_this_repository": false
+    },
+    {
+      "plugin_id": "repair_instance_correspondence",
+      "priority": 30,
+      "handles": [
+        "missing_instance",
+        "extra_instance",
+        "wrong_instance_type",
+        "instance_displacement",
+        "missing_asset",
+        "extra_asset",
+        "wrong_asset_category",
+        "wrong_asset_level",
+        "wrong_asset_parent",
+        "asset_geometry_error",
+        "asset_relation_error",
+        "wrong_asset_state",
+        "wrong_asset_affordances",
+        "missing_asset_property"
+      ],
+      "requires": [
+        "source_instance_tracks",
+        "visibility",
+        "layout_correspondence"
+      ],
+      "writes": [
+        "geometry",
+        "instance_catalog",
+        "scene_graph"
+      ],
+      "invalidates": [
+        "appearance",
+        "collision",
+        "perception",
+        "physics",
+        "tasks"
+      ],
+      "adapter_status": "pending",
+      "legacy_entrypoint": "scripts/build_panel_asset_catalog.py",
+      "note": "Generic asset/part/relation contract. The referenced legacy implementation covers panel assets only; other scene families need adapters. Unknown assets/functions stay unverified.",
+      "legacy_entrypoint_available_in_this_repository": false
+    },
+    {
+      "plugin_id": "repair_texture_source",
+      "priority": 40,
+      "handles": [
+        "confirmed_texture_blur",
+        "texture_seam",
+        "wrong_asset_material"
+      ],
+      "requires": [
+        "verified_registration",
+        "clear_source_support"
+      ],
+      "writes": [
+        "textures",
+        "materials"
+      ],
+      "invalidates": [
+        "appearance",
+        "perception",
+        "tasks"
+      ],
+      "adapter_status": "pending",
+      "legacy_entrypoint": "scripts/refine_panel_texture_detail.py",
+      "legacy_entrypoint_available_in_this_repository": false
+    },
+    {
+      "plugin_id": "repair_physics_binding",
+      "priority": 50,
+      "handles": [
+        "physics_failure",
+        "task_failure"
+      ],
+      "requires": [
+        "raw_contact_and_joint_logs",
+        "geometry_version",
+        "parameter_provenance"
+      ],
+      "writes": [
+        "collision",
+        "joints",
+        "controller_config"
+      ],
+      "invalidates": [
+        "physics",
+        "tasks",
+        "delivery"
+      ],
+      "adapter_status": "pending",
+      "legacy_entrypoint": "scripts/run_panel_stop_mission.py",
+      "legacy_entrypoint_available_in_this_repository": false
+    }
+  ]
+}

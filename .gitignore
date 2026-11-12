@@ -1,4 +1,35 @@
-*.npz *.npy *.ply *.spz *.usda *.usd* *.usdc *.zip
-*.mp4 *.png *.jpg *.log
-views_*/ 3dgs_*/ runs/ __pycache__/ .venv/ env/
-*.glb *.stl *.dae *.mjcf
+*.npz
+*.npy
+*.ply
+*.spz
+*.usd*
+*.zip
+*.mp4
+*.png
+*.jpg
+*.log
+*.glb
+*.stl
+*.dae
+*.mjcf
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+env/
+.env
+.env.*
+!.env.example
+runs/
+data/
+views_*/
+3dgs_*/
+dist/
+build/
+.infra-cache/
+.infra-locks/
