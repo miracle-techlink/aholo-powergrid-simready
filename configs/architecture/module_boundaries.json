@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "package": "simready",
+  "source_directory": "src/simready",
+  "forbidden_runtime_roots": ["legacy", "tests", "examples", "simready_bridge"],
+  "forbidden_module_names": ["runner", "scheduler", "utils", "helpers", "common", "manager"],
+  "domains": {
+    "core": {"responsibility": "File evidence, JSON IO, primitive validation and boundary types", "allowed_dependencies": []},
+    "geometry": {"responsibility": "Camera poses and quaternion conventions", "allowed_dependencies": []},
+    "execution": {"responsibility": "Task graphs, resource leases, processes and artifact cache", "allowed_dependencies": ["core"]},
+    "ingestion": {"responsibility": "Extract and filter video observations", "allowed_dependencies": ["core", "execution"]},
+    "agents": {"responsibility": "Select a registered repair proposal through a decision provider", "allowed_dependencies": ["core", "execution"]},
+    "repair": {"responsibility": "Repair capabilities, executable plugins and task-plan construction", "allowed_dependencies": ["core"]},
+    "evaluation": {"responsibility": "Observe, score and independently verify scene candidates", "allowed_dependencies": ["core", "execution"]},
+    "experience": {"responsibility": "Persist verified episodes and govern reusable skill recipes", "allowed_dependencies": ["core", "evaluation"]},
+    "workflows": {"responsibility": "Coordinate the bounded observe–repair–verify–remember loop", "allowed_dependencies": ["core", "agents", "repair", "execution", "evaluation", "experience"]}
+  },
+  "public_functions": [
+    "simready.workflows.repair_loop.run_repair_workflow",
+    "simready.execution.task_graph.run_task_graph",
+    "simready.evaluation.scoring.evaluate_candidate",
+    "simready.evaluation.verification.verify_candidate",
+    "simready.repair.planning.plan_repairs",
+    "simready.ingestion.video_frames.extract_frames",
+    "simready.agents.provider_factory.create_decision_provider"
+  ]
+}

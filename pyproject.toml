@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "simready-pipeline"
-version = "0.3.0"
+version = "0.4.0"
 description = "Bounded agent repair campaigns, reusable memory and skills, and evidence-bound scene evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,20 +18,22 @@ test = ["pytest>=7", "numpy>=1.24", "scipy>=1.10", "Pillow>=9.1", "scikit-image>
 dev = ["build>=1", "ruff==0.17.4"]
 
 [project.scripts]
-simready-infra = "simready_bridge.infra.__main__:main"
-simready-benchmark = "simready_bridge.benchmark.__main__:main"
-simready-pipeline = "simready_bridge.pipeline.__main__:main"
-simready-ingest = "simready_bridge.ingest.__main__:main"
+simready = "simready.cli:main"
+simready-infra = "simready.compat_cli:infra_main"
+simready-benchmark = "simready.compat_cli:benchmark_main"
+simready-pipeline = "simready.compat_cli:pipeline_main"
+simready-ingest = "simready.compat_cli:ingest_main"
 
 [tool.setuptools.packages.find]
-include = ["simready_bridge*"]
+where = ["src"]
+include = ["simready*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "legacy/scene_bench"]
+testpaths = ["tests", "legacy/scene_evaluation"]
 pythonpath = ["."]
 
 [tool.ruff]
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E9", "F", "I"]
+select = ["E4", "E7", "E9", "F", "I", "N", "B", "UP"]
