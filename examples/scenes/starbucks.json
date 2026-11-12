@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "scene": "starbucks",
+  "observation_fps": 2,
+  "render": {"width": 3840, "height": 2160, "frames": 900, "fps": 30, "subframes": 32},
+  "scope": "Reviewed cafe reconstruction with authored G2 motion; no autonomous-navigation claim"
+}

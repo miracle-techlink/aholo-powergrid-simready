@@ -1,0 +1,5 @@
+digraph G {graph [fontname="Noto Sans CJK SC",bgcolor="white",pad="0.25",nodesep="0.25",ranksep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#ecf4fa",color="#537b94",fontname="Noto Sans CJK SC",fontsize=12,margin="0.18,0.12"]; edge [color="#537b94",arrowsize=0.7];rankdir=TB; config[label="同一场景配置 + 校验过的资产包"]; local[label="本机 Isaac Python"]; docker[label="独立 Docker 容器
+代码/资产只读 · 输出/缓存可写"]; ssh[label="SSH 服务器入口
+同版本代码 / 镜像 / 资产"]; worker[label="RTX worker
+场景 / 物理 / 审计 / 录像"]; out[label="MP4 + audit + timing + hashes",fillcolor="#e4f3e9"]; cloud[label="CPU/网络节点
+Aholo receipt / 云状态恢复",fillcolor="#fff1df"]; config->local;config->docker;config->ssh;ssh->docker;local->worker;docker->worker;worker->out;cloud->config[style=dashed];}

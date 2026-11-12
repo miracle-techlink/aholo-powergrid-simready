@@ -5,6 +5,10 @@ import importlib
 from collections.abc import Sequence
 
 COMMANDS = {
+    "simulation": (
+        "simready.simulation.cli",
+        "Scene bundles, Isaac workers and contact audits",
+    ),
     "ingestion": ("simready.ingestion.cli", "Extract and filter video observations"),
     "workflows": ("simready.workflows.cli", "Run an observe–repair–verify workflow"),
     "agents": ("simready.agents.cli", "Inspect decision-provider availability"),

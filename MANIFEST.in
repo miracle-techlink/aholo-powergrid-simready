@@ -1,6 +1,9 @@
 recursive-include configs *.json
-recursive-include docs *.md *.json
-recursive-include examples *.py
+recursive-include docs *.md *.json *.svg *.tex *.bib *.sh *.dot *.csv
+recursive-include examples *.py *.json *.md
 recursive-include legacy *.py *.md *.yaml
 recursive-include scripts *.py
-recursive-include tests *.py
+recursive-include tests *.py *.json
+recursive-include deploy Dockerfile .dockerignore *.md *.py
+recursive-include docs/report/figures *.pdf *.jpg
+include THIRD_PARTY_NOTICES.md

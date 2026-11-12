@@ -1,0 +1,3 @@
+digraph G {graph [fontname="Noto Sans CJK SC",bgcolor="white",pad="0.25",nodesep="0.25",ranksep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#ecf4fa",color="#537b94",fontname="Noto Sans CJK SC",fontsize=12,margin="0.18,0.12"]; edge [color="#537b94",arrowsize=0.7];rankdir=TB; intent[label="结构化任务 / 已知地图"]; nav[label="Lite3 PPO ONNX
+PhysX 里程计 → 12 关节控制"]; vision[label="RGB 目标唯一性 + 深度反投影"]; plan[label="Z1 FK / IK / 限位
+离散路径与在线碰撞检查"]; act[label="关节执行 + 被动弹簧柱塞"]; sensor[label="接触力 + 按钮行程 + 足地正控制"]; state[label="去抖事件 → 模拟负载 STOPPED"]; audit[label="独立重算事件 / 感知 / FK / 回放",fillcolor="#e4f3e9"]; intent->nav;nav->vision;vision->plan;plan->act;act->sensor;sensor->state;sensor->audit;vision->audit;plan->audit;}

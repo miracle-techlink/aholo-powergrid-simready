@@ -11,7 +11,7 @@ class ExperienceDatabase:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.transaction() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1):
+            if version not in (0, 1, 2):
                 raise ValueError(
                     "Unsupported memory schema; explicit migration required"
                 )
@@ -29,7 +29,12 @@ class ExperienceDatabase:
                     skill_id TEXT NOT NULL REFERENCES skills(skill_id),
                     episode_id TEXT NOT NULL REFERENCES episodes(episode_id),
                     PRIMARY KEY(skill_id, episode_id));
-                PRAGMA user_version=1;
+                CREATE TABLE IF NOT EXISTS performance_experiments (
+                    experiment_id TEXT PRIMARY KEY, benchmark_key TEXT NOT NULL,
+                    candidate_id TEXT NOT NULL, outcome TEXT NOT NULL, payload TEXT NOT NULL);
+                CREATE INDEX IF NOT EXISTS performance_scope
+                    ON performance_experiments(benchmark_key, candidate_id);
+                PRAGMA user_version=2;
             """)
 
     @contextmanager

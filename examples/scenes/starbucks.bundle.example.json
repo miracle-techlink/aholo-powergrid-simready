@@ -1,0 +1,8 @@
+{
+  "scene": "starbucks",
+  "source_video": "source/starbucks.mp4",
+  "scene_usd": "prepared/starbucks.usdc",
+  "robot_usd": "prepared/g2_tour_pose.usda",
+  "color_layer": "prepared/high_color_fix.usdc",
+  "provenance": "Reviewed Aholo reconstruction and corrected channel-major spherical harmonics; user-provided licensed scene and robot assets"
+}

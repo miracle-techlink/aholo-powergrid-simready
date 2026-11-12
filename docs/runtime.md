@@ -1,11 +1,13 @@
 # Agent、Memory、Skill 与修复闭环
 
-运行时只让 Agent 从已登记的修复方案中选择；任务执行、资源分配与验收由宿主代码完成。当前交付的是可运行的框架和合成场景示例，真实场景的重建、渲染、物理采集 worker 仍需适配。
+运行时只让 Agent 从已登记的修复方案中选择；任务执行、资源分配与验收由宿主代码完成。当前包含修复框架、合成场景示例、Aholo 恢复客户端，以及星巴克/变电站专用仿真 worker。它们的资产准备仍有场景条件，尚未形成任意视频全自动资产化能力。
+
+机器人设备访问使用 `simready.simulation.robot_interface` 的 `describe` / `observe` / `command` 合同。G2 仅提供编排 `root_pose`，Lite3+Z1 提供物理 `joint_drive`；这一接口没有将修复 Agent 连接为自主导航策略，也没有替代场景中的感知、规划和接触监督器。设备接入与能力边界见 [模块架构](architecture.md) 和 [机器人示例](../examples/robots/README.md)。
 
 ```mermaid
 flowchart TD
   V[视频] --> F[ingestion：抽帧 / 筛选 / 去重 / 来源清单]
-  F --> R[重建 worker：Aholo 或 VGGT→gsplat；待适配]
+  F --> R[重建 worker：Aholo 已封装 / VGGT→gsplat 研究分支]
   R --> C[Candidate：模型 / 图像 / 资产图 / SHA256]
   C --> O[冻结开发协议 → 独立观测进程]
   O --> D[Scorecard + Defects]
@@ -128,4 +130,4 @@ simready experience skills retire --database runs/agent-demo/experience.sqlite -
 
 停止条件：开发通过、缺少可用方案、Agent 请求停止/新证据、最大轮次、调用次数、累计 token、时间预算或异常。usage 未知时停止执行修复。token 预算在调用返回后核算，单次调用可能超过剩余额度，**不是服务端硬扣费上限**。wall budget 限制子进程和后续派发；哈希/本地 IO 与线程清理不保证精确到毫秒中断。当前不恢复崩溃进程现场，可用保留的候选和 memory 在新目录重新启动。
 
-生产发布尚需：真实重建/渲染/物理 worker、完整视角覆盖、源资产清单、跨场景密封集、阈值标定，以及 verifier / worker / publisher 的 OS 或服务权限隔离。目前所有报告均为 `release_authorized=false`。
+生产级自动验收仍需将现有真实 worker 接入完整修复插件链路，并补足视角覆盖、源资产清单、跨场景密封集、阈值标定，以及 verifier / worker / publisher 的 OS 或服务权限隔离。框架中的 `release_authorized=false` 表示没有自动授予候选生产发布权限，与源码和技术报告的公开发布是不同概念。

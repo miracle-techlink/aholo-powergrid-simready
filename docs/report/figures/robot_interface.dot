@@ -1,0 +1,19 @@
+digraph G {
+  graph [fontname="Noto Sans CJK SC", bgcolor="white", pad="0.25", nodesep="0.35", ranksep="0.3"];
+  node [shape=box, style="rounded,filled", fillcolor="#ecf4fa", color="#537b94", fontname="Noto Sans CJK SC", fontsize=12, margin="0.2,0.12"];
+  edge [color="#537b94", arrowsize=0.7];
+  rankdir=TB;
+  task [label="场景编排 / 既有控制器\n任务策略由各场景实现"];
+  port [label="RobotInterface\ndescribe()  /  observe()  /  command()", fillcolor="#e4f3e9"];
+  g2 [label="G2：kinematic_demo\nroot_pose"];
+  rig [label="Lite3 + Z1：dynamic_physics\njoint_drive"];
+  usd [label="USD 位移 / yaw\n读取与更新编排变换", fillcolor="#fff1df"];
+  physics [label="Isaac articulation\n关节目标 / 物理状态", fillcolor="#e4f3e9"];
+  task -> port;
+  port -> g2;
+  port -> rig;
+  g2 -> usd;
+  rig -> physics;
+  {rank=same; g2; rig;}
+  {rank=same; usd; physics;}
+}

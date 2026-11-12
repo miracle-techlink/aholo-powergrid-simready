@@ -1,0 +1,311 @@
+{
+  "experiment_id": "RSI-RENDER-20261112-01",
+  "scope": "render_replay",
+  "benchmark_key": "55c8f054c3894cbcf2ba5191ce4f840c32c9997dbb9b84285a0703b49abdd650",
+  "protocol_file_sha256": "cfd2cf26b6ecffe5af0358a88cab43edb43a1a60c3f6b6b0e9412dc60a3cce87",
+  "status": {
+    "status": "COMPLETE",
+    "benchmark_key": "55c8f054c3894cbcf2ba5191ce4f840c32c9997dbb9b84285a0703b49abdd650",
+    "started_unix_s": 1794490901.3744044,
+    "selected_runtime": "baseline",
+    "episodes": [
+      {
+        "id": "21270c124a0bb60465c47ac8d96d4ffdd6bb5309a9a65cd6de3611f86129b7a1",
+        "candidate": "disable_background_viewport",
+        "outcome": "REJECTED"
+      }
+    ],
+    "release_authorized": false,
+    "memory_reused_records": 0,
+    "ended_unix_s": 1794492219.5507786,
+    "wall_s": 1318.1763744354248
+  },
+  "candidate": "disable_background_viewport",
+  "outcome": "REJECTED",
+  "runtime": {
+    "baseline_median_s": 448.0938242639968,
+    "baseline_samples_s": [
+      447.27704641598393,
+      448.91060211200966
+    ],
+    "candidate_median_s": 360.8313050879806,
+    "candidate_samples_s": [
+      360.8313050879806
+    ],
+    "checks": {
+      "baseline_stability": true,
+      "median_gain": true,
+      "repetitions": false,
+      "worst_sample": true
+    },
+    "median_gain_fraction": 0.19474162430010422,
+    "passed": false
+  },
+  "calibration": {
+    "stable": true,
+    "unstable_metrics": [],
+    "limits": {
+      "mean_mae": 0.9643615535703025,
+      "p95_frame_mae": 1.3774311944842337,
+      "max_frame_mae": 1.7434131801128387,
+      "p99_tile_mae": 3.261213910579682,
+      "max_tile_mae": 5.385544061660767,
+      "mean_temporal_error_mae": 0.995501923124302,
+      "min_ssim": 0.984731227103383,
+      "sharpness_ratio": [
+        0.97,
+        1.03
+      ]
+    },
+    "policy_sha256": "672b2ffb447dd1504e081b99dc45abc9f22347bb7d9358757f23b93ebb0310d7"
+  },
+  "baseline_quality": {
+    "frames": 714,
+    "mean_mae": 0.576241035713535,
+    "p95_frame_mae": 0.7516207963228225,
+    "max_frame_mae": 0.8289421200752258,
+    "p99_tile_mae": 1.840809273719788,
+    "max_tile_mae": 2.9236960411071777,
+    "mean_temporal_error_mae": 0.597001282082868,
+    "min_ssim": 0.9911541514022554,
+    "sharpness_ratio": 0.9995053799690312
+  },
+  "candidate_quality": [
+    {
+      "frames": 714,
+      "mean_mae": 0.8604740864422475,
+      "p95_frame_mae": 1.0347147941589356,
+      "max_frame_mae": 3.873434066772461,
+      "p99_tile_mae": 2.3851515746116645,
+      "max_tile_mae": 6.704822540283203,
+      "mean_temporal_error_mae": 0.6439063126668021,
+      "min_ssim": 0.9900779140175692,
+      "sharpness_ratio": 0.998102409176674
+    }
+  ],
+  "quality_gates": [
+    {
+      "checks": {
+        "max_frame_mae": false,
+        "max_tile_mae": false,
+        "mean_mae": true,
+        "mean_temporal_error_mae": true,
+        "min_ssim": true,
+        "p95_frame_mae": true,
+        "p99_tile_mae": true,
+        "sharpness_ratio": true
+      },
+      "failed_checks": [
+        "max_frame_mae",
+        "max_tile_mae"
+      ],
+      "passed": false
+    }
+  ],
+  "failing_frame_indices": [
+    [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  ],
+  "failing_tile_frame_indices": [
+    [
+      0,
+      1
+    ]
+  ],
+  "worst_frames": [
+    [
+      {
+        "frame": 0,
+        "mae": 3.873434066772461,
+        "max_tile_mae": 6.704822540283203,
+        "temporal_error_mae": 0.0,
+        "ssim": 0.9900779140175692
+      },
+      {
+        "frame": 1,
+        "mae": 3.628880500793457,
+        "max_tile_mae": 6.2754011154174805,
+        "temporal_error_mae": 1.271942377090454
+      },
+      {
+        "frame": 2,
+        "mae": 2.923213005065918,
+        "max_tile_mae": 4.5221991539001465,
+        "temporal_error_mae": 1.5769479274749756
+      },
+      {
+        "frame": 3,
+        "mae": 2.5351247787475586,
+        "max_tile_mae": 3.801496982574463,
+        "temporal_error_mae": 1.3169960975646973
+      },
+      {
+        "frame": 4,
+        "mae": 2.2442312240600586,
+        "max_tile_mae": 3.3139970302581787,
+        "temporal_error_mae": 1.183620810508728
+      }
+    ]
+  ],
+  "costs": {
+    "stage_count": 5,
+    "failed_stages": [],
+    "stage_wall_sum_seconds": 1317.72823340795,
+    "elapsed_span_seconds": 1318.0853054523468,
+    "known_tokens": {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cached_input_tokens": 0,
+      "total_tokens": 0
+    },
+    "usage_complete": true,
+    "unknown_usage_stages": []
+  },
+  "profile_ledger": [
+    {
+      "path": "baseline_0/timing/profile.json",
+      "schema_version": 1,
+      "stage": "render_replay",
+      "round_index": 0,
+      "status": "SUCCESS",
+      "started_unix_s": 1794490901.381532,
+      "token_mode": "no_llm",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "total_tokens": 0
+      },
+      "metadata": {
+        "benchmark_key": "55c8f054c3894cbcf2ba5191ce4f840c32c9997dbb9b84285a0703b49abdd650",
+        "variant": "baseline"
+      },
+      "returncode": 0,
+      "process_seconds": 447.2737723040045,
+      "ended_unix_s": 1794491348.6585774,
+      "wall_seconds": 447.27704641598393,
+      "usage_complete": true
+    },
+    {
+      "path": "baseline_1/timing/profile.json",
+      "schema_version": 1,
+      "stage": "render_replay",
+      "round_index": 0,
+      "status": "SUCCESS",
+      "started_unix_s": 1794491348.791915,
+      "token_mode": "no_llm",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "total_tokens": 0
+      },
+      "metadata": {
+        "benchmark_key": "55c8f054c3894cbcf2ba5191ce4f840c32c9997dbb9b84285a0703b49abdd650",
+        "variant": "baseline"
+      },
+      "returncode": 0,
+      "process_seconds": 448.90721169600147,
+      "ended_unix_s": 1794491797.7025154,
+      "wall_seconds": 448.91060211200966,
+      "usage_complete": true
+    },
+    {
+      "path": "calibration_observation/timing/profile.json",
+      "schema_version": 1,
+      "stage": "independent_video_verification",
+      "round_index": null,
+      "status": "SUCCESS",
+      "started_unix_s": 1794491797.809334,
+      "token_mode": "no_llm",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "total_tokens": 0
+      },
+      "metadata": {},
+      "returncode": 0,
+      "process_seconds": 30.374482496001292,
+      "ended_unix_s": 1794491828.186774,
+      "wall_seconds": 30.377441391989123,
+      "usage_complete": true
+    },
+    {
+      "path": "round_1/trial_0/timing/profile.json",
+      "schema_version": 1,
+      "stage": "render_replay",
+      "round_index": 1,
+      "status": "SUCCESS",
+      "started_unix_s": 1794491828.2012515,
+      "token_mode": "no_llm",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "total_tokens": 0
+      },
+      "metadata": {
+        "benchmark_key": "55c8f054c3894cbcf2ba5191ce4f840c32c9997dbb9b84285a0703b49abdd650",
+        "variant": "disable_background_viewport"
+      },
+      "returncode": 0,
+      "process_seconds": 360.82841959997313,
+      "ended_unix_s": 1794492189.0325537,
+      "wall_seconds": 360.8313050879806,
+      "usage_complete": true
+    },
+    {
+      "path": "round_1/verification_0/timing/profile.json",
+      "schema_version": 1,
+      "stage": "independent_video_verification",
+      "round_index": null,
+      "status": "SUCCESS",
+      "started_unix_s": 1794492189.135001,
+      "token_mode": "no_llm",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "total_tokens": 0
+      },
+      "metadata": {},
+      "returncode": 0,
+      "process_seconds": 30.329105167998932,
+      "ended_unix_s": 1794492219.4668374,
+      "wall_seconds": 30.331838399986736,
+      "usage_complete": true
+    }
+  ],
+  "rules_provider_usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "total_tokens": 0
+  },
+  "engineering_agent_tokens": null,
+  "memory_experiment_id": "21270c124a0bb60465c47ac8d96d4ffdd6bb5309a9a65cd6de3611f86129b7a1",
+  "cross_scene_skill_active": false,
+  "new_physics": false,
+  "new_reconstruction": false,
+  "first_bootstrap_failure": {
+    "status": "ERROR",
+    "benchmark_key": "7fc748899cb84222256de9405a3feb62cae899e82fdabd2413fc4d98cf8408af",
+    "started_unix_s": 1794490865.8910763,
+    "selected_runtime": "baseline",
+    "episodes": [],
+    "release_authorized": false,
+    "error": "Runtime trial failed; timing and stderr retained at /home/nvidia/algotithm/simready_infra_pr/runs/substation_speed_rsi_20261112_v1/campaign/baseline_0",
+    "ended_unix_s": 1794490866.009711,
+    "wall_s": 0.11863493919372559
+  },
+  "evidence_directory": "/home/nvidia/algotithm/simready_infra_pr/runs/substation_speed_rsi_20261112_v2"
+}

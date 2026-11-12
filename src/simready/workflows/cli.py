@@ -10,13 +10,33 @@ from simready.workflows.repair_loop import run_repair_workflow
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    import sys
+
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "scene":
+        from simready.workflows.scene_delivery import main as scene_main
+
+        return scene_main(argv[1:])
     parser = argparse.ArgumentParser(prog="simready workflows", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("scene", help="Reproduce a source-bound prepared scene")
     command = commands.add_parser("run", help="Run a bounded repair workflow")
     command.add_argument("--config", type=Path, required=True)
     command.add_argument("--out", type=Path, required=True)
+    performance = commands.add_parser(
+        "optimize-runtime", help="Run a frozen performance benchmark and bounded RSI"
+    )
+    performance.add_argument("--protocol", type=Path, required=True)
+    performance.add_argument("--out", type=Path, required=True)
+    performance.add_argument("--memory", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "optimize-runtime":
+            from simready.workflows.performance_loop import run_performance_workflow
+
+            result = run_performance_workflow(args.protocol, args.out, args.memory)
+            print(json.dumps(result, ensure_ascii=False))
+            return 0 if result["status"] == "COMPLETE" else 2
         result = run_repair_workflow(
             read_json(args.config),
             base_dir=args.config.resolve().parent,
