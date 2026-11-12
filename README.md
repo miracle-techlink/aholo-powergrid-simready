@@ -93,6 +93,7 @@ python -m build
 - [v0.3 → v0.4 迁移](docs/migration.md)
 - [Agent / Memory / Skill 运行时](docs/runtime.md)
 - [场景验收合同](docs/evaluation.md) · [任务执行与资源设计](docs/execution.md)
+- [真实场景 profiling：逐轮时间、失败与 token 来源](docs/profiling.md)
 - [本次模块审查](docs/audits/2026-11-12-modularity-v0.4.md)
 
 代码采用 MIT；第三方资产、数据和权重分别遵循其来源许可。
