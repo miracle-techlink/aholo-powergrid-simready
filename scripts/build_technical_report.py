@@ -48,10 +48,19 @@ def render(markdown):
     lines = markdown.splitlines()
     out = []
     index = 0
+    landscape = False
     while index < len(lines):
         line = lines[index]
         if line == "<!-- pagebreak -->":
             out.append(r"\clearpage")
+        elif line == "<!-- landscape -->":
+            out.append(r"\begin{landscape}\thispagestyle{empty}")
+            landscape = True
+        elif line == "<!-- endlandscape -->":
+            out.append(
+                r"\par\vfill\vbox to 0pt{\vskip 24pt\hbox to \linewidth{\hfil\small\thepage\hfil}\vss}\end{landscape}"
+            )
+            landscape = False
         elif line.startswith("```"):
             code = []
             index += 1
@@ -59,7 +68,7 @@ def render(markdown):
                 code.append(lines[index])
                 index += 1
             out.append(
-                "\\begin{Verbatim}[fontsize=\\scriptsize,breaklines=true]\n"
+                "\\begin{Verbatim}[fontsize=\\small,breaklines=true]\n"
                 + "\n".join(code)
                 + "\n\\end{Verbatim}"
             )
@@ -88,8 +97,11 @@ def render(markdown):
             caption, asset = match.groups()
             if asset.endswith(".svg"):
                 asset = asset[:-4] + ".pdf"
+            height = r"0.64\paperwidth" if landscape else r"0.36\textheight"
             out.append(
-                r"\begin{figure}[H]\centering\includegraphics[width=\linewidth,height=0.39\textheight,keepaspectratio]{"
+                r"\begin{figure}[H]\centering\includegraphics[width=\linewidth,height="
+                + height
+                + r",keepaspectratio]{"
                 + asset
                 + r"}\caption{"
                 + inline(caption)
@@ -116,14 +128,14 @@ def render(markdown):
 def main():
     preamble = r"""\documentclass[10pt,a4paper,UTF8,fontset=fandol]{ctexart}
 \usepackage[margin=1.7cm]{geometry}
-\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,fancyhdr}
+\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,fancyhdr,pdflscape}
 \usepackage[colorlinks,linkcolor=blue!50!black,urlcolor=blue!50!black,bookmarksnumbered]{hyperref}
-\hypersetup{pdftitle={视频到可交互仿真场景：完整Pipeline技术报告},pdfauthor={SimReady Pipeline},pdfsubject={视频重建、资产修复、机器人设备接口、独立验收与RSI}}
+\hypersetup{pdftitle={视频到可交互仿真场景：方法、实现与复现},pdfauthor={SimReady Pipeline},pdfsubject={分阶段方法、输入输出合同、Agent修复、独立验收与机器人运行时}}
 \setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
 \renewcommand{\arraystretch}{1.16}
 \captionsetup{font=small,labelfont=bf,justification=justified,singlelinecheck=false,skip=6pt}
 \ctexset{section={format=\Large\bfseries,beforeskip=8pt,afterskip=8pt},subsection={format=\large\bfseries}}
-\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small SimReady Pipeline}\fancyhead[R]{\small 技术报告 · v0.5.0}\fancyfoot[C]{\thepage}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small SimReady Pipeline}\fancyhead[R]{\small 技术报告修订版 · v0.6.0}\fancyfoot[C]{\thepage}
 \setlength{\headheight}{14pt}\raggedbottom
 \widowpenalty=10000\clubpenalty=10000\emergencystretch=2em
 \begin{document}
