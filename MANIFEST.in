@@ -1,5 +1,5 @@
 recursive-include configs *.json
 recursive-include docs *.md *.json
 recursive-include examples *.py
-recursive-include scene_bench *.py
-include scripts/benchmark_infra.py
+recursive-include legacy *.py *.md *.yaml
+recursive-include scripts *.py
