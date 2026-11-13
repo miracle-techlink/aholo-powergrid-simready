@@ -200,3 +200,31 @@ def test_launch_errors_are_distinguished_from_interruptions(
     assert receipt["status"] == status
     assert receipt["error"] == error_type.__name__
     assert receipt["returncode"] is None
+
+
+def test_cache_seed_is_private_and_does_not_copy_runtime_config(tmp_path):
+    from simready.execution.isaac_launcher import seed_runtime_cache
+
+    source, target = tmp_path / "completed", tmp_path / "new"
+    cache = source / ".isaac-cache"
+    cache.mkdir(parents=True)
+    (cache / "shader").write_bytes(b"compiled")
+    (source / "launch.json").write_text("old receipt")
+    seed_runtime_cache(source, target)
+    (target / ".isaac-cache/shader").write_bytes(b"changed")
+    assert (cache / "shader").read_bytes() == b"compiled"
+    assert not (target / "launch.json").exists()
+
+
+def test_cache_seed_rejects_symlink_destination(tmp_path):
+    from simready.execution.isaac_launcher import seed_runtime_cache
+
+    source, target, unrelated = (
+        tmp_path / x for x in ("source", "target", "unrelated")
+    )
+    (source / ".isaac-cache").mkdir(parents=True)
+    target.mkdir()
+    unrelated.mkdir()
+    (target / ".isaac-cache").symlink_to(unrelated, target_is_directory=True)
+    with pytest.raises(ValueError, match="symlinks"):
+        seed_runtime_cache(source, target)

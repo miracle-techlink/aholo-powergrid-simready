@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 
-from simready.execution.isaac_launcher import launch_worker
+from simready.execution.isaac_launcher import launch_worker, seed_runtime_cache
 
 
 def main():
@@ -21,7 +21,15 @@ def main():
     ap.add_argument("--gpu", default="0")
     ap.add_argument("--render", action="store_true")
     ap.add_argument("--width", type=int, choices=[1280, 1920], default=1920)
-    ap.add_argument("--render-subframes", type=int, choices=range(1, 33), default=2)
+    ap.add_argument("--render-subframes", type=int, choices=range(1, 33), default=6)
+    ap.add_argument("--patrol-x-range", nargs=2, type=float)
+    ap.add_argument("--follow-camera", action="store_true")
+    ap.add_argument("--physics-hz", type=int, choices=[240, 480], default=480)
+    ap.add_argument(
+        "--runtime-seed",
+        type=Path,
+        help="Optional completed worker directory from which to copy shader caches",
+    )
     args = ap.parse_args()
     repo = Path(__file__).resolve().parents[2]
     args.assets = args.assets.resolve()
@@ -72,6 +80,10 @@ def main():
 
     try:
         step(
+            "seed_isolated_shader_cache",
+            lambda: seed_runtime_cache(args.runtime_seed, artifacts),
+        )
+        step(
             "actual_scene_support_probe",
             lambda: worker(
                 "simready.simulation.scene_probe",
@@ -100,6 +112,13 @@ def main():
                         args.image,
                         "--gpu",
                         args.gpu,
+                        "--physics-hz",
+                        str(args.physics_hz),
+                        *(
+                            ["--runtime-seed", str(args.runtime_seed.resolve())]
+                            if args.runtime_seed
+                            else []
+                        ),
                     ]
                 ),
             )
@@ -120,6 +139,12 @@ def main():
                         args.assets / "height_profile.json",
                         "--out",
                         artifacts / "route",
+                        *(
+                            ["--x-range", *map(str, args.patrol_x_range)]
+                            if args.patrol_x_range
+                            else []
+                        ),
+                        *(["--follow-camera"] if args.follow_camera else []),
                     ]
                 ),
             )
@@ -217,6 +242,16 @@ def main():
                             "--out",
                             "/output/video",
                             "--encode",
+                            *(
+                                [
+                                    "--camera-focal-length",
+                                    "16",
+                                    "--dome-intensity",
+                                    "650",
+                                ]
+                                if args.follow_camera
+                                else []
+                            ),
                         ],
                     ),
                 )

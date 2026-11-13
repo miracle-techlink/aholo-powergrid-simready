@@ -31,7 +31,7 @@ def main():
         from pxr import Gf, PhysxSchema, UsdGeom, UsdPhysics, UsdUtils
         from scipy.spatial import cKDTree
 
-        from simready.core.artifacts import digest, write_json
+        from simready.core.artifacts import digest, scene_dependency_hashes, write_json
         from simready.simulation.physical_authoring import bind_contact_material
 
         carb.settings.get_settings().set_bool("/physics/updateToUsd", True)
@@ -162,6 +162,7 @@ def main():
             ],
             "scene_sha256": digest(args.assets / "scene/scene.usda"),
             "completion_sha256": digest(args.assets / "scene/completion.usda"),
+            "scene_dependencies": scene_dependency_hashes(args.assets / "scene"),
             "trajectory_sha256": digest(args.out / "trajectories.npz"),
             "real_world_validated": False,
             "robot_navigation_validated": False,

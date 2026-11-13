@@ -1,8 +1,8 @@
 # 星巴克：原场景的任务级 Sim-Ready 修复
 
-本例为两项已有任务补充同一套场景资产合同：**G2 双桌搬杯**和**30 秒编排巡逻**。保留各自使用的原视频重建，增加可回滚的结构补面、静态碰撞、物性来源和独立验收。
+本例为两项已有任务补充同一套场景资产合同：**G2 双桌搬杯**和**30 秒编排巡逻**。原视频重建作为空间依据；在已建模区域内，以原片约束的独立桌椅、长椅、墙面、地砖及重建杯资产替换模糊高斯表面，同时更新碰撞、物性来源与独立验收。
 
-这不是“整店高清重建完成”的声明。原高斯仍有模糊、残影和缺失细节；未知家具使用保守碰撞代理，未全部恢复成独立可操作资产。巡逻是有净空检查的编排运动，不是自主导航或轮式底盘动力学验证。
+原始高斯文件和被抑制索引保留，可回滚。未观测墙画使用同店照片的纹理样本补全；人物挡住的小块壁画使用有掩码与提示词记录的生成补全，木纹使用清洁桌面样本；这些像素明确标记为估计，不能当作原片逐像素还原。搬杯视角的未替换区域仍保留原重建及保守碰撞；巡逻视角隐藏全部残留高斯，使用配准到原场景的可编辑几何背景。巡逻是有净空检查的编排运动，不是自主导航或轮式底盘动力学验证。
 
 ## 一键验证与录制
 
@@ -16,18 +16,38 @@ python examples/starbucks_simready/run.py --case grasp \
 
 # 检查静态承托与巡逻净空，再渲染完整 30 秒。
 python examples/starbucks_simready/run.py --case tour \
-  --assets /path/to/patrol_simready --out runs/cafe-patrol --render
+  --assets /path/to/patrol_simready --out runs/cafe-patrol \
+  --patrol-x-range 2.2 3.5 --follow-camera --render --render-subframes 6
 ```
 
 默认输出为 1920×1080、30 fps。搬杯为 22.5 秒，巡逻为 30 秒。省略 `--render` 只运行验证；失败时停止，不录制未通过版本。需要本地 `simready-isaac:6.1.0` Docker 镜像；部署方式见 [Isaac 部署](../../docs/deployment.md)。模型环境需安装项目及已缓存的 Grounding DINO/SAM 权重。
 
-此例默认每个输出帧使用 2 个 RTX 子帧；可用 `--render-subframes 6` 提高采样预算。每一输出帧都实际渲染，不插帧、不重复帧扩展时长。单 GPU 建议依次运行两个案例，避免多个 RTX 进程同时占用设备。
+此例默认每个输出帧使用 6 个 RTX 子帧。每一输出帧都实际渲染，不插帧、不重复帧扩展时长。单 GPU 建议依次运行两个案例，避免多个 RTX 进程同时占用设备。
 
 建模时写出的 `build.json` / `scene_contract.json` 保持原始候选状态，避免验收后改写资产哈希。最终结果以本次运行的 `artifacts/readiness.json`、`task/artifacts/audit.json`（搬杯）、`artifacts/route/route_check.json`（巡逻）及 `timing.json` 为准。首次 RTX 冷缓存初始化可能耗时数分钟；录制等待真实、非空白帧就绪后才推进相机和机器人。
 
-搬杯控制保持 240 Hz 物理步进，使用起止速度、加速度为零的五次时间插值，闭爪目标为 0.70 rad。接触门槛保持不变；闭合目标是当前已知杯模型的任务设置，不是适用于任意杯子的通用夹持策略。运行保存全部瞬态接触力，未对峰值做平滑或删减。
+此入口默认采用 480 Hz 物理步进（`--physics-hz 480`）；240 Hz 对照在本次家具接触材质下放杯失败，因此未通过验收。搬杯控制，使用起止速度、加速度为零的五次时间插值，闭爪目标为 0.70 rad。放杯使用实测位姿修正末端位置，先将杯底落到目的桌面再松爪，避免悬空松爪造成横向推移。该反馈使用仿真真值，尚不是实机力控。接触门槛保持不变；闭合目标是当前已知杯模型的任务设置，不是适用于任意杯子的通用夹持策略。运行保存全部瞬态接触力，未对峰值做平滑或删减。
 
 ## 从已有原始资产重新修复
+
+在下面的结构修复基础上，调用可见资产修复入口。抓取案例首次生成公共纹理与几何；巡逻案例复用它们，并应用两个重建之间已记录的配准：
+
+```bash
+python examples/starbucks_simready/repair_appearance.py \
+  --assets /path/to/structurally_repaired_grasp \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --sfm-root /path/to/starbucks/scene_rsi_v3 --out runs/cafe-visible-grasp
+
+python examples/starbucks_simready/repair_appearance.py \
+  --assets /path/to/structurally_repaired_patrol \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --sfm-root /path/to/starbucks/scene_rsi_v3 \
+  --reuse-reference runs/cafe-visible-grasp/scene \
+  --reference-to-case /path/to/reference_to_aholo.json \
+  --editable-patrol-background --out runs/cafe-visible-patrol
+```
+
+`--patrol-x-range` 明确调整巡逻范围，保留 30 秒时序与转向。新家具会使旧长路线失败；本例使用检查通过的 1.3 米通道，不能声称仍完成原先 4.8 米全长路线。`--follow-camera` 改为高位跟随并轻微侧向环绕。场景、路线、摄像机和机器人姿态均保存，可复现。
 
 ```bash
 python examples/starbucks_simready/prepare.py --case grasp \
@@ -72,6 +92,9 @@ flowchart TD
 | `repair/structural_completion.py` | RANSAC/迭代拟合平面；投影原片并以重建深度排除前景遮挡；记录未观测纹理；将稠密连通占用体素转换为静态三角碰撞网格 |
 | `build.py` | 保留原视频重建的可见背景；生成墙面、连续地面、支持面及物性清单；低覆盖地面采用原片取色的哑光补面，避免伪造大面积纹理拼接 |
 | `clean_transients.py` | 多帧人物候选与深度约束关联高斯；保护地面/墙面附近点；只通过透明度覆盖层抑制候选，保留原始 USD 与索引；同步重建碰撞代理 |
+| `repair_appearance.py` / `finish_materials.py` | 当前咖啡店布局配置、独立可见几何及有记录的材质补全；按替换区域抑制旧高斯，避免两套家具重叠 |
+| `repair/source_texture.py` | 复用变电站清晰源选择、边界羽化与 SIFT/MAGSAC 配准；保留来源索引，隔离每第七个相机作为留出视角 |
+| `repair/visible_geometry.py` / `workflows/appearance_collision.py` | 可编辑倒角几何、UV、法线与 PBR；聚合静态碰撞并从新几何生成保守占用地图 |
 | `prepare_nav_pose.py` | 使用原 G2 USD 的关节坐标及限位收拢双臂，导出导航展示姿态与分层外形包络；不声称通过全身动力学与自碰撞验证 |
 | `check_route.py` | 用分层机器人包络、体素体积和 2 cm 额外裕量检查全部 900 帧；必要时在原通道内搜索连续中心线，并再次检查完整轨迹 |
 | `simulation/scene_probe.py` | 在实际组合场景中投放刚体，记录 240 步后的承托高度与运动；没有通用兜底地面，碰撞缺失会直接暴露 |
@@ -90,6 +113,12 @@ assets/
 │   ├── people_cleanup.usdc         # 可回滚透明度覆盖
 │   ├── person_gaussian_indices.npy
 │   ├── transient_cleanup.json
+│   ├── appearance_reference.usda   # 可编辑几何与相对纹理引用
+│   ├── appearance_reference.json   # 原片来源、留出索引与估计区域
+│   ├── appearance_replacement.usdc # 仅覆盖已声明的高斯透明度
+│   ├── appearance_gaussian_indices.npy
+│   ├── appearance_repair.json      # 几何、索引与清单哈希
+│   ├── appearance_textures/        # 原始候选、最终纹理、观测/估计掩码
 │   ├── physical_assets.json        # 物性与来源
 │   ├── obstacles.npz               # 占用网格和坐标变换
 │   ├── scene_contract.json
@@ -100,13 +129,19 @@ assets/
 
 `physical_assets.json` 复用现有 `normalize_physics`：`motion_type`、`contact`、`provenance`、`validation` 分开。摩擦为无量纲；长度为米。地面静/动摩擦为 0.8/0.6，墙体与未知障碍为 0.6/0.45，桌面为 0.65/0.5，恢复系数为 0。全部是明确标记、带区间的类别先验，**没有实物标定**。固定环境采用静态碰撞，不虚构整桌、整墙质量。杯子仍使用独立任务的 0.085 kg 刚体与其接触参数；长椅没有软体或弹性坐垫模型。
 
-上述数值描述 `completion.usda` 的结构层。搬杯运行会停用两个重复的背景桌碰撞，改用任务 USD 的 `/World/Table` 与 `/World/TableB`；这两个旧任务桌没有显式绑定接触材质，沿用当前引擎默认，不能将结构层的 0.65/0.5 当作它们实际使用的参数。任务杯碰撞绑定 `CupContact`（0.8/0.6、恢复系数 0）。复核任务时应同时检查实际碰撞叶节点的材质绑定，不能仅检查材质定义是否存在。
+旧结构版本中的两个任务桌沿用引擎默认接触材质。可见修复版本已对实际任务 USD 的 `/World/Table` 与 `/World/TableB` 显式绑定静/动摩擦 **0.65/0.5**、恢复系数 **0**；替换家具的静态碰撞也显式绑定这组预设。搬杯运行停用重复背景桌碰撞，使用任务桌。任务杯碰撞为 **0.8/0.6、恢复系数 0**、质量 **0.085 kg**。这些不是实测参数；更改接触层后必须重新跑 PhysX 和独立任务审计。
 
 ## 验收的边界
 
 - **结构与任务门槛**：来源匹配、补面图层可回滚、碰撞材料有效、实际场景承托通过，且搬杯接触/放置通过或巡逻几何净空通过。
-- **视觉单独评估**：补面减少穿透空白，并不证明全部物体清晰或与原片完全一致。原高斯残影、未观测面及未知物体保留在缺陷清单中。
+- **视觉单独评估**：原生多视角预览与最终视频逐段检查；同店材质样本补全并不证明每个装饰细节与原片一致，估计像素保留单独掩码。视角留出仅用于隔离选源，不能冒充已经通过完整 photometric benchmark。
 - **真实物理单独评估**：没有实测尺度、摩擦或质量辨识，不能把仿真成功推广为实物成功。
 - **导航单独评估**：巡逻录像保留编排运动性质；几何净空通过不等于定位、规划控制器、轮地接触和全身稳定性通过。
 
 补面不再次给已烘焙照明的高斯投影阴影，避免双重遮暗；相关渲染语义参考 [NVIDIA 的 Gaussian Particle Fields 文档](https://docs.omniverse.nvidia.com/materials-and-rendering/latest/particle-fields.html)。
+
+## 材质补全与缓存复用
+
+可见修复入口可追加 `--transient-mask /path/to/person.png --generated-mural /path/to/mural.png`；生成图片旁必须有同名 JSON，记录提示词、输入和输出哈希、未观测属性。生成图配准到原纹理，仅将人物掩码内的像素写入材质；估计掩码和来源索引同步更新。未知墙画并未经过真实观测验证。
+
+验证入口可追加 `--runtime-seed /path/to/completed/artifacts` 复制已有着色器缓存到本次隔离目录；不复用旧物理结果，不共享可写缓存。缓存复制计入本次耗时，所有验证仍绑定本次资产和嵌套纹理哈希。

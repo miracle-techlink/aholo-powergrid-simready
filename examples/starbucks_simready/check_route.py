@@ -53,6 +53,13 @@ def main():
     ap.add_argument("--trajectory", type=Path, required=True)
     ap.add_argument("--profile", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument(
+        "--x-range",
+        nargs=2,
+        type=float,
+        help="Explicit shorter patrol span in source coordinates; preserves duration and turn timing",
+    )
+    ap.add_argument("--follow-camera", action="store_true")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     data = np.load(args.assets / "scene/obstacles.npz", allow_pickle=False)
@@ -63,6 +70,19 @@ def main():
     centers = centers @ transform[:3, :3].T + transform[:3, 3]
     profile = json.loads(args.profile.read_text())
     original = json.loads(args.trajectory.read_text())
+    if args.x_range:
+        if not np.isfinite(args.x_range).all() or args.x_range[1] <= args.x_range[0]:
+            ap.error("--x-range must be finite and increasing")
+        low, high = (
+            min(r["robot_position"][0] for r in original),
+            max(r["robot_position"][0] for r in original),
+        )
+        if high <= low:
+            ap.error("Source patrol has no longitudinal span")
+        for row in original:
+            row["robot_position"][0] = float(
+                np.interp(row["robot_position"][0], [low, high], args.x_range)
+            )
     trials, selected = [], None
     for y in [-1.6, -1.65, -1.7, -1.75, -1.8, -1.55, -1.5]:
         rows = json.loads(json.dumps(original))
@@ -192,6 +212,18 @@ def main():
         ).hexdigest(),
     }
     if selected:
+        if args.follow_camera:
+            for row in selected[0]:
+                pos = np.asarray(row["robot_position"])
+                theta = row["time_s"] / 30 * 2 * np.pi
+                row["eye"] = (pos + [0.45 + 0.20 * np.sin(theta), -1.5, 2.70]).tolist()
+                row["target"] = (pos + [0, 0, 1.0]).tolist()
+        report["source_x_range_override"] = args.x_range
+        report["camera_mode"] = (
+            "elevated follow with gentle lateral orbit"
+            if args.follow_camera
+            else "original fixed camera"
+        )
         (args.out / "trajectory.json").write_text(
             json.dumps(selected[0], indent=2) + "\n"
         )

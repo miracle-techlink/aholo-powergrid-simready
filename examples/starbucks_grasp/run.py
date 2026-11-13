@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-from simready.execution.isaac_launcher import launch_worker
+from simready.execution.isaac_launcher import launch_worker, seed_runtime_cache
 
 
 def main():
@@ -26,6 +26,8 @@ def main():
     parser.add_argument("--image", default="simready-isaac:6.1.0")
     parser.add_argument("--gpu", default="0")
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--physics-hz", type=int, choices=[240, 480], default=240)
+    parser.add_argument("--runtime-seed", type=Path)
     parser.add_argument("--require-original-video", action="store_true")
     parser.add_argument("--width", type=int, choices=[1280, 1920], default=1920)
     args = parser.parse_args()
@@ -41,13 +43,35 @@ def main():
         contract = json.loads(contract_file.read_text())
         source_usd = contract_file.parent / "original_video_splats.usdc"
         if (
-            contract.get("appearance") != "original_video_reconstruction"
+            contract.get("appearance")
+            not in {
+                "original_video_reconstruction",
+                "source_conditioned_repaired_reconstruction",
+            }
             or contract.get("render_table_proxies") is not False
             or contract.get("visual_gaussians_removed") != 0
             or hashlib.sha256(source_usd.read_bytes()).hexdigest()
             != contract.get("source_usd_sha256")
         ):
             raise ValueError("Original reconstruction scene contract failed")
+        if contract["appearance"] == "source_conditioned_repaired_reconstruction":
+            repair = json.loads(
+                (contract_file.parent / "appearance_repair.json").read_text()
+            )
+            for name, key in [
+                ("appearance_reference.usda", "reference_geometry_sha256"),
+                ("appearance_reference.json", "reference_manifest_sha256"),
+                ("appearance_replacement.usdc", "opacity_layer_sha256"),
+            ]:
+                if (
+                    hashlib.sha256(
+                        (contract_file.parent / name).read_bytes()
+                    ).hexdigest()
+                    != repair[key]
+                ):
+                    raise ValueError(
+                        "Original reconstruction repair evidence hash mismatch"
+                    )
     args.out.mkdir(parents=True, exist_ok=False)
     artifacts = args.out / "artifacts"
     artifacts.mkdir()
@@ -94,6 +118,10 @@ def main():
         )
 
     try:
+        stage(
+            "seed_isolated_shader_cache",
+            lambda: seed_runtime_cache(args.runtime_seed, artifacts),
+        )
         scene_options = (
             ["--scene", "/assets/" + args.scene.as_posix()] if args.scene else []
         )
@@ -190,7 +218,13 @@ def main():
             lambda: isaac(
                 "simready.simulation.cup_grasp",
                 planned,
-                ["--out", "/output/physics", *final_scene],
+                [
+                    "--out",
+                    "/output/physics",
+                    "--physics-hz",
+                    str(args.physics_hz),
+                    *final_scene,
+                ],
             ),
         )
         stage(

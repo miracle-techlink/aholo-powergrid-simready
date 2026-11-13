@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from simready.core.artifacts import digest, write_json
+from simready.core.artifacts import digest, scene_dependency_hashes, write_json
 
 
 def audit_scene(assets, probe, route=None, task=None):
@@ -62,6 +62,55 @@ def audit_scene(assets, probe, route=None, task=None):
         if checks["cleanup_indices_valid"]:
             alpha[indices] = 0
             suppressed = len(indices)
+    appearance = scene_dir / "appearance_repair.json"
+    if appearance.exists():
+        record = json.loads(appearance.read_text())
+        indices = np.load(
+            scene_dir / "appearance_gaussian_indices.npy", allow_pickle=False
+        )
+        valid = (
+            indices.ndim == 1
+            and indices.dtype.kind in "iu"
+            and len(np.unique(indices)) == len(indices)
+            and (indices >= 0).all()
+            and (indices < len(alpha)).all()
+        )
+        checks["appearance_indices_valid"] = bool(valid)
+        checks["appearance_hashes_match"] = all(
+            digest(scene_dir / filename) == record[key]
+            for filename, key in [
+                ("appearance_gaussian_indices.npy", "indices_sha256"),
+                ("appearance_replacement.usdc", "opacity_layer_sha256"),
+                ("appearance_reference.usda", "reference_geometry_sha256"),
+                ("appearance_reference.json", "reference_manifest_sha256"),
+            ]
+        )
+        reference = json.loads((scene_dir / "appearance_reference.json").read_text())
+        texture_checks = []
+        for asset in reference["assets"]:
+            if "texture" not in asset:
+                continue
+            tex = asset["texture"]
+            name = asset["id"].split("/")[-1]
+            texture_checks.append(
+                digest(scene_dir / "appearance_textures" / (name + ".png"))
+                == tex["texture_sha256"]
+                and not tex["heldout_used_for_selection"]
+                and not (
+                    set(tex["heldout_indices"])
+                    & {x["camera_index"] for x in tex["sources"]}
+                )
+            )
+        checks["texture_integrity_and_heldout_separation"] = bool(
+            texture_checks
+        ) and all(texture_checks)
+        if valid:
+            alpha[indices] = 0
+            suppressed = int(
+                np.count_nonzero(
+                    np.asarray(original.GetAttribute("opacities").Get()) != alpha
+                )
+            )
     checks["only_declared_opacity_changes"] = np.array_equal(
         alpha, np.array(current.GetAttribute("opacities").Get())
     )
@@ -102,6 +151,10 @@ def audit_scene(assets, probe, route=None, task=None):
         c["material_and_geometry_valid"] for c in colliders
     )
     measured = json.loads(Path(probe).read_text())
+    if appearance.exists():
+        checks["probe_bound_to_all_scene_dependencies"] = measured.get(
+            "scene_dependencies"
+        ) == scene_dependency_hashes(scene_dir)
     raw = np.load(Path(probe).parent / "trajectories.npz", allow_pickle=False)
     positions = raw["positions"]
     checks["probe_trajectory_hash_and_shape"] = (
@@ -151,9 +204,9 @@ def audit_scene(assets, probe, route=None, task=None):
         "real_world_parameters_validated": False,
         "autonomous_navigation_validated": False,
         "limits": [
-            "Dense connected occupied cells are conservative proxies, not fully segmented furniture",
+            "Explicit furniture meshes and any retained occupied-cell proxies are estimates, not measured geometry",
             "Unobserved surfaces and material values are estimates",
-            "Original reconstruction still contains blurred regions and residual ghosting",
+            "Source fidelity and unobserved texture completion have not passed a photometric benchmark",
         ],
         "input_hashes": {
             "scene": digest(scene_dir / "scene.usda"),

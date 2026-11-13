@@ -110,6 +110,9 @@ def main():
                     ".json",
                     ".npy",
                     ".npz",
+                    ".png",
+                    ".jpg",
+                    ".jpeg",
                 }:
                     result["asset_sha256"][str(dependency.relative_to(args.assets))] = (
                         digest(dependency)
@@ -121,7 +124,9 @@ def main():
         dt = 1 / args.physics_hz
         result["physics_hz"] = args.physics_hz
         result["gripper_close_rad"] = args.gripper_close_rad
-        result["command_interpolation"] = "quintic zero endpoint velocity and acceleration"
+        result["command_interpolation"] = (
+            "quintic zero endpoint velocity and acceleration"
+        )
         settings = carb.settings.get_settings()
         settings.set_bool("/physics/updateToUsd", True)
         simulation = omni.physx.get_physx_simulation_interface()
@@ -216,7 +221,9 @@ def main():
                 ].copy()
                 held = cup.get_transforms()[0].copy()
                 destination = np.array(plan["destination"]["cup_bottom_xyz_m"])
-                destination[2] += 0.002
+                # Transfer the cup's load to the support before opening.
+                # Releasing 2 mm above it lets asymmetric finger contact push
+                # the still-unsupported cup sideways during opening.
                 end = palm[:3] + destination - held[:3]
                 target = np.eye(4)
                 target[:3, :3] = Rotation.from_quat(palm[3:]).as_matrix()
@@ -235,7 +242,7 @@ def main():
                     "source": "measured simulator rigid-body poses; privileged canary feedback",
                     "held_cup_xyz_m": held[:3].tolist(),
                     "gripper_destination_xyz_m": end.tolist(),
-                    "release_clearance_m": 0.002,
+                    "release_clearance_m": 0.0,
                 }
             path = np.array(
                 plan["paths"].get(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 
@@ -116,7 +117,7 @@ def main():
                 .GetInverse()
             )
         dome = UsdLux.DomeLight.Define(stage, "/World/Lighting/Dome")
-        dome.CreateIntensityAttr(350)
+        dome.CreateIntensityAttr(650)
         key = UsdLux.DistantLight.Define(stage, "/World/Lighting/Key")
         key.CreateIntensityAttr(1100)
         key.CreateAngleAttr(15)
@@ -125,7 +126,7 @@ def main():
             fill = UsdLux.RectLight.Define(stage, "/World/Lighting/Softbox")
             fill.CreateWidthAttr(2.5)
             fill.CreateHeightAttr(2.5)
-            fill.CreateIntensityAttr(350.0)
+            fill.CreateIntensityAttr(700.0)
             fill.CreateEnableColorTemperatureAttr(True)
             fill.CreateColorTemperatureAttr(4800.0)
             fill.AddTranslateOp().Set(Gf.Vec3d(0.3, -0.3, 2.65))
@@ -144,9 +145,13 @@ def main():
         settings.set_bool("/rtx/rtpt/gaussian/accumulatedAlbedo/enabled", True)
         settings.set_int("/rtx/rtpt/gaussian/maxGaussiansToAccumulate", 48)
         rp = rep.create.render_product(str(cam.GetPath()), (width, height))
-        writer = rep.WriterRegistry.get("BasicWriter")
-        writer.initialize(output_dir=str(args.out / "frames"), rgb=True)
-        writer.attach([rp])
+        # Synchronous readback prevents a cold shader cache from silently
+        # advancing all replay poses before the first actual image exists.
+        from PIL import Image
+
+        rgb_annotation = rep.AnnotatorRegistry.get_annotator("rgb")
+        rgb_annotation.attach([rp])
+        (args.out / "frames").mkdir()
         total = len(data["poses"])
         dt = float(data["dt"])
         samples = (
@@ -166,8 +171,6 @@ def main():
             )
         )
         if args.observe:
-            rgb_annotation = rep.AnnotatorRegistry.get_annotator("rgb")
-            rgb_annotation.attach([rp])
             depth_annotation = rep.AnnotatorRegistry.get_annotator(
                 "distance_to_image_plane"
             )
@@ -210,10 +213,42 @@ def main():
             camop.Set(
                 Gf.Matrix4d().SetLookAt(eye, target, Gf.Vec3d(0, 0, 1)).GetInverse()
             )
+            if num == 0:
+                ready_start = time.monotonic()
+                ready = 0
+                while ready < 3:
+                    if time.monotonic() - ready_start > 600:
+                        raise TimeoutError("RGB capture did not become ready")
+                    app.update()
+                    rep.orchestrator.step(
+                        rt_subframes=args.subframes,
+                        delta_time=1 / 30,
+                        pause_timeline=True,
+                        wait_for_render=True,
+                    )
+                    rep.orchestrator.wait_until_complete()
+                    rgb = np.asarray(rgb_annotation.get_data())
+                    if (
+                        rgb.shape[:2] == (height, width)
+                        and rgb.ndim == 3
+                        and rgb[..., :3].std() > 1
+                    ):
+                        ready += 1
+                print("RGB_CAPTURE_READY", time.monotonic() - ready_start, flush=True)
             rep.orchestrator.step(
                 rt_subframes=12 if args.preview else args.subframes,
-                delta_time=0.0,
+                delta_time=1 / 30,
                 pause_timeline=True,
+                wait_for_render=True,
+            )
+            rep.orchestrator.wait_until_complete()
+            rgb = np.asarray(rgb_annotation.get_data()).copy()
+            if rgb.shape[:2] != (height, width) or rgb.ndim != 3:
+                raise RuntimeError(
+                    f"Invalid actual RGB at replay frame {num}: {rgb.shape}"
+                )
+            Image.fromarray(rgb[..., :3]).save(
+                args.out / "frames" / f"rgb_{num:04d}.png"
             )
             mappings.append(
                 {

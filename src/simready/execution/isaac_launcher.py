@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import uuid
@@ -69,6 +70,30 @@ def reserve_receipt(output):
             return path, path.open("x")
         except FileExistsError:
             path = output / f"launch-{uuid.uuid4().hex}.json"
+
+
+def seed_runtime_cache(source, output):
+    """Copy shader caches from a completed run without sharing mutable state."""
+    if source is None:
+        return
+    source, output = Path(source).resolve(), Path(output).resolve()
+    if source == output:
+        return
+    for relative in (".isaac-cache", ".isaac-home/.cache"):
+        origin, target = source / relative, output / relative
+        if not origin.is_dir():
+            continue
+        if target.is_symlink() or any(
+            parent.is_symlink() for parent in target.parents if parent != output.parent
+        ):
+            raise ValueError("Runtime cache destination must not traverse symlinks")
+        shutil.copytree(
+            origin,
+            target,
+            dirs_exist_ok=True,
+            symlinks=True,
+            ignore_dangling_symlinks=True,
+        )
 
 
 def launch_worker(

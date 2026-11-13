@@ -119,6 +119,7 @@ def main():
     ap.add_argument("--encode-threads", type=int, default=2)
     ap.add_argument("--sun-intensity", type=float, default=1800.0)
     ap.add_argument("--dome-intensity", type=float, default=200.0)
+    ap.add_argument("--camera-focal-length", type=float, default=20.0)
     ap.add_argument("--res", nargs=2, type=int, default=[1280, 720])
     ap.add_argument("--subframes", type=int, default=32)
     ap.add_argument("--out", type=Path, required=True)
@@ -242,7 +243,7 @@ def main():
         settings.set(key, value)
     print("TOUR_SETUP renderer", args.renderer, flush=True)
     cam = UsdGeom.Camera.Define(stage, "/World/TourCamera")
-    cam.CreateFocalLengthAttr(20.0)
+    cam.CreateFocalLengthAttr(args.camera_focal_length)
     cam.CreateClippingRangeAttr(Gf.Vec2f(0.03, 100.0))
     cam_op = UsdGeom.Xformable(cam).AddTransformOp()
 
