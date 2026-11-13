@@ -6,8 +6,8 @@ from collections.abc import Sequence
 
 COMMANDS = {
     "run": (
-        "simready.workflows.scene_pipeline",
-        "Run one reviewed scene from a prepared bundle or asset specification",
+        "simready.workflows.pipeline_entry",
+        "Build a scene from video or reproduce a reviewed scene",
     ),
     "simulation": (
         "simready.simulation.cli",

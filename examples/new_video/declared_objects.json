@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "source_to_world": [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],
+  "scale_provenance": {
+    "status": "unverified",
+    "method": "Illustrative identity transform; replace with measured scene registration",
+    "evidence": "Example coordinates only, not labels extracted from a video"
+  },
+  "floor_plane": {
+    "normal": [0,0,1],
+    "offset": 0,
+    "evidence": "Illustrative world Z=0 plane; replace for the actual scene"
+  },
+  "objects": [
+    {
+      "id": "cabinet_example",
+      "type": "box",
+      "category": "cabinet",
+      "bounds_world": {"min": [1,-0.4,0], "max": [1.6,0.4,1.8]},
+      "color": [0.45,0.5,0.55],
+      "roughness": 0.45,
+      "evidence": "Illustrative dimensions; supply a measured or registered reference"
+    },
+    {
+      "id": "button_example",
+      "type": "button",
+      "category": "push_button",
+      "position_world": [1.635,0,1.2],
+      "axis": "X",
+      "radius": 0.02,
+      "travel": 0.004,
+      "stiffness": 400,
+      "damping": 4,
+      "mass": 0.02,
+      "max_force": 8,
+      "color": [0.8,0.1,0.05],
+      "evidence": "Illustrative spring control; no verified device function"
+    }
+  ],
+  "camera": {"eye": [3,-3,2], "target": [1,0,1], "orbit_degrees": 45},
+  "render": {"width": 1280, "height": 720, "frames": 120, "fps": 24, "subframes": 8}
+}

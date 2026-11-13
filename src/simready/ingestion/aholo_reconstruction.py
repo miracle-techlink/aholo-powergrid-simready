@@ -33,16 +33,45 @@ def _fetch_status(client, world_id, remaining):
         raise RetryablePollError("Transient status transport failure") from error
 
 
-def run(video, out, client_file, timeout):
+def run(video, out, client_file, timeout, *, allow_submit=False):
     import requests
 
     video, out = Path(video).resolve(), Path(out).resolve()
     if not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("Finite positive timeout required")
+    if type(allow_submit) is not bool:
+        raise ValueError("allow_submit must be an explicit boolean")
     source_hash = digest(video)
+    receipt, intent = out / "receipt.json", out / "submit_intent.json"
+    if not receipt.exists():
+        if intent.exists():
+            raise RuntimeError(
+                "Submission outcome unknown. Recover the server receipt before retrying; no automatic resubmission."
+            )
+        if not allow_submit:
+            raise PermissionError("New Aholo reconstruction requires explicit --submit")
     out.mkdir(parents=True, exist_ok=True)
     with (out / "job.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # Recheck under the lock: a disappearing receipt must never turn a
+        # resume-only invocation into an upload or paid submission.
+        resuming = receipt.exists()
+        if resuming:
+            job = read_json(receipt)
+            if job["video_sha256"] != source_hash:
+                raise ValueError("Resume video differs from the submitted input")
+            world_id = job["world_id"]
+            if not isinstance(world_id, str) or not world_id:
+                raise ValueError("Existing receipt has no valid world ID")
+        else:
+            if intent.exists():
+                raise RuntimeError(
+                    "Submission outcome unknown. Recover the server receipt before retrying; no automatic resubmission."
+                )
+            if not allow_submit:
+                raise PermissionError(
+                    "New Aholo reconstruction requires explicit --submit"
+                )
         if client_file is None:
             from simready.ingestion.aholo_client import Client
 
@@ -56,19 +85,7 @@ def run(video, out, client_file, timeout):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             client = module.Client()
-        receipt, intent = out / "receipt.json", out / "submit_intent.json"
-        if receipt.exists():
-            job = read_json(receipt)
-            if job["video_sha256"] != source_hash:
-                raise ValueError("Resume video differs from the submitted input")
-            world_id = job["world_id"]
-            if not isinstance(world_id, str) or not world_id:
-                raise ValueError("Existing receipt has no valid world ID")
-        else:
-            if intent.exists():
-                raise RuntimeError(
-                    "Submission outcome unknown. Recover the server receipt before retrying; no automatic resubmission."
-                )
+        if not resuming:
             url = client.upload(str(video))
             if digest(video) != source_hash:
                 raise ValueError("Video changed during upload")
@@ -160,6 +177,7 @@ def run(video, out, client_file, timeout):
             out / "assets.json",
             {"world_id": world_id, "assets": assets, "cloud_cost_usd": None},
         )
+        return {"world_id": world_id, "video_sha256": source_hash, "assets": assets}
 
 
 def main(argv=None):
@@ -172,6 +190,11 @@ def main(argv=None):
         help="Optional trusted Client override; default uses AHOLO_API_KEY",
     )
     parser.add_argument("--poll-timeout", type=float, default=7200)
+    parser.add_argument(
+        "--submit",
+        action="store_true",
+        help="Authorize one new cloud reconstruction if no receipt exists; resume never resubmits",
+    )
     parser.add_argument(
         "--supervise",
         action="store_true",
@@ -190,6 +213,7 @@ def main(argv=None):
                 "--out",
                 str(args.out.resolve()),
                 *(["--client", str(args.client.resolve())] if args.client else []),
+                *(["--submit"] if args.submit else []),
                 "--poll-timeout",
                 str(args.poll_timeout),
             ],
@@ -202,7 +226,13 @@ def main(argv=None):
     import requests
 
     try:
-        run(args.video, args.out, args.client, args.poll_timeout)
+        run(
+            args.video,
+            args.out,
+            args.client,
+            args.poll_timeout,
+            allow_submit=args.submit,
+        )
     except (requests.Timeout, requests.ConnectionError):
         # No raw exception text: signed download URLs may contain credentials.
         print("Transport interrupted; resume the persisted receipt", file=sys.stderr)

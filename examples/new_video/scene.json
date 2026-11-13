@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scale_provenance": {
+    "status": "unverified",
+    "method": "No measured scale anchor provided",
+    "evidence": "Preview only; preserve unknown source coordinates"
+  },
+  "collision": {
+    "enabled": true,
+    "voxel_size": 0.25,
+    "max_proxies": 2000,
+    "max_points": 100000,
+    "min_points_per_voxel": 2,
+    "static_friction": 0.8,
+    "dynamic_friction": 0.7,
+    "restitution": 0.0
+  },
+  "objects": [],
+  "render": {
+    "width": 1280,
+    "height": 720,
+    "frames": 120,
+    "fps": 24,
+    "subframes": 8
+  }
+}

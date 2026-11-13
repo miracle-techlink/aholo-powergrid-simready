@@ -1,0 +1,346 @@
+{
+  "schema_version": 1,
+  "version": "0.7.0",
+  "date": "2026-11-13",
+  "status": "COMPLETE",
+  "scope": "Functional new-video entry validation using a historical video/PLY pair. No new paid cloud job, repair campaign or robot task.",
+  "runtime_commit": "2814514",
+  "runtime_file_count": 104,
+  "all_runtime_files_match_commit": true,
+  "source": {
+    "video_sha256": "fc892f09a855f9dce13a9682b05e2c466544cae082dd54c1d21a3d17fbda09ea",
+    "ply_sha256": "ca7d32c88118f42b480e044e3fe77c8ac60fe9697088592e36f30197702ab56a",
+    "pairing": "Operator-declared historical pair; association not independently re-established; hashes prove file identity",
+    "new_cloud_submission": false
+  },
+  "host": {
+    "gpu": "NVIDIA GB10",
+    "architecture": "aarch64",
+    "driver": "580.159.03",
+    "docker_image_id": "sha256:97b65e8d0f56963087a8d9a1b1fe85b367d65092e44799141e4a77bc344df236"
+  },
+  "cpu_prepare_and_resume": [
+    {
+      "mode": "initial",
+      "returncode": 0,
+      "command_wall_s": 7.951085392007371,
+      "summary": {
+        "schema_version": 1,
+        "mode": "video_to_scene",
+        "status": "COMPLETE",
+        "source_video_sha256": "fc892f09a855f9dce13a9682b05e2c466544cae082dd54c1d21a3d17fbda09ea",
+        "task_validated": false,
+        "metric_scale_independently_validated": false,
+        "scale_provenance_is_user_supplied": true,
+        "stage": "summary",
+        "delivery_level": "SCENE_EXPORTED",
+        "scene": "/home/nvidia/algotithm/simready_infra_pr/runs/publication_v3_20261113/new_video_cpu_release/execution/attempt-0001/scene/scene.usda",
+        "video": null,
+        "reconstruction_new_submission": false,
+        "metric_scale_verified": false,
+        "limitations": [
+          "Appearance retains the reconstruction; no watertight visible mesh or UV texture baking is performed.",
+          "Voxel occupancy and a fitted floor are conservative geometric estimates, not semantic or contact-validated assets.",
+          "Mass, spring, material and friction values are simulation presets, not measurements inferred from video.",
+          "No task policy, contact event adapter, task audit or independent metric-scale validation has run.",
+          "Metric scale is unverified; numeric dimensions are in declared world units only.",
+          "Collision fitting uses a bounded deterministic sample and may omit thin geometry.",
+          "Structural audit does not measure reconstruction fidelity or whole-scene asset completeness",
+          "No robot motion or contact task executed by the new-video survey"
+        ],
+        "invocation_wall_s": 7.806354880012805,
+        "stages": [
+          {
+            "name": "observations",
+            "reused": false,
+            "wall_s": 6.452002799982438
+          },
+          {
+            "name": "reconstruction",
+            "reused": false,
+            "wall_s": 0.07466515200212598
+          },
+          {
+            "name": "worker_inputs",
+            "reused": false,
+            "wall_s": 0.03175163199193776
+          },
+          {
+            "name": "scene_delivery",
+            "reused": false,
+            "wall_s": 1.1575714719947428
+          }
+        ]
+      }
+    },
+    {
+      "mode": "resume",
+      "returncode": 0,
+      "command_wall_s": 0.24580524800694548,
+      "summary": {
+        "schema_version": 1,
+        "mode": "video_to_scene",
+        "status": "COMPLETE",
+        "source_video_sha256": "fc892f09a855f9dce13a9682b05e2c466544cae082dd54c1d21a3d17fbda09ea",
+        "task_validated": false,
+        "metric_scale_independently_validated": false,
+        "scale_provenance_is_user_supplied": true,
+        "stage": "summary",
+        "delivery_level": "SCENE_EXPORTED",
+        "scene": "/home/nvidia/algotithm/simready_infra_pr/runs/publication_v3_20261113/new_video_cpu_release/execution/attempt-0001/scene/scene.usda",
+        "video": null,
+        "reconstruction_new_submission": false,
+        "metric_scale_verified": false,
+        "limitations": [
+          "Appearance retains the reconstruction; no watertight visible mesh or UV texture baking is performed.",
+          "Voxel occupancy and a fitted floor are conservative geometric estimates, not semantic or contact-validated assets.",
+          "Mass, spring, material and friction values are simulation presets, not measurements inferred from video.",
+          "No task policy, contact event adapter, task audit or independent metric-scale validation has run.",
+          "Metric scale is unverified; numeric dimensions are in declared world units only.",
+          "Collision fitting uses a bounded deterministic sample and may omit thin geometry.",
+          "Structural audit does not measure reconstruction fidelity or whole-scene asset completeness",
+          "No robot motion or contact task executed by the new-video survey"
+        ],
+        "invocation_wall_s": 0.10719244802021421,
+        "stages": [
+          {
+            "name": "observations",
+            "reused": true,
+            "wall_s": 0.0
+          },
+          {
+            "name": "reconstruction",
+            "reused": true,
+            "wall_s": 0.0
+          },
+          {
+            "name": "worker_inputs",
+            "reused": true,
+            "wall_s": 0.0
+          },
+          {
+            "name": "scene_delivery",
+            "reused": true,
+            "wall_s": 0.0
+          }
+        ]
+      }
+    }
+  ],
+  "gpu": {
+    "command_wall_s": 231.87402908800868,
+    "summary_invocation_wall_s": 231.74358235200634,
+    "host_stages": [
+      {
+        "name": "observations",
+        "reused": false,
+        "wall_s": 6.44971391998115
+      },
+      {
+        "name": "reconstruction",
+        "reused": false,
+        "wall_s": 0.07333332797861658
+      },
+      {
+        "name": "worker_inputs",
+        "reused": false,
+        "wall_s": 0.031226527993567288
+      },
+      {
+        "name": "scene_delivery",
+        "reused": false,
+        "wall_s": 225.0942399839987
+      }
+    ],
+    "worker": {
+      "schema_version": 1,
+      "status": "COMPLETE",
+      "stage": "summary",
+      "wall_s": 224.47664659199654,
+      "stages": [
+        {
+          "name": "environment",
+          "wall_s": 0.057522527989931405,
+          "returncode": 0
+        },
+        {
+          "name": "preparation",
+          "wall_s": 1.080905103997793,
+          "returncode": 0
+        },
+        {
+          "name": "structure_audit",
+          "wall_s": 0.22746291200746782,
+          "returncode": 0
+        },
+        {
+          "name": "render",
+          "wall_s": 223.03457694401732,
+          "returncode": 0
+        }
+      ]
+    },
+    "video_probe": {
+      "width": 640,
+      "height": 360,
+      "avg_frame_rate": "24/1",
+      "duration": "0.500000",
+      "nb_frames": "12"
+    },
+    "video_sha256": "7cb7c5d1b0891e94cbcccb5c4e3d484adcc178256fc4c72966de2f6937d4fb89",
+    "delivery_level": "SCENE_SURVEY_READY",
+    "new_reconstruction": false,
+    "metric_scale_verified": false,
+    "robot_task_validated": false,
+    "reference_frame_count": 183,
+    "gaussian_count": 156764,
+    "collision": {
+      "proxy_count": 582,
+      "requested_voxel_size": 0.25,
+      "actual_voxel_size": 4.0,
+      "source_point_count": 107008,
+      "sample_count": 100000,
+      "collider_count": 583,
+      "estimate_status": "unvalidated_static_occupancy",
+      "max_proxies": 2000,
+      "contact_material": {
+        "static_friction": 0.8,
+        "dynamic_friction": 0.7,
+        "restitution": 0.0
+      }
+    }
+  },
+  "visual_review": {
+    "frames": [
+      0,
+      6,
+      11
+    ],
+    "observed": "Raw Gaussian blur, holes and floating artifacts remain visible; this is a diagnostic survey, not the earlier repaired delivery appearance.",
+    "source_consistency_validated": false,
+    "camera_clearance_validated": false,
+    "whole_scene_quality_accepted": false
+  },
+  "failed_attempt_preserved": {
+    "command_wall_s": 224.37775817597867,
+    "status": "FAILED",
+    "reason": "Isaac fast shutdown terminated the renderer before encoding. Worker delivery verification rejected the missing render receipt. Encoding/receipt generation was moved before shutdown and the full entry was rerun.",
+    "subprocess_zero_exit_was_not_accepted": true
+  },
+  "cpu_tests": "427 passed, 1 skipped in 28.28s",
+  "not_verified": [
+    "New Aholo job on a new input video (provider submission/resume tested with controlled clients).",
+    "Default 120-frame survey in the final Docker entry; measured capture is 12 frames.",
+    "Arbitrary raw-video semantic segmentation, textured independent meshes, scale/physics inference or autonomous repair.",
+    "Physical actuation of new generated objects or a robot in the new scene.",
+    "Remote server run, multi-node scaling, commercial quality or performance speedup."
+  ],
+  "timing_scope": "command_wall_s includes command startup and read-only planning; summary time starts after planning. GPU run includes cold shader compilation and local artifact import, excludes provider reconstruction, SDK installation and historical source preparation. Resume reuses existing verified outputs and is not recomputation. No acceleration benchmark was run.",
+  "evidence": [
+    {
+      "path": "runs/publication_v3_20261113/runtime_final_source.json",
+      "bytes": 11461,
+      "sha256": "4084d1841bd36d6eb1424c824745fb9a3727221ee19b11f4433778d2d271b24c"
+    },
+    {
+      "path": "runs/publication_v3_20261113/gpu_final_command.json",
+      "bytes": 666,
+      "sha256": "c32a52e244fb907295341e921fa5116ec11d7d836c6e3a02b1d088ca2326c128"
+    },
+    {
+      "path": "runs/publication_v3_20261113/gpu_final_invocation.json",
+      "bytes": 766,
+      "sha256": "b74797dd56bf19cf8220a9e30f55dcde9df72c09a4c479a45293a6aeaf5a2931"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/summary.json",
+      "bytes": 2015,
+      "sha256": "936a9951e05ee61c905ab1821ed09658de86bfb4a13399833a5e3e17f4c800ff"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/run-plan.json",
+      "bytes": 2571,
+      "sha256": "a01a1e128901dbd32c6cd2c40f2fd7e9b9cc7f11ecdcee03226c2347d8155253"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/pipeline-status.json",
+      "bytes": 523,
+      "sha256": "4cb067d68331d1a4e08e9a8e8bc2ebb0da8531a052e0f56d3b9849e44db23b14"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/delivery.json",
+      "bytes": 5427,
+      "sha256": "568eee7129e5b9ceb9536b27f0459af93177851b60e043c96fbb631022b0a0f6"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/structure-audit.json",
+      "bytes": 1029,
+      "sha256": "dd9ec5cef299564df7a96dd660f5f2c67c5782db4e65d12f9eff0c470f0403de"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/scene/preparation.json",
+      "bytes": 3843,
+      "sha256": "2b7fb76047bbfa0fb602ec2bc11919c5efe0c049aa7dd32d198c2f37f39d39c5"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/render/render.json",
+      "bytes": 3231,
+      "sha256": "be8047bdd66a9e39dc6fae758a6525b3f798f1b808b0b4d580359483638a54ac"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/render/scene_survey.mp4",
+      "bytes": 329189,
+      "sha256": "7cb7c5d1b0891e94cbcccb5c4e3d484adcc178256fc4c72966de2f6937d4fb89"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_probe.json",
+      "bytes": 230,
+      "sha256": "372592897db549ec80cff7effb110c9870d00e44ba32f7c44e79f8eec6869596"
+    },
+    {
+      "path": "runs/publication_v3_20261113/cpu_release_invocations.json",
+      "bytes": 4293,
+      "sha256": "c47f10cf9c962bc08ac849008f468f60d5dbe0ccc73c2a224f1c4e0cc8c48c9d"
+    },
+    {
+      "path": "runs/publication_v3_20261113/cpu_release_command.json",
+      "bytes": 772,
+      "sha256": "465aa1690ce6acc4c01c9825ad7e8cdbd9d5ef4f92ec79bf3607cb6253c1529c"
+    },
+    {
+      "path": "runs/publication_v3_20261113/portable_tests_release.log",
+      "bytes": 512,
+      "sha256": "bfbdd62aa8bf673212d65e6b5d16d4053063312f2c64763270714ec7a39a0ab0"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu/summary.json",
+      "bytes": 940,
+      "sha256": "db89b03170e04efab54135e59b005be643564891069f1e2feabb43d618a489f1"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu/execution/attempt-0001/pipeline-status.json",
+      "bytes": 600,
+      "sha256": "14bf69c40395e665db825ce407dd3ea651c14501055d95be6ee91227ccff7ae0"
+    },
+    {
+      "path": "runs/publication_v3_20261113/gpu_invocation.json",
+      "bytes": 760,
+      "sha256": "20d9622e3fc19a8fc1ea78eadcde53f21b63b30610f8dac3fbd2beba07f9dd05"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/render/frames/capture_000000.png",
+      "bytes": 475587,
+      "sha256": "9aae536ee5a062d124ba98e74d139b1826b29c4eea3b946abbef96a8832e5d91"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/render/frames/capture_000006.png",
+      "bytes": 452061,
+      "sha256": "0296b379963f33a4ea2fb29b5d8d3e5a52e23771fdb4ef5f3669612b75d5e77e"
+    },
+    {
+      "path": "runs/publication_v3_20261113/new_video_gpu_final/execution/attempt-0001/render/frames/capture_000011.png",
+      "bytes": 450714,
+      "sha256": "7e7933a54a288daa385a9e3518ba86f5b1e57e1b6a6fb797f9abfc11e5d1dbcc"
+    }
+  ]
+}

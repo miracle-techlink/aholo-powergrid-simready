@@ -2,6 +2,22 @@
 
 系统把“恢复外观”“准备可交互资产”“运行机器人任务”“独立判定结果”分开实现。数据流由产物合同连接；Python 模块依赖只约束代码组织，不代表算法阶段已经自动化。
 
+## v0.7：新视频的可执行路径
+
+![新视频输入、配置、场景构建与分级验收](report/figures/new_video_pipeline.svg)
+
+`workflows.pipeline_entry`按`--video`与`--scene`选择互斥模式。新视频由`video_pipeline`登记视频/配置/源码身份并编排观测、重建、worker输入和交付；阶段成功必须提交真实产物哈希。恢复只复用身份和哈希匹配的阶段，失败worker保留在独立attempt目录。
+
+| 模块 | 输入和处理 | 输出与边界 |
+|---|---|---|
+| `ingestion.reconstruction_stage` | 视频与显式云提交，或来源绑定的本地manifest；receipt恢复和有限等待 | PLY/SPZ与可复用manifest；不校准几何、语义或真实尺度 |
+| `simulation.gaussian_asset` | 标准3DGS PLY；指数尺度、sigmoid透明度、四元数规范化、SH通道排列 | 可见USD高斯；源外观不等于纹理网格 |
+| `simulation.scene_preparation` | 显式Sim3、可选地面/参数、有限点采样和体素占据、声明的box/button | 三层USD与asset_catalog；地面/碰撞是估计，显式对象不是自动语义分割 |
+| `evaluation.scene_package` | 独立打开USD，检查组合引用、包内依赖、有限包围盒、碰撞与滑动关节合同 | 结构检查；不重算图像保真度、不证明真实尺度或任务成功 |
+| `simulation.scene_video` | 当前场景包围盒或显式相机、原生RTX采样、ffmpeg编码与ffprobe核验 | 运动相机巡览及逐帧证据；不包含机器人或自由空间导航 |
+
+`SCENE_EXPORTED`和`SCENE_SURVEY_READY`描述生成流水线的完成等级；`task_validated=false`始终保留。带真实测量的任务仍须单独绑定机器人控制与独立任务审计。参数和输出合同见[新视频示例](../examples/new_video/README.md)。下面的M1–M6图保留已交付场景的方法全貌，原有照片纹理、柜体补建和多帧注册并未由上述通用生成器全部自动替代。
+
 ![方法总览：M1–M6 的输入、处理、产物与证据路径](report/figures/architecture_overview.svg)
 
 ## 六个阶段与真实执行范围
@@ -16,13 +32,13 @@
 | M5 独立验收 | 固定协议与测量 → 事件/定位/FK 重算 → audit | `simulation.mission_audit`；失败阻止交付录像 |
 | M6 原生回放 | 已验收轨迹 → 独立回放层/RTX/编码 → MP4 与帧证据 | `simulation.mission_video`；G2 使用 `cafe_video` |
 
-`workflows.scene_delivery` 编排已有场景的来源检查与执行阶段，`simready run` 提供统一用户入口。它不把 M3 的离线工作补成全自动流程，也不自动提交新云任务。真实修复插件可逐步接入 M3，但当前注册表没有覆盖任意新视频。
+`workflows.scene_delivery` 编排已有场景的来源检查与执行阶段；`simready run --scene`提供统一入口。`--video`另提供上述通用构建路径；只有显式`--submit-reconstruction`才可新提交云任务。完整纹理补建和真实修复插件仍未覆盖任意新视频。
 
 v0.6 的 [独立验证清单](report/one-command-validation.json) 记录变电站完整物理/审计/回放和星巴克 8 帧短预览，并绑定输入、运行源码及后续失败分支改动。执行方式见 [README](../README.md)，阶段方法和新旧实测范围见 [技术报告](report/technical-report.md)。
 
 ## 数据对象与三个运行层
 
-- **来源对象**：视频 SHA-256、帧时间戳、相机/坐标、观测或估计标签。
+- **来源对象**：视频 SHA-256、名义 fps 采样时间（非原视频帧 PTS）、相机/坐标、观测或估计标签。
 - **外观层**：高斯、独立几何和 PBR/纹理，保留原片约束与未观测区域。
 - **碰撞层**：地面、柜体、控件代理及物理参数，与外观分离。
 - **交互层**：按钮/旋钮关节、工具和模拟状态机，明确阈值与去抖。
