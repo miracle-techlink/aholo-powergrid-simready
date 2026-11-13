@@ -132,188 +132,223 @@ def canvas(title, subtitle):
 
 
 def overview():
-    fig, ax = canvas(
-        "视频到交互 Demo：方法与交付",
-        "共同来源，不同交付范围；机器人任务与场景巡览分别验收",
-    )
-    node(
-        ax,
-        0.48,
-        7.76,
-        6.24,
-        0.68,
-        "视频观测：抽帧、清晰度与来源登记",
-        "原视频＋参考帧＋文件哈希；同视频划分不构成独立测试",
-        color=BLUE,
-        size=12.2,
-        detail_size=10.3,
-    )
-    arrow(ax, [(3.60, 7.73), (3.60, 7.48)], color=BLUE)
-    text(ax, 3.77, 7.61, "原片输入", 9.4, color=MUTED)
-    rect(ax, 0.48, 6.59, 6.24, 0.86, color=BLUE, fill=PALE[BLUE])
+    """One portrait methods diagram: data, feedback and execution boundaries."""
+    fig, ax = plt.subplots(figsize=(8.27, 11.69))
+    fig.subplots_adjust(0, 0, 1, 1)
+    ax.set(xlim=(0, 8.27), ylim=(0, 11.69), aspect="equal")
+    ax.axis("off")
+    text(ax, 0.50, 11.35, "从视频到机器人 Demo：完整 Pipeline", 17, weight="bold")
     text(
         ax,
-        3.60,
-        7.22,
-        "三维重建：空间外观底稿",
-        12.2,
-        color=BLUE,
-        weight="bold",
-        ha="center",
-    )
-    text(
-        ax,
-        3.60,
-        6.97,
-        "Aholo 原视频重建 → PLY / SPZ；服务内部训练为黑盒",
-        10.1,
-        ha="center",
-    )
-    text(
-        ax,
-        3.60,
-        6.74,
-        "研究支路 VGGT → gsplat：历史指标未达门槛，不替换交付底稿",
-        9.4,
+        0.50,
+        11.02,
+        "算法 · 阶段产物 · 控制与修复反馈 · 当前执行范围",
+        11,
         color=MUTED,
-        ha="center",
     )
-    arrow(ax, [(3.60, 6.56), (3.60, 6.40), (2.25, 6.40), (2.25, 6.25)], color=AMBER)
-    arrow(ax, [(3.60, 6.40), (5.61, 6.40), (5.61, 6.25)], color=TEAL)
 
-    rect(ax, 0.48, 4.70, 3.55, 1.52, color=AMBER, fill=PALE[AMBER], dashed=True)
+    def block(y, h, title, lines, color=BLUE, dashed=False):
+        rect(ax, 0.62, y, 5.08, h, color=color, fill=PALE[color], dashed=dashed)
+        text(ax, 0.80, y + h - 0.17, title, 11.8, color=color, weight="bold")
+        for i, label in enumerate(lines):
+            text(ax, 0.80, y + h - 0.39 - i * 0.20, label, 10.0)
+
+    def down(top, bottom, label):
+        arrow(ax, [(3.16, top), (3.16, bottom)], color=BLUE)
+        text(ax, 3.30, (top + bottom) / 2, label, 8.8, color=MUTED)
+
+    block(10.24, 0.56, "输入：真实场景视频与来源登记", [], BLUE)
+    text(ax, 5.48, 10.44, "原片哈希", 9.3, ha="right", color=MUTED)
+    for x in (1.82, 4.49):
+        arrow(ax, [(3.16, 10.21), (3.16, 10.10), (x, 10.10), (x, 9.98)], color=BLUE)
+    rect(ax, 0.62, 9.12, 2.40, 0.83, color=BLUE, fill=PALE[BLUE])
+    text(ax, 0.80, 9.72, "① 参考观测", 11.6, color=BLUE, weight="bold")
+    text(ax, 0.80, 9.44, "抽帧 · 拉普拉斯方差", 10.2)
+    text(ax, 0.80, 9.23, "签名汉明距离 · 来源记录", 9.5)
+    rect(ax, 3.30, 9.12, 2.40, 0.83, color=BLUE, fill=PALE[BLUE])
+    text(ax, 3.48, 9.72, "② 三维重建", 11.6, color=BLUE, weight="bold")
+    text(ax, 3.48, 9.44, "完整原片 → Aholo", 10.2)
+    text(ax, 3.48, 9.23, "3DGS 外观 → PLY / SPZ", 9.5)
+    arrow(ax, [(4.49, 9.09), (4.49, 8.98), (3.16, 8.98), (3.16, 8.86)], color=BLUE)
     text(
-        ax, 2.255, 5.99, "历史离线资产准备", 12, color=AMBER, weight="bold", ha="center"
-    )
-    text(ax, 2.255, 5.68, "坐标／尺度与跨帧来源对应", 10.8, ha="center")
-    text(ax, 2.255, 5.39, "纹理与几何恢复；未观测面估计", 10.6, ha="center")
-    text(
-        ax, 2.255, 5.08, "输出：经核查的外观与资产实例", 10.3, color=MUTED, ha="center"
-    )
-    rect(ax, 4.50, 4.70, 2.22, 1.52, color=TEAL, fill=PALE[TEAL])
-    text(ax, 5.61, 5.99, "新视频候选入口", 12, color=TEAL, weight="bold", ha="center")
-    text(ax, 5.61, 5.68, "保留高斯；按声明变换", 10.1, ha="center")
-    text(ax, 5.61, 5.39, "估计碰撞＋规格对象", 10.3, ha="center")
-    text(ax, 5.61, 5.08, "无自动语义／纹理修复", 10, color=MUTED, ha="center")
-    arrow(ax, [(2.255, 4.67), (2.255, 4.43)], color=AMBER)
-    arrow(ax, [(5.61, 4.67), (5.61, 4.43)], color=TEAL)
-    node(
         ax,
-        0.48,
-        3.65,
-        3.55,
-        0.75,
-        "碰撞与交互合同",
-        "支撑／限位／关节＋接触与状态绑定",
-        color=AMBER,
-        size=11.8,
-        detail_size=10,
+        3.30,
+        8.97,
+        "中心／协方差／透明度／球谐",
+        8.2,
+        color=MUTED,
+        bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.5},
     )
-    node(
+    block(
+        8.04,
+        0.79,
+        "③ 几何准备：坐标、尺度与地面",
+        ["正向相似变换 · RANSAC＋SVD 平面估计", "输出：世界系高斯、地面与尺度来源"],
+        BLUE,
+    )
+    down(8.01, 7.78, "统一坐标与长度单位")
+    block(
+        6.60,
+        1.15,
+        "④ 资产构建：外观／碰撞／交互三层",
+        [
+            "通用：保留高斯＋占据体素＋规格驱动对象",
+            "离线：SAM 表面分组、纹理映射、独立几何补建",
+            "输出：对象身份、局部坐标、USD 与依赖资产",
+        ],
+        TEAL,
+    )
+    # Reference images constrain surface/texture identity and later evaluation.
+    arrow(
         ax,
-        4.50,
-        3.65,
-        2.22,
-        0.75,
-        "独立结构审计",
-        "引用、边界与关节合法性",
+        [(1.82, 9.09), (1.82, 8.96), (0.35, 8.96), (0.35, 7.15), (0.59, 7.15)],
+        color=BLUE,
+    )
+    text(ax, 0.18, 7.99, "参考图像与区域", 9.0, color=BLUE, rotation=90, ha="center")
+    down(6.57, 6.34, "可编辑、可组合的对象")
+    block(
+        5.57,
+        0.74,
+        "⑤ 物理建模与结构检查",
+        [
+            "PhysX 刚体／滑动关节／弹簧—阻尼；USD 审计",
+            "输出：USD 场景；结构通过≠任务通过",
+        ],
+        TEAL,
+    )
+    down(5.54, 5.31, "另需任务配置与机器人标定")
+    block(
+        4.22,
+        1.06,
+        "⑥ 机器人执行：Lite3＋Z1 案例",
+        [
+            "已知停靠点反馈＋PPO 步态；HSV＋RGB-D 定位",
+            "TCP／FK → 有界最小二乘 IK → 路径碰撞检查",
+            "状态机＋关节驱动 ⇄ PhysX＋传感器反馈",
+        ],
+        TEAL,
+    )
+    down(4.19, 3.96, "实际轨迹／接触力／位移／事件")
+    block(
+        3.21,
+        0.72,
+        "⑦ 独立验收：分别判定，分别留证",
+        [
+            "固定视角 RGB／深度／实例；结构与任务各自验收",
+            "变电站：接触、事件、FK 重算等 20 项任务审计",
+        ],
+        PURPLE,
+    )
+    down(3.18, 2.95, "符合任务合同的测量回放")
+    block(
+        2.23,
+        0.69,
+        "⑧ 原生渲染与交付",
+        [
+            "Isaac Sim RTX → 原生帧 → 编码与帧数检查",
+            "交付：Demo 视频＋USD 资产＋测量与验收报告",
+        ],
+        TEAL,
+    )
+
+    rect(ax, 6.00, 9.12, 1.82, 1.68, color=MUTED, fill=PALE[MUTED])
+    text(ax, 6.91, 10.54, "外部条件", 11.4, color=INK, weight="bold", ha="center")
+    for y, label in [
+        (10.18, "已知尺寸／世界轴"),
+        (9.93, "相机内外参"),
+        (9.68, "对象与物理参数"),
+        (9.43, "机器人／策略／TCP"),
+    ]:
+        text(ax, 6.91, y, label, 9.3, ha="center", color=MUTED)
+    arrow(
+        ax,
+        [(5.97, 9.45), (5.85, 9.45), (5.85, 8.66), (5.73, 8.66)],
+        color=MUTED,
+        dashed=True,
+    )
+
+    rect(ax, 6.00, 8.04, 1.82, 0.79, color=AMBER, fill=PALE[AMBER], dashed=True)
+    text(ax, 6.91, 8.61, "重建研究支路", 10.3, color=AMBER, weight="bold", ha="center")
+    text(ax, 6.91, 8.28, "VGGT → gsplat", 9.5, ha="center")
+    arrow(ax, [(5.97, 8.36), (5.73, 8.36)], color=AMBER, dashed=True)
+
+    rect(ax, 6.00, 6.60, 1.82, 1.18, color=AMBER, fill=PALE[AMBER], dashed=True)
+    text(ax, 6.91, 7.53, "离线资产处理", 10.6, color=AMBER, weight="bold", ha="center")
+    text(ax, 6.91, 7.25, "SIFT／MAGSAC", 9.5, ha="center")
+    text(ax, 6.91, 7.01, "DINOv2 一致性", 9.5, ha="center")
+    text(ax, 6.91, 6.78, "照片纹理候选", 9.5, ha="center")
+    arrow(ax, [(5.97, 7.16), (5.73, 7.16)], color=AMBER, dashed=True)
+
+    rect(ax, 6.00, 3.21, 1.82, 3.10, color=PURPLE, fill=PALE[PURPLE], dashed=True)
+    text(ax, 6.91, 6.06, "质量修复回路", 10.8, color=PURPLE, weight="bold", ha="center")
+    for y, label in [
+        (5.72, "冻结参考与协议"),
+        (5.41, "缺陷定位"),
+        (5.10, "Agent 选择方案"),
+        (4.79, "可信插件执行"),
+        (4.48, "独立重算／复验"),
+        (4.17, "改善且无退化"),
+        (3.77, "经验库／参数配方"),
+        (3.47, "另行配置后接入"),
+    ]:
+        text(ax, 6.91, y, label, 9.4, ha="center")
+    arrow(ax, [(5.73, 3.58), (5.97, 3.58)], color=PURPLE, dashed=True)
+    arrow(
+        ax,
+        [
+            (7.85, 4.80),
+            (8.03, 4.80),
+            (8.03, 7.94),
+            (5.86, 7.94),
+            (5.86, 7.45),
+            (5.73, 7.45),
+        ],
         color=PURPLE,
-        size=11.5,
-        detail_size=9.8,
+        dashed=True,
     )
-    arrow(ax, [(2.255, 3.62), (2.255, 3.37)], color=TEAL)
-    arrow(ax, [(5.61, 3.62), (5.61, 3.37)], color=TEAL)
-    node(
+    text(
         ax,
-        0.48,
-        2.56,
-        3.55,
-        0.78,
-        "机器人感知、导航与操作",
-        "RGB-D 定位；Lite3 步态＋Z1 关节驱动",
-        color=TEAL,
-        size=11.8,
-        detail_size=9.6,
-    )
-    node(
-        ax,
-        4.50,
-        2.56,
-        2.22,
-        0.78,
-        "原生相机巡览",
-        "场景候选，不运行机器人",
-        color=TEAL,
-        size=11.5,
-        detail_size=9.8,
-    )
-    arrow(ax, [(2.255, 2.53), (2.255, 2.40), (1.28, 2.40), (1.28, 2.27)], color=PURPLE)
-    node(
-        ax,
-        0.48,
-        1.48,
-        1.60,
-        0.76,
-        "独立任务验收",
-        "传感器／事件／FK",
+        8.13,
+        6.50,
+        "修复候选返回相关资产阶段",
+        8.4,
         color=PURPLE,
-        size=10.8,
-        detail_size=9.2,
+        rotation=90,
+        ha="center",
     )
-    node(
+
+    rect(ax, 6.00, 1.03, 1.82, 1.91, color=TEAL, fill=PALE[TEAL])
+    text(ax, 6.91, 2.68, "另一交付出口", 10.6, color=TEAL, weight="bold", ha="center")
+    for y, label in [
+        (2.36, "新场景结构通过"),
+        (2.08, "→ 相机巡览"),
+        (1.80, "→ 场景候选视频"),
+        (1.45, "G2：编排展示"),
+        (1.19, "均不等于物理任务"),
+    ]:
+        text(ax, 6.91, y, label, 9.1, ha="center")
+    # The alternate delivery follows structural validation, without passing robot control.
+    arrow(ax, [(5.73, 5.92), (5.86, 5.92), (5.86, 2.65), (5.97, 2.65)], color=TEAL)
+
+    rect(ax, 0.62, 1.03, 5.08, 0.94, color=MUTED, fill="white")
+    text(ax, 0.80, 1.72, "读图边界", 10.5, weight="bold")
+    text(ax, 0.80, 1.45, "实线：数据依赖；虚线：需配置／核查的支线或反馈。", 9.3)
+    text(ax, 0.80, 1.21, "单图展示完整方法，不代表任意视频已全自动完成全部阶段。", 9.1)
+    text(
         ax,
-        2.46,
-        1.48,
-        1.57,
-        0.76,
-        "原生回放 Demo",
-        "实测轨迹 → 视频",
-        color=TEAL,
-        size=10.4,
-        detail_size=9.4,
-    )
-    arrow(ax, [(2.11, 1.86), (2.43, 1.86)], color=TEAL)
-    text(ax, 2.27, 2.06, "通过", 9.0, color=TEAL, ha="center")
-    arrow(ax, [(5.61, 2.53), (5.61, 2.27)], color=TEAL)
-    node(
-        ax,
-        4.50,
-        1.48,
-        2.22,
-        0.76,
-        "场景巡览就绪",
-        "尺度／任务／保真未验收",
-        color=TEAL,
-        size=11.5,
-        detail_size=9.8,
+        0.62,
+        0.69,
+        "新视频执行通用构建与结构审计；已有场景执行专用预检与任务审计。",
+        9.6,
+        color=MUTED,
     )
     text(
         ax,
-        3.60,
-        1.17,
-        "G2 为编排展示；不进入 Lite3＋Z1 的物理任务门槛。",
-        10.0,
+        0.62,
+        0.40,
+        "文件哈希、参数来源、代码与资产版本贯穿阶段，验收结论绑定对应产物。",
+        9.5,
         color=MUTED,
-        ha="center",
-    )
-    rect(ax, 0.48, 0.54, 6.24, 0.44, color=LINE, fill="#F7F9FA")
-    text(
-        ax,
-        3.60,
-        0.76,
-        "来源证据贯穿：观测／估计／配置／版本／传感器／视频",
-        10.4,
-        color=MUTED,
-        ha="center",
-    )
-    text(
-        ax,
-        3.60,
-        0.23,
-        "虚线为离线准备；修复 Agent 是可组合框架，未默认贯穿新视频路径。",
-        9.3,
-        color=MUTED,
-        ha="center",
     )
     return fig
 
@@ -719,9 +754,7 @@ def main():
                     + "\n"
                 )
         plt.close(fig)
-        print(
-            f"{name}: 7.2 x 9.5 in; editable Chinese SVG / vector PDF; PNG 1728 x 2280"
-        )
+        print(f"{name}: portrait; editable Chinese SVG / vector PDF / PNG")
 
 
 if __name__ == "__main__":

@@ -8,9 +8,25 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs/report"
+
+
+def load_report(path, ancestors=()):
+    """Expand explicit Markdown fragments, keeping a single source per chapter."""
+    path = path.resolve()
+    if path.parent != REPORT.resolve() or path.suffix != ".md":
+        raise ValueError(f"Report fragment must be a Markdown file in {REPORT}")
+    if path in ancestors:
+        raise ValueError(f"Cyclic report include: {path}")
+    return re.sub(
+        r"^<!-- include: ([^\n]+) -->$",
+        lambda match: load_report(path.parent / match[1], (*ancestors, path)),
+        path.read_text(),
+        flags=re.MULTILINE,
+    )
 
 
 def escape(text):
@@ -31,7 +47,7 @@ def escape(text):
 
 def inline(text):
     tokens = re.split(
-        r"(`[^`]+`|\*\*[^*]+\*\*|\$[^$]+\$|\[图\]\(#fig-[a-z_]+\)|\[\d+(?:,\s*\d+)*\]|https?://[^\s；，。]+)",
+        r"(`[^`]+`|\*\*[^*]+\*\*|\$[^$]+\$|\[图\]\(#fig-[a-z_]+\)|\[[^\]\n]+\]\([^)\n]+\)|\[\d+(?:,\s*\d+)*\]|https?://[^\s；，。]+)",
         text,
     )
     result = []
@@ -48,6 +64,15 @@ def inline(text):
             result.append(token)
         elif token.startswith("[图](#fig-"):
             result.append(r"图~\ref{fig:" + token[9:-1] + "}")
+        elif match := re.fullmatch(r"\[([^\]]+)\]\(([^)]+)\)", token):
+            label, target = match.groups()
+            if not target.startswith(("https://", "http://")):
+                relative = (REPORT / target).resolve().relative_to(ROOT)
+                target = (
+                    "https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/"
+                    + quote(str(relative))
+                )
+            result.append(r"\href{" + target + "}{" + escape(label) + "}")
         elif re.fullmatch(r"\[\d+(?:,\s*\d+)*\]", token):
             keys = ["ref" + n.strip() for n in token[1:-1].split(",")]
             result.append(r"\cite{" + ",".join(keys) + "}")
@@ -63,6 +88,7 @@ def render(markdown):
     out = []
     index = 0
     portrait_figure_page = False
+    portrait_float = False
     bibliography = False
     next_unnumbered = False
     unnumbered_section = False
@@ -92,9 +118,17 @@ def render(markdown):
         elif line in ("<!-- portrait -->", "<!-- landscape -->"):
             out.append(r"\clearpage")
             portrait_figure_page = True
+            portrait_float = False
+        elif line == "<!-- portrait-float -->":
+            portrait_figure_page = True
+            portrait_float = True
+        elif line == "<!-- endportrait-float -->":
+            portrait_figure_page = False
+            portrait_float = False
         elif line in ("<!-- endportrait -->", "<!-- endlandscape -->"):
             out.append(r"\clearpage")
             portrait_figure_page = False
+            portrait_float = False
         elif line == "$$":
             equation = []
             index += 1
@@ -158,7 +192,9 @@ def render(markdown):
                 else r"0.30\textheight"
             )
             width = "16cm" if module_figure or portrait_figure_page else r"\linewidth"
-            placement = "H" if portrait_figure_page else "htbp"
+            placement = (
+                "p" if portrait_float else "H" if portrait_figure_page else "htbp"
+            )
             out.append(
                 r"\begin{figure}["
                 + placement
@@ -173,6 +209,10 @@ def render(markdown):
                 + r"}\label{fig:"
                 + Path(asset).stem
                 + r"}\end{figure}"
+            )
+        elif line.startswith("#### "):
+            out.append(
+                r"\Needspace{5\baselineskip}\subsubsection{" + inline(line[5:]) + "}"
             )
         elif line.startswith("### "):
             out.append(
@@ -233,14 +273,14 @@ def main():
 \captionsetup{font=small,labelfont=bf,labelsep=quad,justification=justified,singlelinecheck=false,skip=6pt}
 \captionsetup[table]{position=top}
 \ctexset{section={format=\Large\bfseries,beforeskip=16pt,afterskip=8pt},subsection={format=\large\bfseries,beforeskip=12pt,afterskip=6pt}}
-\setcounter{tocdepth}{1}\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{1}\setcounter{secnumdepth}{3}
 \makeatletter\renewcommand{\l@section}{\@dottedtocline{1}{0em}{2.3em}}\makeatother
 \renewcommand{\refname}{参考文献}
 \pagestyle{plain}\raggedbottom
 \widowpenalty=10000\clubpenalty=10000\emergencystretch=2em
 \begin{document}
 """
-    text = (REPORT / "technical-report.md").read_text()
+    text = load_report(REPORT / "technical-report.md")
     (REPORT / "main.tex").write_text(preamble + render(text) + "\n\\end{document}\n")
     for iteration in range(3):
         with (REPORT / f"build_pass{iteration + 1}.log").open("w") as log:
