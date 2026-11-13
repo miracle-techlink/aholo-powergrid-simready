@@ -4,6 +4,8 @@
 
 中文竖版白皮书已按视频到 Demo 的技术主线重组，工程命令与字段集中到附录；运行代码和实验数据沿用 v0.7。见[白皮书发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)与[流程总览](report/pipeline-overview.md)。
 
+物性估计与验证已形成[开发计划](plans/physical_properties.md)，包含现有代码缺口、参数契约、研究方法接入、公开数据评估、条件化辨识和八个 PR 的实施顺序。目前为设计阶段，尚未将预设参数升级为实测标定结果。
+
 ## v0.7 本版完成范围
 
 代码见 [PR #7](https://github.com/miracle-techlink/video-to-simready/pull/7)，发布材料见 [逐模块技术报告 Release](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3)。
