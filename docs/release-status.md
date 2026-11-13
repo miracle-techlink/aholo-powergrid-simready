@@ -2,6 +2,8 @@
 
 状态核对日期：2026-11-13。性能优化已暂停；当前工作范围是封装、机器人接口、复现与技术报告发布。
 
+中文竖版白皮书已按视频到 Demo 的技术主线重组，工程命令与字段集中到附录；运行代码和实验数据沿用 v0.7。见[白皮书发布页](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v4)与[流程总览](report/pipeline-overview.md)。
+
 ## v0.7 本版完成范围
 
 代码见 [PR #7](https://github.com/miracle-techlink/aholo-powergrid-simready/pull/7)，发布材料见 [逐模块技术报告 Release](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v3)。
@@ -13,7 +15,7 @@
 | 通用资产准备 | SH规范化、显式Sim3、可选地面、有界体素碰撞、独立box/弹簧按钮 | 真实PLY构建与CPU结构检查；无新物体动态按压或语义验证 |
 | 完成与恢复验证 | 源视频/PLY/spec绑定；必需产物、状态、尺度与任务声明检查；失败attempt保留 | CPU完整约7.951秒，验证并复用4阶段约0.246秒，无worker重跑 |
 | 新巡览 | 原生RTX、显式或包围盒相机、编码与逐帧证据 | Docker12帧640×360/24fps；231.874秒含冷启动；原高斯仍明显模糊/空洞 |
-| 技术报告 | 按10模块说明输入输出、原理、参数、图示、代码与证据；参考连续单栏排版 | 外部供应商、研究分支、可组合修复与真实运行分开 |
+| 技术报告 | 按视频到Demo主线解释方法、系统与实验；26页中文竖版白皮书，代码映射放附录 | 外部供应商、研究分支、可组合修复与真实运行分开 |
 | 代码检查 | 427 passed、1 skipped；Ruff、格式、架构与编译核验 | GPU成功绑定2814514的104个运行源码文件 |
 
 [v0.7证据清单](report/new-video-validation.json)保存最终运行、恢复与首轮失败。首轮渲染已产图，但Isaac快速关闭导致后置编码没有执行，交付验证正确拒绝；修复顺序后完整重跑通过。该失败窗口没有算成成功，也没有被删除。

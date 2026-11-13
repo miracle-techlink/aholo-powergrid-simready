@@ -45,12 +45,15 @@ WIDTH, HEIGHT = 7.2, 5.2
 
 plt.rcParams.update(
     {
-        "font.family": "DejaVu Sans",
+        "font.family": ["Noto Sans CJK SC", "DejaVu Sans"],
         "font.size": 11,
         "svg.fonttype": "none",
         "svg.hashsalt": "simready-methods-v1",
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
+        # Embed CJK OpenType/CFF glyphs as vector outlines; Type 42 incorrectly
+        # declares them as TrueType and drops Chinese in common PDF viewers.
+        # SVG keeps editable text independently of this PDF-only setting.
+        "pdf.fonttype": 3,
+        "ps.fonttype": 3,
         "savefig.facecolor": "white",
         "mathtext.fontset": "dejavusans",
     }
@@ -284,27 +287,27 @@ def cube(ax, x, y, size=0.35, color=AMBER, fill=True):
 
 def input_gaussians():
     fig, ax = canvas(
-        "From video samples to Gaussian appearance",
-        "Raw video feeds Aholo; extracted frames support reference and review.",
+        "从视频采样到高斯外观",
+        "原视频上传至 Aholo；抽帧用于来源参考与检查。",
     )
-    panel(ax, 0.22, 2.72, 3.26, 1.98, "a", "Sample and register")
-    panel(ax, 3.68, 2.72, 3.30, 1.98, "b", "Gaussian parameters", TEAL)
-    panel(ax, 0.22, 0.55, 6.76, 1.95, "c", "Project, shade and composite", PURPLE)
-    text(ax, 0.43, 4.13, "Nominal sampling grid", color=GRAY)
+    panel(ax, 0.22, 2.72, 3.26, 1.98, "a", "抽帧与来源登记")
+    panel(ax, 3.68, 2.72, 3.30, 1.98, "b", "高斯参数", TEAL)
+    panel(ax, 0.22, 0.55, 6.76, 1.95, "c", "投影、着色与合成", PURPLE)
+    text(ax, 0.43, 4.13, "名义时间采样网格", color=GRAY)
     xs = np.linspace(0.48, 3.17, 6)
     line(ax, [(0.45, 3.55), (3.20, 3.55)], LINE)
     for index, x in enumerate(xs):
         frame(ax, x - 0.18, 3.68, 0.37, 0.28, faded=index in [1, 3])
         ax.add_patch(Circle((x, 3.55), 0.027, color=LINE if index in [1, 3] else BLUE))
         (cross if index in [1, 3] else check)(ax, x, 3.35)
-    text(ax, 1.85, 3.08, "Sharpness + hash filter", ha="center")
-    text(ax, 1.85, 2.84, "train / same-video heldout", ha="center", color=GRAY)
+    text(ax, 1.85, 3.08, "清晰度与哈希筛选", ha="center")
+    text(ax, 1.85, 2.84, "训练帧 / 同源视频留出帧", ha="center", color=GRAY)
     ellipsoid(ax, 4.38, 3.73, 1.0, 0.46, 30, TEAL)
     arrow(ax, [(4.38, 3.73), (4.84, 3.99)], TEAL)
     text(ax, 4.12, 3.24, r"$\mu,\;q_{wxyz}$", color=TEAL)
     text(ax, 5.07, 4.06, r"$s=\exp(\ell_s)$")
     text(ax, 5.07, 3.69, r"$\alpha=\sigma(\ell_\alpha)$")
-    text(ax, 5.07, 3.30, "SH degree 0–3")
+    text(ax, 5.07, 3.30, "SH 阶数 0–3")
     text(
         ax,
         5.33,
@@ -329,8 +332,8 @@ def input_gaussians():
     for point in [(2.56, 1.72), (2.56, 1.18)]:
         line(ax, [(0.85, 1.40), point], LINE, 0.8, dashed=True)
     ellipsoid(ax, 2.55, 1.52, 0.16, 0.39, -8, BLUE)
-    text(ax, 1.44, 0.79, "3D Gaussian", ha="center")
-    text(ax, 2.67, 0.79, "2D splat", ha="center")
+    text(ax, 1.44, 0.79, "三维高斯", ha="center")
+    text(ax, 2.67, 0.79, "二维投影斑点", ha="center")
     text(
         ax,
         3.30,
@@ -338,20 +341,20 @@ def input_gaussians():
         r"$\mathrm{SH}_i(v)=\sum_{\ell,m}\beta_{i,\ell m}Y_{\ell m}(v)$",
         12,
     )
-    text(ax, 3.30, 1.42, "SH basis → view color", color=GRAY)
+    text(ax, 3.30, 1.42, "SH 基函数 → 视角相关颜色", color=GRAY)
     text(ax, 3.30, 1.02, r"$C=\sum_i T_i a_i c_i,\quad T_i=\prod_{j<i}(1-a_j)$", 11)
-    text(ax, 3.30, 0.71, "Projected alpha · front-to-back order", color=GRAY)
+    text(ax, 3.30, 0.71, "投影不透明度 · 由前至后合成", color=GRAY)
     return fig
 
 
 def registration_geometry():
     fig, ax = canvas(
-        "Registration and three-layer scene preparation",
-        "Source appearance, estimated collision and declared objects remain distinct.",
+        "坐标配准与三层场景准备",
+        "来源外观、估计碰撞与显式声明对象分层记录。",
     )
-    panel(ax, 0.22, 2.94, 6.76, 1.76, "a", "Positive Sim3 and an explicit world frame")
-    panel(ax, 0.22, 0.55, 3.26, 2.17, "b", "Bounded collision estimates", AMBER)
-    panel(ax, 3.68, 0.55, 3.30, 2.17, "c", "Three runtime layers", TEAL)
+    panel(ax, 0.22, 2.94, 6.76, 1.76, "a", "正尺度 Sim3 与明确的世界坐标系")
+    panel(ax, 0.22, 0.55, 3.26, 2.17, "b", "有界碰撞估计", AMBER)
+    panel(ax, 3.68, 0.55, 3.30, 2.17, "c", "三个运行层", TEAL)
     axes(ax, 0.88, 3.55, 0.43, 30)
     axes(ax, 3.67, 3.48, 0.48, 0)
     rng = np.random.default_rng(13)
@@ -362,12 +365,12 @@ def registration_geometry():
     )
     arrow(ax, [(1.64, 3.72), (3.12, 3.72)], BLUE, lw=1.3)
     text(ax, 2.36, 4.08, r"$x_w=sRx_s+t$", 12, ha="center")
-    text(ax, 0.94, 3.13, "source frame", ha="center", color=GRAY)
-    text(ax, 3.91, 3.06, "Z-up world", ha="center", color=GRAY)
+    text(ax, 0.94, 3.13, "源坐标系", ha="center", color=GRAY)
+    text(ax, 3.91, 3.06, "Z 轴向上的世界坐标", ha="center", color=GRAY)
     text(ax, 4.75, 4.12, r"$s>0,\quad R^\top R=I$")
-    text(ax, 4.75, 3.79, "Scale needs evidence")
+    text(ax, 4.75, 3.79, "尺度需要来源证据")
     box(ax, 4.75, 3.08, 1.96, 0.42, AMBER, PALE[AMBER], dashed=True)
-    text(ax, 5.73, 3.29, "else UNVERIFIED", color=AMBER, ha="center")
+    text(ax, 5.73, 3.29, "否则：尺度未验证", color=AMBER, ha="center")
     # A finite observed floor and a bounded set of occupancy cells.
     line(ax, [(0.48, 1.61), (1.63, 1.74)], AMBER, 1.3)
     samples = rng.uniform([0.5, 1.65], [1.62, 2.10], (34, 2))
@@ -376,17 +379,17 @@ def registration_geometry():
     arrow(ax, [(1.75, 1.84), (2.05, 1.84)], AMBER)
     for x, y in [(2.18, 1.55), (2.53, 1.55), (2.53, 1.90)]:
         cube(ax, x, y, 0.31)
-    text(ax, 1.85, 1.23, r"floor: $n^\top x+d=0$", ha="center")
-    text(ax, 1.85, 0.94, "sample ≤100k · proxies ≤2k", ha="center")
-    text(ax, 1.85, 0.69, "defaults; coarsen to meet cap", ha="center", color=GRAY)
+    text(ax, 1.85, 1.23, r"地面：$n^\top x+d=0$", ha="center")
+    text(ax, 1.85, 0.94, "采样 ≤10万点 · 代理 ≤2000个", ha="center")
+    text(ax, 1.85, 0.69, "默认上限；超限时合并体素", ha="center", color=GRAY)
     for y, title, detail, color in [
-        (2.04, "Appearance", "source Gaussians", BLUE),
-        (1.44, "Collision", "static proxies", AMBER),
-        (0.85, "Interaction", "explicit objects", TEAL),
+        (2.04, "外观层", "来源高斯外观", BLUE),
+        (1.44, "碰撞层", "静态碰撞代理", AMBER),
+        (0.85, "交互层", "显式声明的对象", TEAL),
     ]:
-        if title == "Appearance":
+        if title == "外观层":
             ellipsoid(ax, 4.17, y + 0.06, 0.44, 0.26, 25, BLUE)
-        elif title == "Collision":
+        elif title == "碰撞层":
             cube(ax, 3.96, y - 0.08, 0.31, AMBER, fill=False)
         else:
             box(ax, 3.95, y - 0.07, 0.40, 0.23, TEAL, PALE[TEAL])
@@ -407,11 +410,11 @@ def registration_geometry():
 
 def button_contact():
     fig, ax = canvas(
-        "Physical primitive and separately bound contact logic",
-        "Explicit binding; missing samples reset counts; no observer pose writes.",
+        "物理原语与单独绑定的接触逻辑",
+        "事件需显式绑定；缺样会清空计数；观测器不改写位姿。",
     )
-    panel(ax, 0.22, 2.74, 3.26, 1.96, "a", "Authored spring primitive", TEAL)
-    panel(ax, 3.68, 2.74, 3.30, 1.96, "b", "Measured adapter input", BLUE)
+    panel(ax, 0.22, 2.74, 3.26, 1.96, "a", "显式构建的弹簧原语", TEAL)
+    panel(ax, 3.68, 2.74, 3.30, 1.96, "b", "适配器的实测输入", BLUE)
     panel(
         ax,
         0.22,
@@ -419,7 +422,7 @@ def button_contact():
         6.76,
         1.97,
         "c",
-        "Bound ContactButton: press, release, re-arm",
+        "接触状态观测：触发、释放、重新就绪",
         PURPLE,
     )
     ax.add_patch(
@@ -443,12 +446,12 @@ def button_contact():
     line(ax, [(0.77, 3.17), (0.77, 3.31)], LINE)
     line(ax, [(2.12, 3.17), (2.12, 3.31)], LINE)
     arrow(ax, [(2.10, 4.14), (1.50, 4.14)], TEAL)
-    text(ax, 1.79, 4.25, r"depth $d$", color=TEAL, ha="center")
+    text(ax, 1.79, 4.25, r"压入深度 $d$", color=TEAL, ha="center")
     box(ax, 2.57, 3.48, 0.57, 0.38, BLUE, PALE[BLUE], radius=0.04)
     arrow(ax, [(2.57, 3.67), (2.13, 3.67)], BLUE, lw=1.4)
-    text(ax, 2.83, 4.05, "tool force", ha="center", color=BLUE)
+    text(ax, 2.83, 4.05, "工具接触力", ha="center", color=BLUE)
     ax.add_patch(Circle((2.10, 3.67), 0.04, color=AMBER, zorder=8))
-    text(ax, 1.85, 2.99, r"$F_{spring}=-kd-b\dot d$", 12, ha="center")
+    text(ax, 1.85, 2.99, r"$F_s=-kd-b\dot d$", 12, ha="center")
     # Illustrative normalized sensor traces, not measured task data.
     x0, y0, w, h = 4.10, 3.24, 2.53, 0.70
     threshold_y = y0 + h * 0.56
@@ -512,41 +515,39 @@ def button_contact():
         text(ax, x0 + t / 160 * w, y0 - 0.16, str(t), ha="center", color=GRAY)
     event_x = x0 + w * 90 / 160
     arrow(ax, [(event_x, 4.18), (event_x, 4.00)], PURPLE)
-    text(ax, 5.38, 4.23, "40 ms → event", color=PURPLE, ha="center")
-    text(ax, 5.33, 2.88, "normalized traces · ms · schematic", ha="center", color=GRAY)
+    text(ax, 5.38, 4.23, "持续 40 ms → 触发", color=PURPLE, ha="center")
+    text(ax, 5.33, 2.88, "归一化曲线 · ms · 原理示意", ha="center", color=GRAY)
     line(ax, [(3.98, 4.03), (4.18, 4.03)], TEAL, 1.4)
-    text(ax, 4.24, 4.03, "depth", color=TEAL)
+    text(ax, 4.24, 4.03, "深度", color=TEAL)
     line(ax, [(6.05, 4.03), (6.23, 4.03)], BLUE, 1.4)
-    text(ax, 6.29, 4.03, "force", color=BLUE)
-    for x, label in [(1.09, "ARMED"), (6.08, "UNARMED")]:
+    text(ax, 6.29, 4.03, "接触力", color=BLUE)
+    for x, label in [(1.09, "允许触发"), (6.08, "等待释放")]:
         box(ax, x - 0.65, 1.08, 1.30, 0.56, PURPLE, PALE[PURPLE], radius=0.20)
         text(ax, x, 1.36, label, 11, ha="center", weight="bold", color=PURPLE)
     arrow(ax, [(1.76, 1.54), (5.40, 1.54)], PURPLE)
-    text(ax, 3.58, 1.94, r"$d\geq d_p$ AND $F\geq F_p$ for $N_p$ samples", ha="center")
-    text(
-        ax, 3.58, 1.31, "emit one declared press transition", ha="center", color=PURPLE
-    )
+    text(ax, 3.58, 1.94, r"$d\geq d_p$ 且 $F\geq F_p$，持续 $N_p$ 个样本", ha="center")
+    text(ax, 3.58, 1.31, "触发一次已声明的按压状态转移", ha="center", color=PURPLE)
     arrow(ax, [(5.42, 1.07), (5.42, 0.89), (1.74, 0.89), (1.74, 1.08)], PURPLE)
-    text(ax, 3.58, 0.68, r"$d\leq d_r$ AND $F\leq F_r$ for $N_r$ samples", ha="center")
+    text(ax, 3.58, 0.68, r"$d\leq d_r$ 且 $F\leq F_r$，持续 $N_r$ 个样本", ha="center")
     return fig
 
 
 def observation_acceptance():
     fig, ax = canvas(
-        "Pinned observations and separate acceptance contracts",
-        "Recompute evidence; rendered appearance alone cannot certify task success.",
+        "固定观测与分层验收合同",
+        "验收重新计算证据；仅凭渲染外观不能判定任务成功。",
     )
-    panel(ax, 0.22, 2.76, 3.26, 1.94, "a", "Standard observations")
-    panel(ax, 3.68, 2.76, 3.30, 1.94, "b", "Localized defects", AMBER)
-    panel(ax, 0.22, 0.55, 3.26, 1.98, "c", "Candidate regression", TEAL)
-    panel(ax, 3.68, 0.55, 3.30, 1.98, "d", "Independent audits", PURPLE)
+    panel(ax, 0.22, 2.76, 3.26, 1.94, "a", "标准观测")
+    panel(ax, 3.68, 2.76, 3.30, 1.94, "b", "缺陷定位", AMBER)
+    panel(ax, 0.22, 0.55, 3.26, 1.98, "c", "候选回归", TEAL)
+    panel(ax, 3.68, 0.55, 3.30, 1.98, "d", "独立审计", PURPLE)
     camera(ax, 0.61, 3.76, 0.27)
     frame(ax, 1.02, 3.43, 0.87, 0.63, BLUE, roi=True)
     frame(ax, 2.12, 3.43, 0.87, 0.63, TEAL, roi=True)
     arrow(ax, [(0.82, 3.76), (0.98, 3.76)], BLUE)
-    text(ax, 1.46, 3.19, "reference", ha="center")
-    text(ax, 2.56, 3.19, "candidate", ha="center")
-    text(ax, 1.85, 2.91, "fixed view / ROI / input hash", ha="center", color=GRAY)
+    text(ax, 1.46, 3.19, "参考观测", ha="center")
+    text(ax, 2.56, 3.19, "候选观测", ha="center")
+    text(ax, 1.85, 2.91, "固定视角 / ROI / 输入哈希", ha="center", color=GRAY)
     # Defect evidence localizes a mismatch, without identifying its root cause.
     box(ax, 3.97, 3.30, 1.02, 0.80, BLUE, PALE[BLUE])
     for x in [4.09, 4.36, 4.63]:
@@ -563,25 +564,25 @@ def observation_acceptance():
         )
     )
     arrow(ax, [(4.76, 3.70), (5.15, 3.70)], AMBER)
-    text(ax, 5.27, 4.04, "asset + ROI")
-    text(ax, 5.27, 3.70, "metric / limit")
-    text(ax, 5.27, 3.36, "severity")
-    text(ax, 5.33, 2.94, "root cause: UNCONFIRMED", ha="center", color=AMBER)
+    text(ax, 5.27, 4.04, "资产 + ROI")
+    text(ax, 5.27, 3.70, "指标 / 阈值")
+    text(ax, 5.27, 3.36, "严重程度")
+    text(ax, 5.33, 2.94, "根因：尚未确认", ha="center", color=AMBER)
     # The protocol hash is invariant while required checks are compared.
-    for x, title, shade in [(0.55, "before", PALE[GRAY]), (2.09, "after", PALE[TEAL])]:
+    for x, title, shade in [(0.55, "修复前", PALE[GRAY]), (2.09, "修复后", PALE[TEAL])]:
         box(ax, x, 1.48, 0.89, 0.47, TEAL if x > 1 else LINE, shade)
         text(ax, x + 0.445, 1.715, title, ha="center")
     arrow(ax, [(1.50, 1.72), (2.02, 1.72)], TEAL)
-    text(ax, 1.85, 2.08, "development only", ha="center", color=TEAL)
-    text(ax, 1.85, 1.22, "same frozen protocol", ha="center", color=GRAY)
+    text(ax, 1.85, 2.08, "仅开发阶段", ha="center", color=TEAL)
+    text(ax, 1.85, 1.22, "同一冻结协议", ha="center", color=GRAY)
     check(ax, 0.57, 0.93, TEAL)
-    text(ax, 0.77, 0.93, "no required regression")
+    text(ax, 0.77, 0.93, "所有必选项均无退化")
     check(ax, 0.57, 0.68, TEAL)
-    text(ax, 0.77, 0.68, "at least one improvement")
+    text(ax, 0.77, 0.68, "至少一项指标改善")
     # Structural acceptance and physical task acceptance consume different data.
     cube(ax, 3.99, 1.68, 0.26, PURPLE, fill=False)
-    text(ax, 4.52, 1.97, "USD structure", weight="bold", color=PURPLE)
-    text(ax, 4.52, 1.70, "layers · bounds · joints")
+    text(ax, 4.52, 1.97, "USD 结构", weight="bold", color=PURPLE)
+    text(ax, 4.52, 1.70, "图层 · 包围盒 · 关节")
     line(ax, [(3.97, 1.43), (6.70, 1.43)], LINE, 0.8)
     line(
         ax,
@@ -589,19 +590,19 @@ def observation_acceptance():
         PURPLE,
         1.2,
     )
-    text(ax, 4.52, 1.20, "Measured task", weight="bold", color=PURPLE)
-    text(ax, 4.52, 0.93, "sensors + body replay")
-    text(ax, 5.33, 0.67, "20 checks for the tested task", ha="center", color=GRAY)
+    text(ax, 4.52, 1.20, "实测任务", weight="bold", color=PURPLE)
+    text(ax, 4.52, 0.93, "传感器与刚体轨迹回放")
+    text(ax, 5.33, 0.67, "该测试任务的 20 项检查", ha="center", color=GRAY)
     return fig
 
 
 def render_evidence():
     fig, ax = canvas(
-        "Native rendering and evidence-bound delivery",
-        "A survey is a preview; task success comes from the measured mission audit.",
+        "原生渲染与证据绑定的交付",
+        "巡览仅为预览；任务成功由实测记录的独立审计判定。",
     )
-    panel(ax, 0.22, 2.74, 3.26, 1.96, "a", "Scene survey", BLUE)
-    panel(ax, 3.68, 2.74, 3.30, 1.96, "b", "Measured mission replay", TEAL)
+    panel(ax, 0.22, 2.74, 3.26, 1.96, "a", "场景巡览", BLUE)
+    panel(ax, 3.68, 2.74, 3.30, 1.96, "b", "实测任务回放", TEAL)
     panel(
         ax,
         0.22,
@@ -609,7 +610,7 @@ def render_evidence():
         6.76,
         1.97,
         "c",
-        "Native RGB capture, encoding and receipts",
+        "原生 RGB 采集、编码与凭据",
         PURPLE,
     )
     # Survey poses rotate eye-target delta around declared world Z.
@@ -622,32 +623,32 @@ def render_evidence():
         x, y = 1.69 + 0.915 * np.cos(r), 3.57 + 0.48 * np.sin(r)
         camera(ax, x, y, 0.18, BLUE)
         line(ax, [(x, y - 0.10), (1.69, 3.62)], LINE, 0.75, dashed=True)
-    text(ax, 1.85, 4.24, "bounds or explicit camera", ha="center", color=GRAY)
+    text(ax, 1.85, 4.24, "包围盒机位或显式相机", ha="center", color=GRAY)
     text(ax, 1.85, 3.05, r"$\theta_i=\Theta\,i/\max(1,N-1)$", ha="center")
-    text(ax, 1.85, 2.87, "no navigation / task claim", ha="center", color=GRAY)
+    text(ax, 1.85, 2.87, "不代表导航或任务成功", ha="center", color=GRAY)
     # Continuous sensor log and the stored 25 Hz body poses are separate streams.
     x = np.linspace(4.04, 6.65, 70)
     y = 3.60 + 0.22 * np.sin(np.linspace(-1.1, 1.7, 70))
     ax.plot(x, y, color=TEAL, lw=1.3)
     idx = np.arange(0, 70, 7)
     ax.scatter(x[idx], y[idx], s=13, color=TEAL, zorder=6)
-    text(ax, 5.33, 4.25, "stored body + cap poses", ha="center", color=GRAY)
+    text(ax, 5.33, 4.25, "已记录的刚体与按钮帽位姿", ha="center", color=GRAY)
     line(ax, [(4.04, 3.27), (6.65, 3.27)], LINE)
     for xx in x[idx]:
         line(ax, [(xx, 3.22), (xx, 3.32)], TEAL, 0.8)
-    text(ax, 5.33, 3.06, "25 fps · direct pose replay", ha="center")
-    text(ax, 5.33, 2.87, "isolated copy; physics disabled", ha="center", color=GRAY)
+    text(ax, 5.33, 3.06, "25 fps · 直接回放实测位姿", ha="center")
+    text(ax, 5.33, 2.87, "独立副本；禁用物理更新", ha="center", color=GRAY)
     # Distinct sources converge only at rendering, not at a success classifier.
     arrow(ax, [(1.85, 2.72), (1.85, 2.57)], BLUE)
     arrow(ax, [(5.33, 2.72), (5.33, 2.57)], TEAL)
     frame(ax, 0.48, 1.26, 1.08, 0.68, PURPLE)
     text(ax, 1.02, 0.98, "RTX RGB", ha="center", color=PURPLE)
-    text(ax, 1.02, 0.73, "timeline paused", ha="center", color=GRAY)
+    text(ax, 1.02, 0.73, "时间轴暂停", ha="center", color=GRAY)
     arrow(ax, [(1.68, 1.62), (2.04, 1.62)], PURPLE)
     for dx, dy in [(0.10, 0.09), (0, 0)]:
         frame(ax, 2.15 + dx, 1.32 + dy, 0.83, 0.52, BLUE)
-    text(ax, 2.62, 0.98, "RGB frames", ha="center")
-    text(ax, 2.62, 0.73, "fixed resolution", ha="center", color=GRAY)
+    text(ax, 2.62, 0.98, "RGB 帧序列", ha="center")
+    text(ax, 2.62, 0.73, "固定分辨率", ha="center", color=GRAY)
     arrow(ax, [(3.15, 1.62), (3.53, 1.62)], PURPLE)
     box(ax, 3.65, 1.30, 1.00, 0.60, PURPLE, PALE[PURPLE])
     ax.add_patch(
@@ -658,14 +659,14 @@ def render_evidence():
             zorder=4,
         )
     )
-    text(ax, 4.15, 0.98, "encode MP4", ha="center")
-    text(ax, 4.15, 0.73, "probe dimensions", ha="center", color=GRAY)
+    text(ax, 4.15, 0.98, "编码为 MP4", ha="center")
+    text(ax, 4.15, 0.73, "核验视频尺寸", ha="center", color=GRAY)
     arrow(ax, [(4.77, 1.62), (5.16, 1.62)], PURPLE)
     box(ax, 5.31, 1.24, 1.38, 0.71, TEAL, PALE[TEAL])
     text(ax, 6.00, 1.71, "SHA-256", ha="center", weight="bold", color=TEAL)
-    text(ax, 6.00, 1.45, "bound receipt", ha="center", color=TEAL)
-    text(ax, 6.00, 0.98, "scene · poses", ha="center")
-    text(ax, 6.00, 0.73, "code · video", ha="center", color=GRAY)
+    text(ax, 6.00, 1.45, "绑定产物凭据", ha="center", color=TEAL)
+    text(ax, 6.00, 0.98, "场景 · 位姿", ha="center")
+    text(ax, 6.00, 0.73, "代码 · 视频", ha="center", color=GRAY)
     return fig
 
 
@@ -688,7 +689,7 @@ def main(argv=None):
     for name, builder in selected.items():
         fig = builder()
         for extension in ["svg", "pdf", "png"]:
-            metadata = {"Creator": "SimReady native method figure builder"}
+            metadata = {"Creator": "SimReady 原生方法图生成器"}
             if extension == "pdf":
                 metadata.update(CreationDate=None, ModDate=None)
             elif extension == "svg":

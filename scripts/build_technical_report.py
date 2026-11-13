@@ -62,7 +62,7 @@ def render(markdown):
     lines = markdown.splitlines()
     out = []
     index = 0
-    landscape = False
+    portrait_figure_page = False
     bibliography = False
     next_unnumbered = False
     unnumbered_section = False
@@ -79,7 +79,7 @@ def render(markdown):
         elif line == "<!-- toc -->":
             out.append(r"{\small\setlength{\parskip}{0pt}\tableofcontents}\clearpage")
         elif line == "<!-- appendix -->":
-            out.append(r"\appendix")
+            out.append(r"\clearpage\appendix")
         elif line == "<!-- unnumbered -->":
             next_unnumbered = True
         elif line.startswith('<a id="fig-'):
@@ -89,14 +89,12 @@ def render(markdown):
         elif line.startswith("<!-- columns: "):
             values = line.removeprefix("<!-- columns: ").removesuffix(" -->")
             column_weights = [float(x) for x in values.split(",")]
-        elif line == "<!-- landscape -->":
-            out.append(r"\begin{landscape}\thispagestyle{empty}")
-            landscape = True
-        elif line == "<!-- endlandscape -->":
-            out.append(
-                r"\par\vfill\vbox to 0pt{\vskip 24pt\hbox to \linewidth{\hfil\small\thepage\hfil}\vss}\end{landscape}"
-            )
-            landscape = False
+        elif line in ("<!-- portrait -->", "<!-- landscape -->"):
+            out.append(r"\clearpage")
+            portrait_figure_page = True
+        elif line in ("<!-- endportrait -->", "<!-- endlandscape -->"):
+            out.append(r"\clearpage")
+            portrait_figure_page = False
         elif line == "$$":
             equation = []
             index += 1
@@ -153,15 +151,18 @@ def render(markdown):
                 asset = asset[:-4] + ".pdf"
             module_figure = Path(asset).stem.startswith("module_")
             height = (
-                r"0.64\paperwidth"
-                if landscape
+                r"0.82\textheight"
+                if portrait_figure_page
                 else r"0.50\textheight"
                 if module_figure
                 else r"0.30\textheight"
             )
-            width = "16cm" if module_figure else r"\linewidth"
+            width = "16cm" if module_figure or portrait_figure_page else r"\linewidth"
+            placement = "H" if portrait_figure_page else "htbp"
             out.append(
-                r"\begin{figure}[H]\centering\includegraphics[width="
+                r"\begin{figure}["
+                + placement
+                + r"]\centering\includegraphics[width="
                 + width
                 + ",height="
                 + height
@@ -222,9 +223,10 @@ def render(markdown):
 def main():
     preamble = r"""\documentclass[10pt,a4paper,UTF8,fontset=fandol]{ctexart}
 \usepackage[margin=1.6cm]{geometry}
-\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,pdflscape,needspace,mathtools,amssymb}
+\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,needspace,mathtools,amssymb}
+\usepackage[section]{placeins}
 \usepackage[colorlinks,linkcolor=blue!50!black,urlcolor=blue!50!black,bookmarksnumbered]{hyperref}
-\hypersetup{pdftitle={视频到可交互仿真场景：模块原理、运行系统与可复现证据},pdfauthor={SimReady Pipeline},pdfsubject={十模块：输入抽帧、三维重建、坐标尺度、资产生成、物理交互、观测缺陷、修复配方、机器人运行时、独立验收与渲染交付}}
+\hypersetup{pdftitle={从场景视频到机器人交互演示：SimReady 技术白皮书},pdfauthor={SimReady Pipeline},pdfsubject={视频到演示的完整技术链路：重建、资产化、物理交互、机器人控制、闭环修复与独立验收}}
 \setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
 \setlength{\intextsep}{12pt}
 \renewcommand{\arraystretch}{1.16}
