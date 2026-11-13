@@ -77,14 +77,14 @@ def refine_tables(stage, texture=None):
         UsdGeom.Imageable(prim).MakeInvisible()
 
 
-def repair_robot_uv_interpolation(stage):
+def repair_robot_uv_interpolation(stage, root_path="/World/G2"):
     from pxr import UsdGeom
 
     fixed = []
     for prim in stage.Traverse():
-        if not str(prim.GetPath()).startswith("/World/G2/") or not prim.IsA(
-            UsdGeom.Mesh
-        ):
+        if not str(prim.GetPath()).startswith(
+            root_path.rstrip("/") + "/"
+        ) or not prim.IsA(UsdGeom.Mesh):
             continue
         st = UsdGeom.PrimvarsAPI(prim).GetPrimvar("st")
         if not st or st.IsIndexed() or st.GetInterpolation() != "faceVarying":

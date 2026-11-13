@@ -290,6 +290,14 @@ def main():
             atomic_json(args.out / "robot_interface.json", robot_port.describe())
             robot = stage.DefinePrim("/World/TourRig/G2", "Xform")
             robot.GetReferences().AddReference(str(args.robot.resolve()))
+            from simready.simulation.manipulation_visuals import (
+                repair_robot_uv_interpolation,
+            )
+
+            atomic_json(
+                args.out / "robot_uv_repairs.json",
+                repair_robot_uv_interpolation(stage, "/World/TourRig/G2"),
+            )
             cam.CreateFocalLengthAttr(18.0)
             cam.CreateHorizontalApertureAttr(36.0)
             cam.CreateVerticalApertureAttr(20.25)
@@ -436,13 +444,16 @@ def main():
                     for _ in range(5):
                         app.update()
                     while omni.usd.get_context().get_stage_loading_status()[2] > 0:
-                        if time.monotonic() - ready_start > 180:
+                        if time.monotonic() - ready_start > 600:
                             raise TimeoutError("USD assets did not finish loading")
                         app.update()
                     valid_warm_captures = 0
                     previous_count = len(list(capture_dir.glob("rgb_*.png")))
                     while valid_warm_captures < 3:
-                        if time.monotonic() - ready_start > 180:
+                        # A cold RTX shader cache can take several minutes for
+                        # the first image. Keep the same pose and still require
+                        # three real, nonconstant captures before advancing.
+                        if time.monotonic() - ready_start > 600:
                             raise TimeoutError("Actual RGB capture never became ready")
                         rep.orchestrator.step(
                             rt_subframes=args.subframes,

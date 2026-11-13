@@ -18,12 +18,19 @@ def main():
     parser.add_argument("--assets", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--scene", type=Path)
+    parser.add_argument("--physics-hz", type=int, choices=[240, 480], default=240)
+    parser.add_argument(
+        "--gripper-close-rad",
+        type=float,
+        choices=[0.60, 0.65, 0.70, 0.75],
+        default=0.70,
+    )
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     import faulthandler
 
     trace = (args.out / "stack.log").open("w")
-    faulthandler.dump_traceback_later(45, repeat=True, file=trace)
+    faulthandler.dump_traceback_later(120, repeat=True, file=trace)
     started = time.perf_counter()
     from isaacsim import SimulationApp
 
@@ -50,6 +57,18 @@ def main():
             stage.DefinePrim("/World/Background", "Xform").GetReferences().AddReference(
                 str(args.scene)
             )
+            contract_path = args.scene.parent / "scene_contract.json"
+            contract = (
+                json.loads(contract_path.read_text()) if contract_path.exists() else {}
+            )
+            for binding in contract.get("task_support_overrides", []):
+                task_support = stage.GetPrimAtPath(binding["task_path"])
+                duplicate = stage.GetPrimAtPath(
+                    "/World/Background/" + binding["background_path"]
+                )
+                if not task_support or not duplicate:
+                    raise ValueError("Missing declared task support binding")
+                UsdPhysics.CollisionAPI(duplicate).CreateCollisionEnabledAttr(False)
         UsdGeom.SetStageMetersPerUnit(stage, 1)
         UsdGeom.SetStageUpAxis(stage, "Z")
         scene = UsdPhysics.Scene.Define(stage, "/World/PhysicsScene")
@@ -81,9 +100,28 @@ def main():
         if args.scene:
             relative_scene = args.scene.relative_to(args.assets)
             result["asset_sha256"][str(relative_scene)] = digest(args.scene)
+            # Bind nested repair layers and their provenance to this rollout;
+            # hashing only the top-level reference file misses scene changes.
+            for dependency in sorted(args.scene.parent.rglob("*")):
+                if dependency.is_file() and dependency.suffix in {
+                    ".usd",
+                    ".usda",
+                    ".usdc",
+                    ".json",
+                    ".npy",
+                    ".npz",
+                }:
+                    result["asset_sha256"][str(dependency.relative_to(args.assets))] = (
+                        digest(dependency)
+                    )
         result["worker_sha256"] = digest(Path(__file__))
         result["scope"] = plan["scope"]
-        dt = 1 / 240
+        # Resolve the stiff six-joint gripper contact without relaxing the
+        # independent bilateral-contact acceptance threshold.
+        dt = 1 / args.physics_hz
+        result["physics_hz"] = args.physics_hz
+        result["gripper_close_rad"] = args.gripper_close_rad
+        result["command_interpolation"] = "quintic zero endpoint velocity and acceleration"
         settings = carb.settings.get_settings()
         settings.set_bool("/physics/updateToUsd", True)
         simulation = omni.physx.get_physx_simulation_interface()
@@ -121,7 +159,8 @@ def main():
             for p in stage.Traverse()
             if str(p.GetPath()).startswith("/World/Background/")
             and p.HasAPI(UsdPhysics.CollisionAPI)
-            and ("/Bench" in str(p.GetPath()) or "/Wall" in str(p.GetPath()))
+            and UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Get() is not False
+            and not str(p.GetPath()).endswith("/Floor")
         ]
         environment = view.create_rigid_contact_view(
             robot_paths,
@@ -152,15 +191,16 @@ def main():
         forces = []
         labels = []
         env_forces = []
+        closed = args.gripper_close_rad
         phases = [
             ("SETTLE", 1.0, "pregrasp", "pregrasp", 0, 0),
             ("APPROACH", 2.0, "pregrasp", "grasp", 0, 0),
-            ("CLOSE", 1.5, "grasp", "grasp", 0, 0.75),
-            ("LIFT", 2.0, "grasp", "lift", 0.75, 0.75),
-            ("HOLD", 2.0, "lift", "lift", 0.75, 0.75),
-            ("TRANSFER", 4.0, "lift", "transfer", 0.75, 0.75),
-            ("PLACE", 4.0, "transfer", "place", 0.75, 0.75),
-            ("RELEASE", 2.0, "place", "place", 0.75, 0),
+            ("CLOSE", 1.5, "grasp", "grasp", 0, closed),
+            ("LIFT", 2.0, "grasp", "lift", closed, closed),
+            ("HOLD", 2.0, "lift", "lift", closed, closed),
+            ("TRANSFER", 4.0, "lift", "transfer", closed, closed),
+            ("PLACE", 4.0, "transfer", "place", closed, closed),
+            ("RELEASE", 2.0, "place", "place", closed, 0),
             ("RETREAT", 2.0, "place", "transfer", 0, 0),
             ("VERIFY", 2.0, "transfer", "transfer", 0, 0),
         ]
@@ -205,7 +245,7 @@ def main():
             print("PHASE", label, flush=True)
             for step in range(round(duration / dt)):
                 t = (step + 1) / round(duration / dt)
-                u = t * t * (3 - 2 * t)
+                u = t * t * t * (10 - 15 * t + 6 * t * t)
                 q[0, arm_i] = [
                     np.interp(u, np.linspace(0, 1, len(path)), path[:, j])
                     for j in range(7)

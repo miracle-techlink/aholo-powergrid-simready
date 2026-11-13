@@ -152,9 +152,16 @@ def main():
             [0]
             if args.observe
             else (
-                [0, 720, 1560, int(total * 0.62), int(total * 0.82), total - 1]
+                [
+                    0,
+                    round(3.0 / dt),
+                    round(6.5 / dt),
+                    int(total * 0.62),
+                    int(total * 0.82),
+                    total - 1,
+                ]
                 if args.preview
-                else list(range(0, total, 8))
+                else list(range(0, total, max(1, round(1.0 / (30.0 * dt)))))
             )
         )
         if args.observe:
