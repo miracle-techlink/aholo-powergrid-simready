@@ -32,7 +32,7 @@
       ]
     },
     "ingestion": {
-      "responsibility": "Extract and filter video observations",
+      "responsibility": "Extract video observations and produce source-bound semantic masks",
       "allowed_dependencies": [
         "core",
         "execution"
@@ -95,6 +95,14 @@
     "simready.evaluation.verification.verify_candidate",
     "simready.repair.planning.plan_repairs",
     "simready.ingestion.video_frames.extract_frames",
-    "simready.agents.provider_factory.create_decision_provider"
+    "simready.agents.provider_factory.create_decision_provider",
+    "simready.ingestion.grounded_segmentation.grounded_segment_image",
+    "simready.ingestion.semantic_segmentation.segment_image",
+    "simready.simulation.semantic_projection.build_semantic_spec",
+    "simready.simulation.depth_projection.backproject_depth",
+    "simready.simulation.physical_spec.normalize_physics",
+    "simready.simulation.camera_calibration.rendered_camera_calibration",
+    "simready.evaluation.physical_assets.inspect_physical_assets",
+    "simready.workflows.semantic_assets.run_semantic_assets"
   ]
 }

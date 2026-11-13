@@ -13,6 +13,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     import sys
 
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "semantic-assets":
+        from simready.workflows.semantic_assets import main as assets_main
+
+        return assets_main(argv[1:])
     if argv and argv[0] == "scene":
         from simready.workflows.scene_delivery import main as scene_main
 
@@ -20,6 +24,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="simready workflows", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("scene", help="Reproduce a source-bound prepared scene")
+    commands.add_parser(
+        "semantic-assets",
+        help="Calibrated semantic masks to per-object physics and USD audit",
+    )
     command = commands.add_parser("run", help="Run a bounded repair workflow")
     command.add_argument("--config", type=Path, required=True)
     command.add_argument("--out", type=Path, required=True)

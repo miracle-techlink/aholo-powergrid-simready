@@ -2,7 +2,7 @@
 
 本文说明代码怎样组成系统，与[视频到 Demo 的方法链](report/pipeline-overview.md)配套。详细模块正文同时编入[技术白皮书](report/technical-report.md)的“软件架构与模块构造”章，保持同一份来源。
 
-运行包位于 `src/simready`，分为十个领域，共 104 个 Python 文件。顶层 CLI 只选择入口；工作流拥有阶段和候选状态；领域模块完成计算或构造；执行域管理进程和资源；独立验收决定输出是否满足合同。图中分组描述代码责任，不表示每次运行都依次调用全部模块。
+运行包位于 `src/simready`，分为十个领域。顶层 CLI 只选择入口；工作流拥有阶段和候选状态；领域模块完成计算或构造；执行域管理进程和资源；独立验收决定输出是否满足合同。下方架构图保留 v0.7 的整体划分；v0.8 在已有领域内增加[语义分割、RGB-D 观测、逐对象物性与独立验收](physical-assets.md)，没有引入跨领域反向依赖。
 
 ![十个领域及其内部责任与状态归属](report/figures/software_composition.svg)
 
@@ -46,4 +46,4 @@ Agent 修复使用另外的工作流，将有限方案选择、可信任务执�
 | 新模型 Provider | `DecisionProvider.decide` 与显式工厂注册 | 受限方案、超时、实际用量与错误分支 |
 | 新部署后端 | 启动器、状态回执和产物交付合同 | 环境、进程生命周期、输入不可变与失败恢复 |
 
-静态依赖规则见 [module_boundaries.json](../configs/architecture/module_boundaries.json)，执行 `python scripts/check_architecture.py` 可检查领域边界。AST/CPU 检查不代替 GPU 任务或视觉验收。本次文档修订没有改变运行代码或新增性能成绩。
+静态依赖规则见 [module_boundaries.json](../configs/architecture/module_boundaries.json)，执行 `python scripts/check_architecture.py` 可检查领域边界。AST/CPU 检查不代替 GPU 任务或视觉验收。v0.8 新模块、独立 USD 检查和 PhysX 合成响应的证据与边界见[物性管线说明](physical-assets.md)。
