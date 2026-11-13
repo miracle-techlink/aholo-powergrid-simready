@@ -16,9 +16,9 @@
 | `evaluation.scene_package` | 独立打开USD，检查组合引用、包内依赖、有限包围盒、碰撞与滑动关节合同 | 结构检查；不重算图像保真度、不证明真实尺度或任务成功 |
 | `simulation.scene_video` | 当前场景包围盒或显式相机、原生RTX采样、ffmpeg编码与ffprobe核验 | 运动相机巡览及逐帧证据；不包含机器人或自由空间导航 |
 
-`SCENE_EXPORTED`和`SCENE_SURVEY_READY`描述生成流水线的完成等级；`task_validated=false`始终保留。带真实测量的任务仍须单独绑定机器人控制与独立任务审计。参数和输出合同见[新视频示例](../examples/new_video/README.md)。下面的M1–M6图保留已交付场景的方法全貌，原有照片纹理、柜体补建和多帧注册并未由上述通用生成器全部自动替代。
+`SCENE_EXPORTED`和`SCENE_SURVEY_READY`描述生成流水线的完成等级；`task_validated=false`始终保留。带真实测量的任务仍须单独绑定机器人控制与独立任务审计。参数和输出合同见[新视频示例](../examples/new_video/README.md)。下面的中文总图区分已交付任务链路与新视频候选路径，原有照片纹理、柜体补建和多帧注册并未由上述通用生成器全部自动替代。
 
-![方法总览：M1–M6 的输入、处理、产物与证据路径](report/figures/architecture_overview.svg)
+![方法总览：视频到 Demo 的处理、产物与证据路径](report/figures/architecture_overview.svg)
 
 ## 六个阶段与真实执行范围
 

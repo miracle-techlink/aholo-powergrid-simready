@@ -53,7 +53,7 @@ simready run --scene substation --bundle-spec /path/to/substation.bundle.json \
 
 ## 方法总览
 
-![M1–M6：来源观测、经检查的资产准备、任务与独立验收](docs/report/figures/architecture_overview.svg)
+![视频到 Demo：来源观测、资产准备、机器人任务与独立验收](docs/report/figures/architecture_overview.svg)
 
 高斯底稿保留外观；独立几何、碰撞和关节使指定任务可执行；测量与独立审计决定动作是否成立。外观、碰撞、交互是三个运行层，来源证据链贯穿所有层。
 
