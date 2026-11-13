@@ -4,10 +4,10 @@
 
 - [代码架构与模块阅读索引](../software-architecture.md)
 - [在线阅读](technical-report.md) · [模块覆盖核查表](module-coverage.md)
-- [本版发布页](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v5)
-- [技术报告 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf)
-- [十二张架构与方法图 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.pdf)
-- [可编辑图与生成源码 ZIP](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.zip)
+- [本版发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)
+- [技术报告 PDF](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf)
+- [十二张架构与方法图 PDF](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.pdf)
+- [可编辑图与生成源码 ZIP](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.zip)
 - [新视频运行说明](../../examples/new_video/README.md) · [发布文案](release-notes.md)
 
 ## 阅读主线
@@ -22,7 +22,7 @@
 
 v0.7 使用历史原片与操作者声明关联的 PLY 重新构建：CPU 命令约 7.951 秒，完整恢复约 0.246 秒；Docker 的 12 帧、640×360 巡览约 231.874 秒。结构和编码检查通过，原高斯仍明显模糊、缺面，未通过视觉保真度、独立尺度或机器人任务验收。没有提交新云重建，不能据此报告完整重建 E2E。代码身份、首轮失败与成功重跑均保留在 [v0.7 验证清单](new-video-validation.json)。
 
-历史证据独立保留：[v0.6 已有场景入口](one-command-validation.json)、[v0.5 包装核验](packaging-validation.json)、[早期任务与评测](evidence.json)。旧报告可从 [v0.6 Release](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v2) 和 [首版 Release](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13) 下载。
+历史证据独立保留：[v0.6 已有场景入口](one-command-validation.json)、[v0.5 包装核验](packaging-validation.json)、[早期任务与评测](evidence.json)。旧报告可从 [v0.6 Release](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v2) 和 [首版 Release](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13) 下载。
 
 ## 重建文档
 
@@ -47,7 +47,7 @@ python scripts/build_technical_report.py
 
 报告输出为 `dist/simready-technical-report-zh.pdf`。第三方机器人资产、权重、原视频与 Isaac SDK 不包含在源码包中。
 
-本版补充方法、资产转换及代码构造说明，保留 v0.7 运行代码和原实验数据。[此前逐模块版](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v3)仍可下载。
+本版补充方法、资产转换及代码构造说明，保留 v0.7 运行代码和原实验数据。[此前逐模块版](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3)仍可下载。
 
 ## 分节正文的单一来源
 

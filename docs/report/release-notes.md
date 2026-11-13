@@ -6,14 +6,14 @@
 
 发布链接：
 
-- [技术白皮书发布页](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v5)
-- [PDF 直接下载](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf)
-- [中文架构与方法图册](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.pdf)
-- [可编辑图与生成代码](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.zip)
-- [软件架构与代码模块构造](https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/docs/software-architecture.md)
-- [视频到 Demo 流程总览](https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/docs/report/pipeline-overview.md)
-- [GitHub 代码仓库](https://github.com/miracle-techlink/aholo-powergrid-simready)
-- [新视频启动示例](https://github.com/miracle-techlink/aholo-powergrid-simready/tree/main/examples/new_video)
+- [技术白皮书发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)
+- [PDF 直接下载](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf)
+- [中文架构与方法图册](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.pdf)
+- [可编辑图与生成代码](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.zip)
+- [软件架构与代码模块构造](https://github.com/miracle-techlink/video-to-simready/blob/main/docs/software-architecture.md)
+- [视频到 Demo 流程总览](https://github.com/miracle-techlink/video-to-simready/blob/main/docs/report/pipeline-overview.md)
+- [GitHub 代码仓库](https://github.com/miracle-techlink/video-to-simready)
+- [新视频启动示例](https://github.com/miracle-techlink/video-to-simready/tree/main/examples/new_video)
 
 ## 已有结果与适用范围
 
@@ -27,8 +27,8 @@ v0.7 新视频入口已串接观测、重建接入、通用 USD 准备、结构�
 
 本次修改仅涉及文档、图示和生成脚本，原实验清单和运行源码保持一致。图形与 PDF 可使用仓库脚本重建，中文图需要 Noto Sans CJK SC 字体。PDF 内嵌字形，十二张架构/方法 SVG 保留可编辑文字。
 
-- [v0.7 原运行证据](https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/docs/report/new-video-validation.json)
-- [v0.6 任务复现证据](https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/docs/report/one-command-validation.json)
-- [保留的逐模块版本与 v0.7 安装包](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v3)
+- [v0.7 原运行证据](https://github.com/miracle-techlink/video-to-simready/blob/main/docs/report/new-video-validation.json)
+- [v0.6 任务复现证据](https://github.com/miracle-techlink/video-to-simready/blob/main/docs/report/one-command-validation.json)
+- [保留的逐模块版本与 v0.7 安装包](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3)
 
 本版本不重复发布软件安装包；代码入口与部署方式沿用 v0.7。原创代码采用 MIT，第三方资产、视频、权重、SDK 与服务遵循各自许可。

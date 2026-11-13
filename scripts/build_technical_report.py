@@ -69,7 +69,7 @@ def inline(text):
             if not target.startswith(("https://", "http://")):
                 relative = (REPORT / target).resolve().relative_to(ROOT)
                 target = (
-                    "https://github.com/miracle-techlink/aholo-powergrid-simready/blob/main/"
+                    "https://github.com/miracle-techlink/video-to-simready/blob/main/"
                     + quote(str(relative))
                 )
             result.append(r"\href{" + target + "}{" + escape(label) + "}")
