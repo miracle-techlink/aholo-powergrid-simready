@@ -29,6 +29,8 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 
 新增[星巴克双桌搬杯示例](examples/starbucks_grasp/README.md)：G2_90d 用合成 RGB-D 定位独立重建杯子，经关节驱动抓起并放到另一张桌子，保存接触力、实测位姿和独立验收。它覆盖固定基座与局部修复任务区，尚不代表整店修复或自主导航通过。
 
+场景版本已区分：最初的参数化局部背景只作物理验证；原场景模式保留原视频重建的全量高斯与原桌面外观，并用 `--require-original-video` 检查来源。原重建的模糊、残影等问题仍须单独修复和验收。
+
 [查看真实验证结果](#验证结果) · [两个场景的启动说明](examples/scenes/README.md) · [下载报告与图册](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)
 
 ## 核心能力

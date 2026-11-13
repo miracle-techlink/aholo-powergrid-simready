@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
-from scipy.ndimage import label
+from scipy.ndimage import binary_erosion, label
 from scipy.spatial import cKDTree
 
 from simready.core.artifacts import digest
@@ -56,7 +56,9 @@ def propose(observation, output, center, radius, top):
     mask = (
         np.isfinite(points).all(-1)
         & (np.linalg.norm(points[:, :, :2] - center, axis=-1) < radius)
-        & (points[:, :, 2] > top + 0.015)
+        # Reconstructed Gaussian surfaces have thickness; exclude the first
+        # 3 cm above the estimated support before forming connected regions.
+        & (points[:, :, 2] > top + 0.03)
         & (points[:, :, 2] < top + 0.17)
     )
     components, _ = label(mask)
@@ -67,6 +69,10 @@ def propose(observation, output, center, radius, top):
         extent = np.ptp(cloud, axis=0)
         if np.all((extent > [0.035, 0.035, 0.04]) & (extent < [0.13, 0.13, 0.16])):
             candidates.append(int(index))
+    candidates.sort(key=lambda index: counts[index], reverse=True)
+    candidate_count = len(candidates)
+    if len(candidates) > 1 and counts[candidates[0]] >= 3 * counts[candidates[1]]:
+        candidates = candidates[:1]
     if len(candidates) != 1:
         raise ValueError(
             f"Expected one size-compatible cup candidate, got {len(candidates)}"
@@ -93,6 +99,8 @@ def propose(observation, output, center, radius, top):
         scale=scale,
         source_observation=str(observation.resolve()),
         proposal_source="connected above-support RGB-D components and size prior",
+        proposal_candidate_count=candidate_count,
+        proposal_policy="largest size-compatible component only with >=3x area margin; semantic and mesh checks follow",
         support={"center_xy_m": list(center), "radius_m": radius, "top_m": top},
         image_sha256=digest(output / "image.png"),
         depth_sha256=digest(output / "depth.npy"),
@@ -155,7 +163,15 @@ def localize(observation, segmentation, model, output):
     mask = np.array(Image.open(mask_file)) > 0
     support = calibration["support"]
     top = support["top_m"]
-    valid = mask & np.isfinite(points).all(-1) & (points[:, :, 2] > top + 0.01)
+    # Exclude one original-image pixel at the RGB mask boundary, where mixed
+    # Gaussian/mesh depth can belong to the background. Keep the raw mask intact.
+    interior = binary_erosion(mask, iterations=max(1, int(calibration.get("scale", 1))))
+    valid = (
+        interior
+        & np.isfinite(points).all(-1)
+        & (points[:, :, 2] > top + 0.01)
+        & (points[:, :, 2] < top + 0.14)
+    )
     cloud = np.unique(points[valid], axis=0)
     if len(cloud) < 100:
         raise ValueError("Cup segmentation has insufficient valid depth")
@@ -175,6 +191,7 @@ def localize(observation, segmentation, model, output):
         "cup_bottom_xyz_m": position.tolist(),
         "surface_fit_p95_m": error,
         "observed_points": len(cloud),
+        "mask_edge_filter_source_pixels": 1,
         "method": "support-plane RGB-D proposal -> Grounding DINO + SAM -> reconstructed mesh registration",
         "ground_truth_object_pose_read": False,
         "yaw_estimated": False,

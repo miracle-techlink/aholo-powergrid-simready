@@ -5,6 +5,7 @@ This entry point does not reconstruct an arbitrary new video.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -25,6 +26,7 @@ def main():
     parser.add_argument("--image", default="simready-isaac:6.1.0")
     parser.add_argument("--gpu", default="0")
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--require-original-video", action="store_true")
     parser.add_argument("--width", type=int, choices=[1280, 1920], default=1920)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
@@ -32,6 +34,20 @@ def main():
     args.out = args.out.resolve()
     if args.scene and (args.scene.is_absolute() or ".." in args.scene.parts):
         parser.error("--scene must stay inside --assets")
+    if args.require_original_video:
+        if not args.scene:
+            parser.error("--require-original-video requires --scene")
+        contract_file = (args.assets / args.scene).parent / "scene_contract.json"
+        contract = json.loads(contract_file.read_text())
+        source_usd = contract_file.parent / "original_video_splats.usdc"
+        if (
+            contract.get("appearance") != "original_video_reconstruction"
+            or contract.get("render_table_proxies") is not False
+            or contract.get("visual_gaussians_removed") != 0
+            or hashlib.sha256(source_usd.read_bytes()).hexdigest()
+            != contract.get("source_usd_sha256")
+        ):
+            raise ValueError("Original reconstruction scene contract failed")
     args.out.mkdir(parents=True, exist_ok=False)
     artifacts = args.out / "artifacts"
     artifacts.mkdir()
@@ -42,6 +58,7 @@ def main():
         "status": "RUNNING",
         "scope": "prepared local task corner; fixed-base G2 two-table cup transfer",
         "stages": rows,
+        "original_video_scene_required": args.require_original_video,
     }
     env = dict(os.environ)
     env["PYTHONPATH"] = str(repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
@@ -155,6 +172,11 @@ def main():
                     planned,
                     "--localization",
                     artifacts / "localization/localization.json",
+                    *(
+                        ["--layout", args.assets / "task_layout.json"]
+                        if (args.assets / "task_layout.json").exists()
+                        else []
+                    ),
                 ]
             ),
         )

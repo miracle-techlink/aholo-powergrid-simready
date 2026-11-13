@@ -77,9 +77,22 @@ def main():
     ap.add_argument("--cup", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--localization", type=Path)
+    ap.add_argument("--layout", type=Path)
     args = ap.parse_args()
     target_xy = [0.55, -0.23]
     perception = None
+    layout = (
+        json.loads(args.layout.read_text())
+        if args.layout
+        else {
+            "tables": {
+                "Table": {"xy": [0.65, -0.13], "radius": 0.32, "top": 0.85},
+                "TableB": {"xy": [0.4, -0.94], "radius": 0.32, "top": 0.85},
+            },
+            "destination": [0.4, -0.7, 0.85],
+        }
+    )
+    destination = layout["destination"]
     if args.localization:
         perception = json.loads(args.localization.read_text())
         if (
@@ -115,8 +128,8 @@ def main():
     for prim in Usd.PrimRange(cup):
         if prim.HasAPI(UsdPhysics.CollisionAPI):
             UsdShade.MaterialBindingAPI.Apply(prim).Bind(mat, materialPurpose="physics")
-    round_table(s, "/World/Table", (0.65, -0.13))
-    round_table(s, "/World/TableB", (0.40, -0.94))
+    for name, table in layout["tables"].items():
+        round_table(s, "/World/" + name, table["xy"], table["radius"], table["top"])
     box(s, "/World/Ground", (0, 0, -0.05), (5, 5, 0.1), (0.3, 0.3, 0.3))
     k = UsdJointTree(s, "/World/G2/base_link")
     names = [f"idx6{i}_arm_r_joint{i}" for i in range(1, 8)]
@@ -129,8 +142,8 @@ def main():
         ("pregrasp", [*target_xy, 1.30]),
         ("grasp", [*target_xy, 1.115]),
         ("lift", [*target_xy, 1.265]),
-        ("transfer", [0.4, -0.70, 1.265]),
-        ("place", [0.4, -0.70, 1.115]),
+        ("transfer", [*destination[:2], 1.265]),
+        ("place", [*destination[:2], destination[2] + 0.265]),
     ]:
         pose[:3, 3] = xyz
         for attempt in range(9):
@@ -247,7 +260,7 @@ def main():
         },
         "destination": {
             "table": "/World/TableB",
-            "cup_bottom_xyz_m": [0.4, -0.7, 0.85],
+            "cup_bottom_xyz_m": destination,
         },
         "gripper_coupling": "left inner/outer negative; right inner/outer and both support joints positive; original limits preserved",
         "fixture": "root fixed; five torso joints locked at zero for arm-only canary",
@@ -266,6 +279,8 @@ def main():
             "fixed-base G2; RGB-D localized known reconstructed cup; known destination table"
         )
     (out / "plan.json").write_text(json.dumps(plan, indent=2) + "\n")
+    if args.layout:
+        shutil.copy2(args.layout, out / "task_layout.json")
     print(json.dumps({"out": str(out), "waypoints": waypoints}, indent=2))
 
 

@@ -84,7 +84,22 @@ def main():
         )
 
         texture = args.scene.parent / "table_wood.png" if args.scene else None
-        refine_tables(stage, texture if texture and texture.exists() else None)
+        contract_path = (
+            args.scene.parent / "scene_contract.json" if args.scene else None
+        )
+        contract = (
+            json.loads(contract_path.read_text())
+            if contract_path and contract_path.exists()
+            else {}
+        )
+        if contract.get("render_table_proxies") is False:
+            for name in ["Table", "TableB"]:
+                for suffix in ["", "Stem", "Foot"]:
+                    UsdGeom.Imageable(
+                        stage.GetPrimAtPath("/World/" + name + suffix)
+                    ).MakeInvisible()
+        else:
+            refine_tables(stage, texture if texture and texture.exists() else None)
         uv_repairs = repair_robot_uv_interpolation(stage)
         ops = []
         parent_inverse = []
@@ -247,6 +262,13 @@ def main():
                     "frames": mappings,
                     "appearance_only_uv_repairs": uv_repairs,
                     "background": str(args.scene),
+                    "scene_contract": contract,
+                    "visible_gaussian_prims": [
+                        str(p.GetPath())
+                        for p in stage.Traverse()
+                        if p.GetTypeName() == "ParticleField3DGaussianSplat"
+                        and UsdGeom.Imageable(p).ComputeVisibility() != "invisible"
+                    ],
                 },
                 indent=2,
             )

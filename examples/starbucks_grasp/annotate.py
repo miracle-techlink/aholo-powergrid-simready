@@ -28,8 +28,24 @@ def timestamp(seconds):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
+    ap.add_argument("--scene-contract", type=Path)
     args = ap.parse_args()
     root = args.run
+    original = bool(
+        args.scene_contract
+        and json.loads(args.scene_contract.read_text()).get("appearance")
+        == "original_video_reconstruction"
+    )
+    title = (
+        "星巴克原视频重建场景 | G2 将杯子搬到另一张桌子"
+        if original
+        else "星巴克任务区 | G2 将重建杯子搬到另一张桌子"
+    )
+    note = (
+        "PhysX 仿真 · 固定基座 · 原重建背景保留 · 材料参数未实测"
+        if original
+        else "PhysX 仿真 · 固定基座 · 实测轨迹回放 · 场景局部补建 / 材料参数未实测"
+    )
     audit = json.loads((root / "artifacts/audit.json").read_text())
     if audit["status"] != "PASS":
         raise ValueError("A passed independent audit is required")
@@ -55,8 +71,8 @@ Style: Note,Noto Sans CJK SC,23,&H00DDDDDD,&H00FFFFFF,&HAA171717,&HAA171717,0,0,
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     events = [
-        f"Dialogue: 0,0:00:00.00,{timestamp(duration)},Title,,0,0,0,,星巴克任务区 | G2 将重建杯子搬到另一张桌子",
-        f"Dialogue: 0,0:00:00.00,{timestamp(duration)},Note,,0,0,0,,PhysX 仿真 · 固定基座 · 实测轨迹回放 · 场景局部补建 / 材料参数未实测",
+        f"Dialogue: 0,0:00:00.00,{timestamp(duration)},Title,,0,0,0,,{title}",
+        f"Dialogue: 0,0:00:00.00,{timestamp(duration)},Note,,0,0,0,,{note}",
     ]
     for i in range(0, len(t), 24):
         end = min(i + 24, len(t)) * dt
