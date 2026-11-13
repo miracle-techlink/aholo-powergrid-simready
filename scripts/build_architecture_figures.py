@@ -183,7 +183,7 @@ def overview():
 
     rect(ax, 0.48, 4.70, 3.55, 1.52, color=AMBER, fill=PALE[AMBER], dashed=True)
     text(
-        ax, 2.255, 5.99, "M3  历史离线准备", 12, color=AMBER, weight="bold", ha="center"
+        ax, 2.255, 5.99, "历史离线资产准备", 12, color=AMBER, weight="bold", ha="center"
     )
     text(ax, 2.255, 5.68, "坐标／尺度与跨帧来源对应", 10.8, ha="center")
     text(ax, 2.255, 5.39, "纹理与几何恢复；未观测面估计", 10.6, ha="center")
