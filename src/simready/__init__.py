@@ -1,3 +1,3 @@
 """SimReady pipeline: explicit domains for scene preparation, repair and evaluation."""
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"

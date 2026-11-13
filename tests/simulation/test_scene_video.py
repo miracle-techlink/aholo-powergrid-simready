@@ -36,3 +36,31 @@ def test_bounds_derived_camera_scales_with_the_actual_scene():
     scaled = {key: (np.asarray(value) * 3).tolist() for key, value in BOUNDS.items()}
     actual = camera_samples(scaled, {}, 2)
     assert np.allclose(actual[0]["eye"], np.asarray(original[0]["eye"]) * 3)
+
+
+def test_render_calibration_projects_target_to_image_center(tmp_path):
+    from PIL import Image
+
+    from simready.simulation.camera_calibration import rendered_camera_calibration
+    from simready.simulation.semantic_projection import visible_point_pixels
+
+    image = tmp_path / "frame.png"
+    Image.new("RGB", (641, 361)).save(image)
+    record = rendered_camera_calibration(
+        image,
+        ply_sha256="a" * 64,
+        source_to_world=np.eye(4).tolist(),
+        eye=[0, -4, 2],
+        target=[0, 0, 1],
+        focal_length_mm=20,
+        horizontal_aperture_mm=36,
+        evidence="synthetic authored camera",
+    )
+    indices, x, y = visible_point_pixels(
+        np.array([[0.0, 0.0, 1.0]]),
+        np.array(record["camera_to_world"]),
+        np.array(record["intrinsics"]),
+        (641, 361),
+    )
+    assert (indices.tolist(), x.tolist(), y.tolist()) == ([0], [320], [180])
+    assert record["real_camera_calibrated"] is False

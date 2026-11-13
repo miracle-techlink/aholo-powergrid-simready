@@ -6,7 +6,7 @@
 
 Video reconstruction · USD scene preparation · Robot interaction · Evidence-driven repair
 
-[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml) [![Runtime](https://img.shields.io/badge/Runtime-v0.7.0-2A8078)](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3) [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml) [![Runtime](https://img.shields.io/badge/Runtime-v0.8.0-2A8078)](docs/physical-assets.md) [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
 [快速开始](#快速开始) · [Aholo API 接入](#与群核科技-aholo-api-的关系) · [技术白皮书](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf) · [架构与代码](docs/software-architecture.md) · [部署指南](docs/deployment.md) · [示例](examples/scenes/README.md)
 
@@ -16,7 +16,7 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 
 **上游三维重建接入群核科技 Aholo API；本项目负责从重建结果到仿真场景、机器人交互与独立验收的工程流程。** 具体分工与官方入口见 [Aholo API 接入说明](#与群核科技-aholo-api-的关系)。
 
-当前提供三类入口：**新视频生成场景与巡览、已有场景复现机器人演示、独立的 Agent 修复与经验复用框架**。项目包含 45 页中文技术白皮书、12 张可编辑架构与方法图，以及本地、Docker 和服务器部署代码。
+当前提供**新视频生成场景与巡览、多类语义资产与物性配置、已有场景机器人演示，以及 Agent 修复与经验复用框架**。项目包含 45 页中文技术白皮书、12 张可编辑架构与方法图，以及本地、Docker 和服务器部署代码。本次 v0.8 的新模块与验证单独见[多类物性管线](docs/physical-assets.md)，历史 PDF 不冒充本轮实验报告。
 
 ## 演示
 
@@ -32,7 +32,7 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 ## 核心能力
 
 - **视频到场景候选**：来源登记、抽帧、Aholo 重建提交与恢复、已有 PLY 复用，以及坐标与高斯格式处理。
-- **资产物理化**：外观、碰撞、交互分层；生成有界碰撞代理、显式盒体和弹簧按钮，以相对引用组合为 USD。
+- **资产物理化**：Grounding DINO + SAM 多类候选、同视角 RGB-D 关联、逐对象摩擦／质量／惯量声明和独立 USD 检查；外观、碰撞与交互分层。默认参数明确标记为未测量先验。
 - **机器人运行时**：统一设备端口，接入步态、RGB-D 定位、FK/IK、路径检查和接触监督；具体能力按机器人与任务验证。
 - **独立验收**：分别检查 USD 结构、固定视角质量、资产一致性和机器人任务，保存测量、缺陷、审计与交付记录。
 - **Agent 与 RSI**：从注册插件生成有限修复方案，独立复验后决定接受；Memory/Skill 复用经验证的参数配方。
@@ -129,6 +129,20 @@ python -m examples.repair_workflow.run_learning_demo --out runs/repair-demo
 默认使用规则 Provider 和三个合成场景，演示修复、独立评分、跨场景验证、Skill 晋升与复用。它用于验证框架合同，不代表真实三维修复质量。更换模型 Provider、接入插件与共享经验库见[Agent / Memory / Skill 手册](docs/runtime.md)。
 
 ## 系统如何工作
+
+### 多类语义资产与物性入口
+
+```bash
+python -m pip install -e '.[physical-assets,segmentation]'
+simready workflows semantic-assets \
+  --image /data/scene/image.png --calibration /data/scene/calibration.json \
+  --ply /data/scene/splats.ply --scene-spec /data/scene/scene_spec.json \
+  --out runs/semantic-assets
+```
+
+输入图像必须有匹配的相机与几何；已有场景可先采集同视角 RGB-D。输出分割、逐物体参数、USD、独立审计和分段耗时。默认是静态几何候选；真实材料精度、完整网格和门铰链等行为仍需验证。无需模型或私有数据的[贯通示例](examples/semantic_assets/README.md)、两张真实场景图的分割命令，以及[摩擦／质量 PhysX 响应实验](examples/physical_assets/README.md)均可公开复现。
+
+### 视频与机器人交付路径
 
 ```mermaid
 flowchart LR

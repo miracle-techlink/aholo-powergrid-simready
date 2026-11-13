@@ -67,13 +67,12 @@ def render_scene(scene, preparation, spec, output):
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     config = read_json(spec)
+    prepared = read_json(preparation)
     render = config["render"]
     width, height, count, fps = (
         render[key] for key in ("width", "height", "frames", "fps")
     )
-    poses = camera_samples(
-        read_json(preparation)["bounds_world"], config.get("camera", {}), count
-    )
+    poses = camera_samples(prepared["bounds_world"], config.get("camera", {}), count)
     write_json(
         output / "camera.json",
         {
@@ -91,6 +90,7 @@ def render_scene(scene, preparation, spec, output):
         {"headless": True},
         experience=os.path.join(os.environ["EXP_PATH"], "isaacsim.exp.base.kit"),
     )
+    render_complete = False
     try:
         import carb
         import omni.kit.app
@@ -220,6 +220,27 @@ def render_scene(scene, preparation, spec, output):
             count,
         ) or numerator / denominator != fps:
             raise ValueError("Encoded movie does not match requested timing/resolution")
+        from simready.simulation.camera_calibration import rendered_camera_calibration
+
+        calibrations = []
+        for capture, pose in zip(ledger, poses, strict=True):
+            name = f"calibration/frame_{pose['frame']:06d}.json"
+            record = rendered_camera_calibration(
+                output / capture["path"],
+                ply_sha256=prepared["source_sha256"],
+                source_to_world=prepared["source_to_world"],
+                eye=pose["eye"],
+                target=pose["target"],
+                focal_length_mm=20.0,
+                horizontal_aperture_mm=36.0,
+                evidence="scene_video authored camera; source geometry scale is not independently verified",
+            )
+            record["preparation_sha256"] = digest(preparation)
+            record["poses_sha256"] = digest(output / "camera.json")
+            write_json(output / name, record)
+            calibrations.append(
+                {"frame": pose["frame"], "path": name, "sha256": digest(output / name)}
+            )
         write_json(
             output / "render.json",
             {
@@ -236,8 +257,10 @@ def render_scene(scene, preparation, spec, output):
                 "source_consistency_validated": False,
                 "poses_sha256": digest(output / "camera.json"),
                 "captures": ledger,
+                "calibrations": calibrations,
             },
         )
+        render_complete = True
     except BaseException:
         # Kit fast shutdown can terminate Python; print failures before cleanup.
         import traceback
@@ -246,7 +269,7 @@ def render_scene(scene, preparation, spec, output):
         raise
     finally:
         # Encoding and receipts must precede Kit's process-terminating shutdown.
-        app.close()
+        app.close(exit_code=0 if render_complete else 2)
 
 
 def main(argv=None):

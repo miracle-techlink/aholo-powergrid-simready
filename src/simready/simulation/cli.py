@@ -11,6 +11,9 @@ WORKERS = {
     "mission-audit": "mission_audit",
     "mission-video": "mission_video",
     "export-bundle": "asset_bundle",
+    "physical-probe": "physical_probe",
+    "depth-observation": "depth_observation",
+    "prepare-scene": "scene_preparation",
 }
 
 

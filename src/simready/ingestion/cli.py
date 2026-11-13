@@ -5,6 +5,14 @@ import sys
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "ground":
+        from simready.ingestion.grounded_segmentation import main as ground_main
+
+        return ground_main(argv[1:])
+    if argv and argv[0] == "segment":
+        from simready.ingestion.semantic_segmentation import main as segment_main
+
+        return segment_main(argv[1:])
     if argv and argv[0] == "aholo":
         from simready.ingestion.aholo_reconstruction import main as aholo_main
 
@@ -13,6 +21,10 @@ def main(argv: list[str] | None = None) -> int:
         description="Extract video observations or submit/resume Aholo reconstruction."
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
+    subcommands.add_parser(
+        "segment", help="Source-bound semantic masks or explicit mask import"
+    )
+    subcommands.add_parser("ground", help="Open-vocabulary Grounding DINO + SAM masks")
     subcommands.add_parser(
         "aholo", help="Receipt-based cloud reconstruction and monitoring"
     )

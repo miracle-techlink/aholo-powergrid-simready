@@ -10,8 +10,17 @@ from simready.core.artifacts import digest
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "physical-assets":
+        from simready.evaluation.physical_assets import main as physical_main
+
+        return physical_main(argv[1:])
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser(
+        "physical-assets",
+        help="Independently reopen USD and compare declared object physics",
+    )
     for name in ("run", "worker"):
         command = commands.add_parser(name)
         command.add_argument("--protocol", type=Path, required=True)

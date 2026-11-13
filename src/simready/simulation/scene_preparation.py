@@ -21,6 +21,12 @@ from simready.simulation.gaussian_asset import (
     validate_sim3,
     write_appearance,
 )
+from simready.simulation.physical_authoring import (
+    author_physics_metadata,
+    author_rigid_body,
+    bind_contact_material,
+)
+from simready.simulation.physical_spec import normalize_physics
 
 
 def _number(value, name, lower, upper):
@@ -53,14 +59,23 @@ def _bounds(value):
     return low, high
 
 
-def _objects(spec):
+def _objects(spec, *, contact, declared_scale):
     from pxr import Sdf
 
     values = spec.get("objects", [])
     if not isinstance(values, list) or len(values) > 256:
         raise ValueError("objects must be a list with at most 256 entries")
     result, seen = [], set()
-    common = {"id", "type", "category", "evidence", "color", "roughness"}
+    common = {
+        "id",
+        "type",
+        "category",
+        "evidence",
+        "color",
+        "roughness",
+        "physics",
+        "visible",
+    }
     for value in values:
         if not isinstance(value, dict) or value.get("type") not in {"box", "button"}:
             raise ValueError("Explicit object type must be box or button")
@@ -106,10 +121,13 @@ def _objects(spec):
             or not category
         ):
             raise ValueError("Object evidence and category must be strings")
+        if type(value.get("visible", True)) is not bool:
+            raise ValueError("Object visible must be boolean")
         obj = dict(
             id=name,
             type=kind,
             category=category,
+            visible=value.get("visible", True),
             evidence=evidence,
             color=color.tolist(),
             roughness=_number(value.get("roughness", 0.6), "roughness", 0, 1),
@@ -144,6 +162,19 @@ def _objects(spec):
                 inward_axis_world=(-np.eye(3)["XYZ".index(axis)]).tolist(),
             )
         obj["bounds_world"] = {"min": low.tolist(), "max": high.tolist()}
+        if "physics" in value and not isinstance(value["physics"], dict):
+            raise ValueError("object.physics must be a mapping")
+        obj["physics"] = normalize_physics(
+            value.get("physics"),
+            geometry_type=kind,
+            fallback_contact=contact,
+            metric_scale_declared=declared_scale,
+            legacy_mass_kg=obj.get("mass"),
+            legacy_mass_explicit="mass" in value,
+            contact_explicit=set(spec.get("collision", {})),
+        )
+        if kind == "button":
+            obj["mass"] = obj["physics"]["mass_kg"]
         result.append(obj)
     return result
 
@@ -262,33 +293,66 @@ def _material(stage, path, color, roughness):
 
 
 def _bind_contact_material(stage, root, parameters):
-    from pxr import UsdPhysics, UsdShade
+    from pxr import Usd, UsdPhysics
 
-    material = UsdShade.Material.Define(stage, root + "/ContactPreset")
-    api = UsdPhysics.MaterialAPI.Apply(material.GetPrim())
-    api.CreateStaticFrictionAttr(parameters["static_friction"])
-    api.CreateDynamicFrictionAttr(parameters["dynamic_friction"])
-    api.CreateRestitutionAttr(parameters["restitution"])
-    for prim in stage.Traverse():
-        if prim.HasAPI(UsdPhysics.CollisionAPI):
-            UsdShade.MaterialBindingAPI.Apply(prim).Bind(
-                material, materialPurpose="physics"
-            )
+    # Background geometry has one preset, scoped to its subtree. It must never
+    # replace a semantic object's separately declared material.
+    colliders = [
+        str(prim.GetPath())
+        for prim in Usd.PrimRange(stage.GetPrimAtPath(root))
+        if prim.HasAPI(UsdPhysics.CollisionAPI)
+    ]
+    bind_contact_material(stage, root + "/ContactPreset", colliders, parameters)
 
 
 def _write_objects(path, objects, contact):
     from pxr import Gf, UsdGeom, UsdPhysics, UsdShade
 
     stage = _stage(path, "/Objects")
+    # Retain the legacy preset prim for schema-v1 readers. Bind only object-local
+    # materials below, after shapes exist; a global pass would overwrite them.
+    _bind_contact_material(stage, "/Objects", contact)
     for obj in objects:
         root = "/Objects/" + obj["id"]
+        body = UsdGeom.Xform.Define(stage, root)
+        body.GetPrim().SetCustomDataByKey("simready:semantic_category", obj["category"])
+        body.GetPrim().SetCustomDataByKey("simready:geometry_type", obj["type"])
+        body.GetPrim().SetCustomDataByKey("simready:object_id", obj["id"])
+        if not obj["visible"]:
+            body.CreateVisibilityAttr("invisible")
+        author_physics_metadata(body.GetPrim(), obj["physics"])
         material = _material(
             stage, root + "/Looks/Surface", obj["color"], obj["roughness"]
         )
         if obj["type"] == "box":
-            shape = _cube(stage, root + "/Shape", obj["bounds_world"])
+            low, high = _bounds(obj["bounds_world"])
+            center = (low + high) / 2
+            body.AddTranslateOp().Set(Gf.Vec3d(*center.tolist()))
+            shape = _cube(
+                stage,
+                root + "/Shape",
+                {
+                    "min": (low - center).tolist(),
+                    "max": (high - center).tolist(),
+                },
+            )
+            author_rigid_body(body.GetPrim(), obj["physics"])
             UsdShade.MaterialBindingAPI.Apply(shape.GetPrim()).Bind(material)
             obj["prim_path"] = "/World" + root + "/Shape"
+            colliders = [root + "/Shape"]
+            material_path = bind_contact_material(
+                stage,
+                root + "/Looks/PhysicsMaterial",
+                colliders,
+                obj["physics"]["contact"],
+            )
+            obj["physics_binding"] = {
+                "material_prim": "/World" + material_path,
+                "collision_prims": ["/World" + p for p in colliders],
+                "rigid_body_prims": ["/World" + root]
+                if obj["physics"]["motion_type"] != "static"
+                else [],
+            }
             continue
         position, axis = np.array(obj["position_world"]), obj["axis"]
         vector = np.eye(3)["XYZ".index(axis)]
@@ -298,8 +362,7 @@ def _write_objects(path, objects, contact):
         UsdPhysics.RigidBodyAPI.Apply(base.GetPrim()).CreateKinematicEnabledAttr(True)
         cap = UsdGeom.Xform.Define(stage, root + "/Cap")
         cap.AddTranslateOp().Set(Gf.Vec3d(*position.tolist()))
-        UsdPhysics.RigidBodyAPI.Apply(cap.GetPrim())
-        UsdPhysics.MassAPI.Apply(cap.GetPrim()).CreateMassAttr(obj["mass"])
+        author_rigid_body(cap.GetPrim(), obj["physics"])
         for role, radius, height in [
             ("Base", obj["radius"] * 1.3, obj["cap_height"]),
             ("Cap", obj["radius"], obj["cap_height"]),
@@ -332,7 +395,15 @@ def _write_objects(path, objects, contact):
             cap_prim="/World" + root + "/Cap",
             joint_prim="/World" + root + "/Joint",
         )
-    _bind_contact_material(stage, "/Objects", contact)
+        colliders = [root + "/Base/Shape", root + "/Cap/Shape"]
+        material_path = bind_contact_material(
+            stage, root + "/Looks/PhysicsMaterial", colliders, obj["physics"]["contact"]
+        )
+        obj["physics_binding"] = {
+            "material_prim": "/World" + material_path,
+            "collision_prims": ["/World" + p for p in colliders],
+            "rigid_body_prims": [obj["base_prim"], obj["cap_prim"]],
+        }
     stage.GetRootLayer().Save()
 
 
@@ -428,7 +499,6 @@ def prepare_scene(ply, output, spec=None):
             "World coordinates must be Z-up; register other frames with source_to_world"
         )
     up_declared = "source_to_world" in supplied or supplied.get("world_up_axis") == "Z"
-    objects = _objects(supplied)
     collision = supplied.get("collision", {})
     _keys(
         collision,
@@ -469,6 +539,7 @@ def prepare_scene(ply, output, spec=None):
     }
     if contact["dynamic_friction"] > contact["static_friction"]:
         raise ValueError("dynamic_friction must not exceed static_friction")
+    objects = _objects(supplied, contact=contact, declared_scale=declared_scale)
     source_sha256 = digest(ply)
     data = decode_vertices(read_ply(ply))
     world = data["points"].astype(np.float64) @ transform[:3, :3].T + transform[:3, 3]
@@ -533,7 +604,8 @@ def prepare_scene(ply, output, spec=None):
     limitations = [
         "Appearance retains the reconstruction; no watertight visible mesh or UV texture baking is performed.",
         "Voxel occupancy and a fitted floor are conservative geometric estimates, not semantic or contact-validated assets.",
-        "Mass, spring, material and friction values are simulation presets, not measurements inferred from video.",
+        "Physical parameters are declared hypotheses with source metadata; no independent real-world validation or identification has run.",
+        "Per-object contact materials are authored; pairwise effective friction still depends on the runtime material-combination rule.",
         "No task policy, contact event adapter, task audit or independent metric-scale validation has run.",
     ]
     if not declared_scale:
