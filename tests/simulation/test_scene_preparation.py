@@ -95,7 +95,10 @@ def test_reference_3dgs_sh_channel_order_and_activations(tmp_path):
         read_ply(write_ply(tmp_path / "source.ply", [[0, 0, 0], [1, 2, 3]]))
     )
     assert data["kind"] == "gaussian_splats"
-    np.testing.assert_allclose(data["scales"], 0.02)
+    # PLY log-scales and exp output are float32; allow their rounding on all CPUs.
+    np.testing.assert_allclose(
+        data["scales"], 0.02, rtol=2 * np.finfo(np.float32).eps, atol=0
+    )
     np.testing.assert_allclose(data["rotations"], [[1, 0, 0, 0]] * 2)
     np.testing.assert_allclose(data["opacities"], 0.5)
     np.testing.assert_allclose(
