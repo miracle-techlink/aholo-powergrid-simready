@@ -8,11 +8,13 @@ Video reconstruction · USD scene preparation · Robot interaction · Evidence-d
 
 [![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml) [![Runtime](https://img.shields.io/badge/Runtime-v0.7.0-2A8078)](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3) [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
-[快速开始](#快速开始) · [技术白皮书](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf) · [架构与代码](docs/software-architecture.md) · [部署指南](docs/deployment.md) · [示例](examples/scenes/README.md)
+[快速开始](#快速开始) · [Aholo API 接入](#与群核科技-aholo-api-的关系) · [技术白皮书](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf) · [架构与代码](docs/software-architecture.md) · [部署指南](docs/deployment.md) · [示例](examples/scenes/README.md)
 
 </div>
 
 Video to SimReady 将视频观测、三维重建、分层场景资产、机器人控制与独立验收组织成可复用的流水线。系统用 3D Gaussian 表达场景外观，用独立几何、碰撞和关节表达可操作对象，并保存来源、配置、测量和产物之间的关联。
+
+**上游三维重建接入群核科技 Aholo API；本项目负责从重建结果到仿真场景、机器人交互与独立验收的工程流程。** 具体分工与官方入口见 [Aholo API 接入说明](#与群核科技-aholo-api-的关系)。
 
 当前提供三类入口：**新视频生成场景与巡览、已有场景复现机器人演示、独立的 Agent 修复与经验复用框架**。项目包含 45 页中文技术白皮书、12 张可编辑架构与方法图，以及本地、Docker 和服务器部署代码。
 
@@ -35,6 +37,21 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 - **独立验收**：分别检查 USD 结构、固定视角质量、资产一致性和机器人任务，保存测量、缺陷、审计与交付记录。
 - **Agent 与 RSI**：从注册插件生成有限修复方案，独立复验后决定接受；Memory/Skill 复用经验证的参数配方。
 - **可恢复执行**：显式输入与产物哈希、阶段回执、失败目录、进程监督，以及可单独复用的任务图、资源租约和内容缓存。
+
+## 与群核科技 Aholo API 的关系
+
+[Aholo 是群核科技的空间智能开放平台](https://manycoretech.com/product)。Video to SimReady 通过其公开的三维重建 API 上传视频、创建异步任务、查询进度并下载三维高斯产物，以此作为场景外观的初始表示。
+
+| 技术层 | 提供方与职责 |
+|---|---|
+| 上游云端重建 | **群核科技 Aholo**：运行云端三维重建服务，提供任务状态和 PLY / SPZ 等产物。 |
+| 重建结果到机器人仿真 | **Video to SimReady**：实现 API 客户端与可恢复编排、坐标与高斯格式处理、外观／碰撞／交互分层 USD、机器人运行时、独立验收和原生渲染，并提供插件化修复与 Memory／Skill 经验复用框架。 |
+
+本仓库开源 API 接入、工作流编排与仿真处理代码；Aholo 的云端重建模型与训练实现由服务方提供。当前示例的重建底稿采用 Aholo，VGGT→gsplat 保留为独立研究分支。将新场景用于机器人任务仍需对应的资产准备、尺度标定和任务验证，具体范围见[验证结果](#验证结果)。
+
+- **Aholo 平台与 API Key 入口**：[Aholo 空间智能实验室 · labs.aholo3d.cn](https://labs.aholo3d.cn/)
+- **官方 API 文档**：[接口简介 · labs.aholo.ai/api-docs/intro](https://labs.aholo.ai/api-docs/intro) · [调用流程与密钥配置](https://labs.aholo.ai/api-docs/quickstart)
+- **本项目接入代码**：[HTTPS 上传客户端](src/simready/ingestion/aholo_client.py) · [任务提交、恢复与产物下载](src/simready/ingestion/aholo_reconstruction.py)
 
 ## 快速开始
 
@@ -63,7 +80,7 @@ Python 要求指宿主编排环境；仿真 worker 使用所选 Isaac 环境的�
 
 ### 2. 从新视频生成场景
 
-通过环境或密钥管理器提供 `AHOLO_API_KEY`，准备好上面的运行环境后：
+按 [Aholo 官方快速开始](https://labs.aholo.ai/api-docs/quickstart)申请 API Key，通过环境或密钥管理器提供 `AHOLO_API_KEY`，准备好上面的运行环境后：
 
 ```bash
 simready run --video /path/to/input.mp4 --out runs/new-scene \
@@ -115,7 +132,7 @@ python -m examples.repair_workflow.run_learning_demo --out runs/repair-demo
 
 ```mermaid
 flowchart LR
-    V[源视频] --> R[Aholo 重建或来源绑定的 PLY]
+    V[源视频] --> R[群核科技 Aholo 云端重建或来源绑定的 PLY]
     V --> O[参考观测与来源登记]
     R --> S[坐标对齐与分层 USD]
     S --> A[独立结构审计]
@@ -201,4 +218,4 @@ CI 在 Python 3.10/3.12 上执行静态检查、CPU 测试和构包；依赖私�
 
 原创代码采用 [MIT License](LICENSE)。Isaac SDK、场景视频、机器人资产、模型权重及云服务遵循各自许可；第三方材料的使用范围见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-项目基于或参考 [3D Gaussian Splatting](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/)、[Aholo](https://labs.aholo.ai/api-docs/en/openapi.json)、[OpenUSD](https://openusd.org/)、[Isaac Sim](https://github.com/isaac-sim/IsaacSim) 与 [Isaac Lab](https://github.com/isaac-sim/IsaacLab)。研究分支及 SAM、DINOv2、Difix 等方法的具体使用范围和出处见技术白皮书。
+项目接入[群核科技 Aholo 三维重建 API](https://labs.aholo.ai/api-docs/intro)，并基于或参考 [3D Gaussian Splatting](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/)、[OpenUSD](https://openusd.org/)、[Isaac Sim](https://github.com/isaac-sim/IsaacSim) 与 [Isaac Lab](https://github.com/isaac-sim/IsaacLab)。研究分支及 SAM、DINOv2、Difix 等方法的具体使用范围和出处见技术白皮书。
