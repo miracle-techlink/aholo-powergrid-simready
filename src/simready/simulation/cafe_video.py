@@ -227,6 +227,9 @@ def main():
     stage.SetMetadata("upAxis", "Z")
     stage.SetMetadata("metersPerUnit", 1.0)
     settings = carb.settings.get_settings()
+    # Editor guides can leak into a fresh Replicator render product.
+    # They are not scene geometry and must not appear in delivered footage.
+    settings.set("/app/viewport/grid/enabled", False)
     settings.set("/rtx/post/dlss/execMode", 2)
     settings.set("/rtx/post/aa/op", 4)  # DLAA: native output resolution, no upscale.
     settings.set("/rtx/dldenoiser/enabled", True)
