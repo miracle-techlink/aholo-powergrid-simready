@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="518.4pt" height="684pt" viewBox="0 0 518.4 684" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 684
+L 518.4 684
+L 518.4 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 32.04 108.72
+L 486.36 108.72
+Q 491.04 108.72 491.04 104.04
+L 491.04 74.52
+Q 491.04 69.84 486.36 69.84
+L 32.04 69.84
+Q 27.36 69.84 27.36 74.52
+L 27.36 104.04
+Q 27.36 108.72 32.04 108.72
+z
+" clip-path="url(#pc854b49c52)" style="fill: #eef4f9; stroke: #3a6f9d; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 32.04 238.32
+L 245.88 238.32
+Q 250.56 238.32 250.56 233.64
+L 250.56 140.04
+Q 250.56 135.36 245.88 135.36
+L 32.04 135.36
+Q 27.36 135.36 27.36 140.04
+L 27.36 233.64
+Q 27.36 238.32 32.04 238.32
+z
+" clip-path="url(#pc854b49c52)" style="fill: #eef4f9; stroke: #3a6f9d; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 271.08 238.32
+L 486.36 238.32
+Q 491.04 238.32 491.04 233.64
+L 491.04 140.04
+Q 491.04 135.36 486.36 135.36
+L 271.08 135.36
+Q 266.4 135.36 266.4 140.04
+L 266.4 233.64
+Q 266.4 238.32 271.08 238.32
+z
+" clip-path="url(#pc854b49c52)" style="fill: #edf6f3; stroke: #2a8078; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 32.04 301.68
+L 486.36 301.68
+Q 491.04 301.68 491.04 297
+L 491.04 266.76
+Q 491.04 262.08 486.36 262.08
+L 32.04 262.08
+Q 27.36 262.08 27.36 266.76
+L 27.36 297
+Q 27.36 301.68 32.04 301.68
+z
+" clip-path="url(#pc854b49c52)" style="fill: #f4f6f8; stroke: #607080; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 32.04 564.48
+L 245.88 564.48
+Q 250.56 564.48 250.56 559.8
+L 250.56 329.4
+Q 250.56 324.72 245.88 324.72
+L 32.04 324.72
+Q 27.36 324.72 27.36 329.4
+L 27.36 559.8
+Q 27.36 564.48 32.04 564.48
+z
+" clip-path="url(#pc854b49c52)" style="fill: #ffffff; stroke: #3a6f9d; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 45.72 422.64
+L 232.2 422.64
+Q 236.88 422.64 236.88 417.96
+L 236.88 386.28
+Q 236.88 381.6 232.2 381.6
+L 45.72 381.6
+Q 41.04 381.6 41.04 386.28
+L 41.04 417.96
+Q 41.04 422.64 45.72 422.64
+z
+" clip-path="url(#pc854b49c52)" style="fill: #eef4f9; stroke: #3a6f9d; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 45.72 484.56
+L 232.2 484.56
+Q 236.88 484.56 236.88 479.88
+L 236.88 448.2
+Q 236.88 443.52 232.2 443.52
+L 45.72 443.52
+Q 41.04 443.52 41.04 448.2
+L 41.04 479.88
+Q 41.04 484.56 45.72 484.56
+z
+" clip-path="url(#pc854b49c52)" style="fill: #eef4f9; stroke: #3a6f9d; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 45.72 546.48
+L 232.2 546.48
+Q 236.88 546.48 236.88 541.8
+L 236.88 510.12
+Q 236.88 505.44 232.2 505.44
+L 45.72 505.44
+Q 41.04 505.44 41.04 510.12
+L 41.04 541.8
+Q 41.04 546.48 45.72 546.48
+z
+" clip-path="url(#pc854b49c52)" style="fill: #eef4f9; stroke: #3a6f9d; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 271.08 564.48
+L 486.36 564.48
+Q 491.04 564.48 491.04 559.8
+L 491.04 329.4
+Q 491.04 324.72 486.36 324.72
+L 271.08 324.72
+Q 266.4 324.72 266.4 329.4
+L 266.4 559.8
+Q 266.4 564.48 271.08 564.48
+z
+" clip-path="url(#pc854b49c52)" style="fill: #ffffff; stroke: #2a8078; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 284.76 491.76
+L 472.68 491.76
+Q 477.36 491.76 477.36 487.08
+L 477.36 385.56
+Q 477.36 380.88 472.68 380.88
+L 284.76 380.88
+Q 280.08 380.88 280.08 385.56
+L 280.08 487.08
+Q 280.08 491.76 284.76 491.76
+z
+" clip-path="url(#pc854b49c52)" style="fill: #edf6f3; stroke: #2a8078; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 284.76 546.48
+L 472.68 546.48
+Q 477.36 546.48 477.36 541.8
+L 477.36 510.12
+Q 477.36 505.44 472.68 505.44
+L 284.76 505.44
+Q 280.08 505.44 280.08 510.12
+L 280.08 541.8
+Q 280.08 546.48 284.76 546.48
+z
+" clip-path="url(#pc854b49c52)" style="fill: #edf6f3; stroke: #2a8078; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 32.04 633.6
+L 486.36 633.6
+Q 491.04 633.6 491.04 628.92
+L 491.04 592.2
+Q 491.04 587.52 486.36 587.52
+L 32.04 587.52
+Q 27.36 587.52 27.36 592.2
+L 27.36 628.92
+Q 27.36 633.6 32.04 633.6
+z
+" clip-path="url(#pc854b49c52)" style="fill: #f4f6f8; stroke: #607080; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 145.44 109.44
+L 145.44 131.361966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #3a6f9d; stroke-linecap: round"/>
+    <path d="M 147.24 127.761966
+L 145.44 131.361966
+L 143.64 127.761966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #3a6f9d; stroke: #3a6f9d; stroke-linecap: round"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 374.4 109.44
+L 374.4 131.361966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #2a8078; stroke-linecap: round"/>
+    <path d="M 376.2 127.761966
+L 374.4 131.361966
+L 372.6 127.761966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #2a8078; stroke: #2a8078; stroke-linecap: round"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 145.44 239.04
+L 145.44 258.801966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #3a6f9d; stroke-linecap: round"/>
+    <path d="M 147.24 255.201966
+L 145.44 258.801966
+L 143.64 255.201966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #3a6f9d; stroke: #3a6f9d; stroke-linecap: round"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 374.4 239.04
+L 374.4 258.801966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #2a8078; stroke-linecap: round"/>
+    <path d="M 376.2 255.201966
+L 374.4 258.801966
+L 372.6 255.201966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #2a8078; stroke: #2a8078; stroke-linecap: round"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 145.44 302.4
+L 145.44 322.881966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #3a6f9d; stroke-linecap: round"/>
+    <path d="M 147.24 319.281966
+L 145.44 322.881966
+L 143.64 319.281966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #3a6f9d; stroke: #3a6f9d; stroke-linecap: round"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 374.4 302.4
+L 374.4 322.881966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #2a8078; stroke-linecap: round"/>
+    <path d="M 376.2 319.281966
+L 374.4 322.881966
+L 372.6 319.281966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #2a8078; stroke: #2a8078; stroke-linecap: round"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 138.96 424.08
+L 138.96 440.961966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #3a6f9d; stroke-linecap: round"/>
+    <path d="M 140.76 437.361966
+L 138.96 440.961966
+L 137.16 437.361966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #3a6f9d; stroke: #3a6f9d; stroke-linecap: round"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 138.96 486
+L 138.96 502.881966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #3a6f9d; stroke-linecap: round"/>
+    <path d="M 140.76 499.281966
+L 138.96 502.881966
+L 137.16 499.281966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #3a6f9d; stroke: #3a6f9d; stroke-linecap: round"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 378.72 434.88
+L 378.72 444.561966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #2a8078; stroke-linecap: round"/>
+    <path d="M 380.12 441.761966
+L 378.72 444.561966
+L 377.32 441.761966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #2a8078; stroke: #2a8078; stroke-linecap: round"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 145.44 565.92
+L 145.44 584.241966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #3a6f9d; stroke-linecap: round"/>
+    <path d="M 147.24 580.641966
+L 145.44 584.241966
+L 143.64 580.641966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #3a6f9d; stroke: #3a6f9d; stroke-linecap: round"/>
+   </g>
+   <g id="patch_24">
+    <path d="M 374.4 565.92
+L 374.4 584.241966
+" clip-path="url(#pc854b49c52)" style="fill: none; stroke: #2a8078; stroke-linecap: round"/>
+    <path d="M 376.2 580.641966
+L 374.4 584.241966
+L 372.6 580.641966
+z
+" clip-path="url(#pc854b49c52)" style="fill: #2a8078; stroke: #2a8078; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #263442" x="27.36" y="32.46375" transform="rotate(-0 27.36 32.46375)">实际调用：一条命令，两种流水线</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 10.2px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #607080" x="27.36" y="54.9765" transform="rotate(-0 27.36 54.9765)">箭头表示调用顺序；每个仿真阶段仍是独立 Python 子进程</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #3a6f9d" x="259.2" y="92.66082" transform="rotate(-0 259.2 92.66082)">simready.cli → workflows.pipeline_entry</text>
+   </g>
+   <g id="text_4">
+    <text style="font-weight: 700; font-size: 9.4px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #3a6f9d" x="27.36" y="129.025312" transform="rotate(-0 27.36 129.025312)">--video</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 9.4px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #2a8078" x="266.4" y="127.912" transform="rotate(-0 266.4 127.912)">--scene</text>
+   </g>
+   <g id="text_6">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #3a6f9d" x="38.16" y="154.742344" transform="rotate(-0 38.16 154.742344)">宿主  video_pipeline</text>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(38.16 185.0259)">video_frames.extract_frames</text>
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(38.16 197.6109)">reconstruction_stage：复用或云任务</text>
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(38.16 210.60465)">固化 PLY / scene-spec / input.json</text>
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(38.16 223.53615)">VideoStages 保存可恢复回执</text>
+   </g>
+   <g id="text_8">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #2a8078" x="277.2" y="154.742344" transform="rotate(-0 277.2 154.742344)">宿主  scene_pipeline</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(277.2 185.02065)">可选 bundle 导出 / 身份核验</text>
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(277.2 198.41265)">写场景配置与执行计划</text>
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(277.2 211.36815)">已有资产不触发新云重建</text>
+    <text style="font-size: 9.6px; font-family: 'Noto Sans CJK SC'; fill: #263442" transform="translate(277.2 224.3379)">SSH 委派到已准备的远端 Docker</text>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 10.6px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="259.2" y="278.487" transform="rotate(-0 259.2 278.487)">execution.isaac_launcher / isaac_container</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="259.2" y="293.661141" transform="rotate(-0 259.2 293.661141)">显式解释器或 Docker；输入挂载、日志、退出码与启动回执</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 9.2px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #607080" x="27.36" y="320.309656" transform="rotate(-0 27.36 320.309656)">执行环境中的 worker</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #3a6f9d" x="38.16" y="344.167656" transform="rotate(-0 38.16 344.167656)">video_execution.execute</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 10px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #263442" x="38.16" y="368.145" transform="rotate(-0 38.16 368.145)">输入摘要复核 → 环境检查</text>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 10.4px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #3a6f9d" x="138.96" y="398.242075" transform="rotate(-0 138.96 398.242075)">scene_preparation</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="138.96" y="414.003597" transform="rotate(-0 138.96 414.003597)">分层 USD / 资产目录 / 准备记录</text>
+   </g>
+   <g id="text_17">
+    <text style="font-weight: 700; font-size: 10px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #3a6f9d" x="138.96" y="459.903044" transform="rotate(-0 138.96 459.903044)">evaluation.scene_package</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="138.96" y="476.156222" transform="rotate(-0 138.96 476.156222)">独立打开 USD；只做结构审计</text>
+   </g>
+   <g id="text_19">
+    <text style="font-weight: 700; font-size: 10.4px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #3a6f9d" x="138.96" y="522.394075" transform="rotate(-0 138.96 522.394075)">scene_video</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="138.96" y="537.989738" transform="rotate(-0 138.96 537.989738)">巡览 → 帧 / 相机 / 编码凭据</text>
+   </g>
+   <g id="text_21">
+    <text style="font-weight: 700; font-size: 9.8px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #2a8078" x="277.2" y="343.774094" transform="rotate(-0 277.2 343.774094)">scene_execution.execute_scene</text>
+   </g>
+   <g id="text_22">
+    <text style="font-size: 9.3px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #263442" x="277.2" y="367.165219" transform="rotate(-0 277.2 367.165219)">包 / 环境 → scene_delivery → 抽帧</text>
+   </g>
+   <g id="text_23">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #2a8078" x="290.16" y="400.33" transform="rotate(-0 290.16 400.33)">变电站：每阶段成功才继续</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 10.4px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #263442" x="378.72" y="426.050875" transform="rotate(-0 378.72 426.050875)">substation_mission</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 9.5px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #263442" x="378.72" y="460.315703" transform="rotate(-0 378.72 460.315703)">mission_audit → mission_video</text>
+   </g>
+   <g id="text_26">
+    <text style="font-size: 8.7px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="378.72" y="481.398914" transform="rotate(-0 378.72 481.398914)">实测轨迹          独立回放</text>
+   </g>
+   <g id="text_27">
+    <text style="font-weight: 700; font-size: 10px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #2a8078" x="378.72" y="522.4582" transform="rotate(-0 378.72 522.4582)">星巴克：cafe_video</text>
+   </g>
+   <g id="text_28">
+    <text style="font-size: 8.8px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="378.72" y="538.0248" transform="rotate(-0 378.72 538.0248)">G2 编排；不产生物理导航成绩</text>
+   </g>
+   <g id="text_29">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="259.2" y="606.049486" transform="rotate(-0 259.2 606.049486)">宿主再次核验产物身份与交付合同 → summary.json</text>
+   </g>
+   <g id="text_30">
+    <text style="font-size: 9.2px; font-family: 'Noto Sans CJK SC'; text-anchor: middle; fill: #607080" x="259.2" y="623.853631" transform="rotate(-0 259.2 623.853631)">结构通过、任务通过、视频合格分别记账；文件存在不足以判成功</text>
+   </g>
+   <g id="text_31">
+    <text style="font-size: 9.2px; font-family: 'Noto Sans CJK SC'; text-anchor: start; fill: #263442" x="27.36" y="659.459656" transform="rotate(-0 27.36 659.459656)">prepare-only 跳过环境检查和巡览；修复循环通过另一工作流显式启动。</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pc854b49c52">
+   <rect x="0" y="0" width="518.4" height="684"/>
+  </clipPath>
+ </defs>
+</svg>
