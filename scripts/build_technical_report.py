@@ -1,6 +1,6 @@
 """Build the curated Markdown report as a Chinese PDF with XeLaTeX.
 
-Supports only the paragraph/table/image/code subset authored in this report.
+Supports the curated Markdown, citation and equation subset in this report.
 Requires xelatex and its ctex fonts; no API, GPU or private scene data is needed.
 """
 
@@ -30,13 +30,27 @@ def escape(text):
 
 
 def inline(text):
-    tokens = re.split(r"(`[^`]+`|\*\*[^*]+\*\*|https?://[^\s；，。]+)", text)
+    tokens = re.split(
+        r"(`[^`]+`|\*\*[^*]+\*\*|\$[^$]+\$|\[图\]\(#fig-[a-z_]+\)|\[\d+(?:,\s*\d+)*\]|https?://[^\s；，。]+)",
+        text,
+    )
     result = []
     for token in tokens:
         if token.startswith("`"):
-            result.append(r"\texttt{" + escape(token[1:-1]) + "}")
+            code = escape(token[1:-1]).replace("/", r"/\allowbreak{}")
+            code = code.replace(r"\_", r"\_\allowbreak{}")
+            for separator in (".", ",", "=", ":", "[", "-", r"\{"):
+                code = code.replace(separator, separator + r"\allowbreak{}")
+            result.append(r"\texttt{" + code + "}")
         elif token.startswith("**"):
             result.append(r"\textbf{" + escape(token[2:-2]) + "}")
+        elif token.startswith("$"):
+            result.append(token)
+        elif token.startswith("[图](#fig-"):
+            result.append(r"图~\ref{fig:" + token[9:-1] + "}")
+        elif re.fullmatch(r"\[\d+(?:,\s*\d+)*\]", token):
+            keys = ["ref" + n.strip() for n in token[1:-1].split(",")]
+            result.append(r"\cite{" + ",".join(keys) + "}")
         elif token.startswith(("https://", "http://")):
             result.append(r"\url{" + token + "}")
         else:
@@ -49,10 +63,32 @@ def render(markdown):
     out = []
     index = 0
     landscape = False
+    bibliography = False
+    next_unnumbered = False
+    unnumbered_section = False
+    table_caption = None
+    column_weights = None
     while index < len(lines):
         line = lines[index]
         if line == "<!-- pagebreak -->":
             out.append(r"\clearpage")
+        elif line == "<!-- frontmatter -->":
+            out.append(r"\begin{center}")
+        elif line == "<!-- endfrontmatter -->":
+            out.append(r"\end{center}")
+        elif line == "<!-- toc -->":
+            out.append(r"{\small\setlength{\parskip}{0pt}\tableofcontents}\clearpage")
+        elif line == "<!-- appendix -->":
+            out.append(r"\appendix")
+        elif line == "<!-- unnumbered -->":
+            next_unnumbered = True
+        elif line.startswith('<a id="fig-'):
+            pass
+        elif line.startswith("<!-- table: "):
+            table_caption = line.removeprefix("<!-- table: ").removesuffix(" -->")
+        elif line.startswith("<!-- columns: "):
+            values = line.removeprefix("<!-- columns: ").removesuffix(" -->")
+            column_weights = [float(x) for x in values.split(",")]
         elif line == "<!-- landscape -->":
             out.append(r"\begin{landscape}\thispagestyle{empty}")
             landscape = True
@@ -61,6 +97,15 @@ def render(markdown):
                 r"\par\vfill\vbox to 0pt{\vskip 24pt\hbox to \linewidth{\hfil\small\thepage\hfil}\vss}\end{landscape}"
             )
             landscape = False
+        elif line == "$$":
+            equation = []
+            index += 1
+            while index < len(lines) and lines[index] != "$$":
+                equation.append(lines[index])
+                index += 1
+            out.append(
+                "\\begin{equation}\n" + "\n".join(equation) + "\n\\end{equation}"
+            )
         elif line.startswith("```"):
             code = []
             index += 1
@@ -68,7 +113,8 @@ def render(markdown):
                 code.append(lines[index])
                 index += 1
             out.append(
-                "\\begin{Verbatim}[fontsize=\\small,breaklines=true]\n"
+                "\\begin{Verbatim}[fontsize=\\small,breaklines=true,frame=single,"
+                "rulecolor=\\color{black!18},framesep=7pt]\n"
                 + "\n".join(code)
                 + "\n\\end{Verbatim}"
             )
@@ -81,40 +127,88 @@ def render(markdown):
                 index += 1
             index -= 1
             columns = len(table[0])
-            layout = (">{\\raggedright\\arraybackslash}X " * columns).strip()
-            out.append(
-                r"\begin{table}[H]\small\begin{tabularx}{\linewidth}{"
-                + layout
-                + "}\n\\toprule"
+            weights = column_weights or [1.0] * columns
+            if len(weights) != columns or any(w <= 0 for w in weights):
+                raise ValueError("Table column weights must match positive columns")
+            weights = [w * columns / sum(weights) for w in weights]
+            layout = " ".join(
+                f">{{\\hsize={w:.5f}\\hsize\\linewidth=\\hsize"
+                r"\raggedright\arraybackslash}X"
+                for w in weights
             )
+            out.append(r"\begin{table}[H]\small\setlength{\tabcolsep}{5pt}")
+            if table_caption:
+                out.append(r"\caption{" + inline(table_caption) + "}")
+            out.append(r"\begin{tabularx}{\linewidth}{" + layout + "}\n\\toprule")
             for row, cells in enumerate(table):
                 out.append(" & ".join(inline(c) for c in cells) + r" \\")
                 if row == 0:
                     out.append(r"\midrule")
             out.append(r"\bottomrule\end{tabularx}\end{table}")
+            table_caption, column_weights = None, None
         elif line.startswith("!["):
             match = re.fullmatch(r"!\[(.*)\]\((.*)\)", line)
             caption, asset = match.groups()
             if asset.endswith(".svg"):
                 asset = asset[:-4] + ".pdf"
-            height = r"0.64\paperwidth" if landscape else r"0.36\textheight"
+            module_figure = Path(asset).stem.startswith("module_")
+            height = (
+                r"0.64\paperwidth"
+                if landscape
+                else r"0.50\textheight"
+                if module_figure
+                else r"0.30\textheight"
+            )
+            width = "16cm" if module_figure else r"\linewidth"
             out.append(
-                r"\begin{figure}[H]\centering\includegraphics[width=\linewidth,height="
+                r"\begin{figure}[H]\centering\includegraphics[width="
+                + width
+                + ",height="
                 + height
                 + r",keepaspectratio]{"
                 + asset
                 + r"}\caption{"
                 + inline(caption)
+                + r"}\label{fig:"
+                + Path(asset).stem
                 + r"}\end{figure}"
             )
         elif line.startswith("### "):
-            out.append(r"\subsection*{" + inline(line[4:]) + "}")
-        elif line.startswith("## "):
-            out.append(r"\section*{" + inline(line[3:]) + "}")
-        elif line.startswith("# "):
             out.append(
-                r"\begin{center}{\Huge\bfseries " + inline(line[2:]) + r"}\end{center}"
+                r"\Needspace{5\baselineskip}\subsection"
+                + ("*" if unnumbered_section else "")
+                + "{"
+                + inline(line[4:])
+                + "}"
             )
+        elif line == "## 摘要":
+            out.append(r"\section*{摘要}")
+        elif line == "## 参考文献":
+            out.append(
+                r"\phantomsection\addcontentsline{toc}{section}{参考文献}"
+                r"\begin{thebibliography}{99}"
+            )
+            bibliography = True
+        elif line == "<!-- endreferences -->":
+            out.append(r"\end{thebibliography}")
+            bibliography = False
+        elif line.startswith("## "):
+            unnumbered_section = next_unnumbered
+            next_unnumbered = False
+            heading = inline(line[3:])
+            out.append(
+                r"\Needspace{10\baselineskip}\section"
+                + ("*" if unnumbered_section else "")
+                + "{"
+                + heading
+                + "}"
+            )
+            if unnumbered_section:
+                out.append(r"\addcontentsline{toc}{section}{" + heading + "}")
+        elif line.startswith("# "):
+            out.append(r"{\LARGE\bfseries " + inline(line[2:]) + r"}\par\vspace{4pt}")
+        elif bibliography and (match := re.match(r"- \[(\d+)\] (.+)", line)):
+            out.append(r"\bibitem{ref" + match[1] + "}" + inline(match[2]))
         elif line.startswith("- "):
             out.append(r"\noindent\textbullet\quad " + inline(line[2:]) + r"\par")
         elif line:
@@ -127,22 +221,26 @@ def render(markdown):
 
 def main():
     preamble = r"""\documentclass[10pt,a4paper,UTF8,fontset=fandol]{ctexart}
-\usepackage[margin=1.7cm]{geometry}
-\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,fancyhdr,pdflscape}
+\usepackage[margin=1.6cm]{geometry}
+\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,caption,fvextra,xurl,pdflscape,needspace,mathtools,amssymb}
 \usepackage[colorlinks,linkcolor=blue!50!black,urlcolor=blue!50!black,bookmarksnumbered]{hyperref}
-\hypersetup{pdftitle={视频到可交互仿真场景：方法、实现与复现},pdfauthor={SimReady Pipeline},pdfsubject={分阶段方法、输入输出合同、Agent修复、独立验收与机器人运行时}}
+\hypersetup{pdftitle={视频到可交互仿真场景：模块原理、运行系统与可复现证据},pdfauthor={SimReady Pipeline},pdfsubject={十模块：输入抽帧、三维重建、坐标尺度、资产生成、物理交互、观测缺陷、修复配方、机器人运行时、独立验收与渲染交付}}
 \setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\setlength{\intextsep}{12pt}
 \renewcommand{\arraystretch}{1.16}
-\captionsetup{font=small,labelfont=bf,justification=justified,singlelinecheck=false,skip=6pt}
-\ctexset{section={format=\Large\bfseries,beforeskip=8pt,afterskip=8pt},subsection={format=\large\bfseries}}
-\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small SimReady Pipeline}\fancyhead[R]{\small 技术报告修订版 · v0.6.0}\fancyfoot[C]{\thepage}
-\setlength{\headheight}{14pt}\raggedbottom
+\captionsetup{font=small,labelfont=bf,labelsep=quad,justification=justified,singlelinecheck=false,skip=6pt}
+\captionsetup[table]{position=top}
+\ctexset{section={format=\Large\bfseries,beforeskip=16pt,afterskip=8pt},subsection={format=\large\bfseries,beforeskip=12pt,afterskip=6pt}}
+\setcounter{tocdepth}{1}\setcounter{secnumdepth}{2}
+\makeatletter\renewcommand{\l@section}{\@dottedtocline{1}{0em}{2.3em}}\makeatother
+\renewcommand{\refname}{参考文献}
+\pagestyle{plain}\raggedbottom
 \widowpenalty=10000\clubpenalty=10000\emergencystretch=2em
 \begin{document}
 """
     text = (REPORT / "technical-report.md").read_text()
     (REPORT / "main.tex").write_text(preamble + render(text) + "\n\\end{document}\n")
-    for iteration in range(2):
+    for iteration in range(3):
         with (REPORT / f"build_pass{iteration + 1}.log").open("w") as log:
             subprocess.run(
                 ["xelatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
@@ -153,7 +251,9 @@ def main():
             )
     destination = ROOT / "dist/simready-technical-report-zh.pdf"
     destination.parent.mkdir(exist_ok=True)
-    shutil.copy2(REPORT / "main.pdf", destination)
+    temporary = destination.with_suffix(".pdf.tmp")
+    shutil.copy2(REPORT / "main.pdf", temporary)
+    temporary.replace(destination)
     print(destination)
 
 

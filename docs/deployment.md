@@ -1,5 +1,18 @@
 # Isaac Sim 部署与运行
 
+## 新视频执行
+
+宿主安装 `.[ingest,aholo]` 与 ffmpeg 后，在相同的完整镜像中构建新场景：
+
+```bash
+simready run --video /path/to/input.mp4 --out runs/new-scene \
+  --submit-reconstruction --accept-eula
+```
+
+重建凭据保存在运行目录；API key 只从宿主环境读取，不写入镜像或worker输入。新视频模式的云重建客户端在宿主 CPU 侧执行上传、监控和下载，重建计算由供应商服务执行，随后将已验证PLY与场景规格作为只读输入送入Isaac worker。worker依次导出USD、独立检查结构、渲染巡览。完整参数、CPU导出、恢复和服务器命令见[新视频示例](../examples/new_video/README.md)。
+
+`--scene-spec`填写坐标/尺度来源和显式对象，不是把旧场景参数自动搬到新视频。`--prepare-only --backend local --python /path/to/usd/python`可以只做CPU构建与结构检查；渲染需要Isaac与RTX。当前新视频模式支持本机与Docker；服务器通过SSH执行相同命令，尚无本轮远端实跑结果。
+
 ## 默认使用统一入口
 
 仓库和已准备资产就绪后，统一入口负责环境检查和完整执行：
@@ -76,7 +89,7 @@ SSH 传输只负责执行一个已引用且正确转义的命令，不是分布�
 
 ## 已验证与未验证
 
-当前 v0.6 的实测记录见 [one-command-validation.json](report/one-command-validation.json)。统一入口在镜像 `97b65e8d0f56` 中，使用最终导出器生成的两套真实资产完成以下执行。远端 SSH 尚未执行完整任务，因此不报告远端成功或多 GPU 加速比。
+历史 v0.6 的实测记录见 [one-command-validation.json](report/one-command-validation.json)。统一入口在镜像 `97b65e8d0f56` 中，使用最终导出器生成的两套真实资产完成以下执行。远端 SSH 尚未执行完整任务，因此不报告远端成功或多 GPU 加速比。
 
 | 核验对象 | 完成范围 | 未覆盖范围 |
 |---|---|---|

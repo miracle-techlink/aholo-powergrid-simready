@@ -2,11 +2,25 @@
 
 **将来源视频、可交互资产、机器人任务与独立验收连接起来。**
 
-v0.6.0 提供两个已准备场景的统一运行入口：变电站执行 Lite3+Z1 的物理接近、RGB-D 定位与按压；星巴克执行 G2 编排运动和原生渲染。新视频仍需场景配准、资产补建和参数准备。
+v0.7.0 增加新视频入口：观测 → 可恢复重建 → 坐标/资产准备 → 独立结构检查 → 原生巡览。已有变电站仍执行 Lite3+Z1 物理任务，星巴克仍执行 G2 编排演示。新场景的尺度、语义和机器人任务分别保留验证状态。
 
-[技术报告](docs/report/technical-report.md) · [修订版 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v2/simready-technical-report-zh.pdf) · [场景准备](examples/scenes/README.md) · [部署说明](docs/deployment.md) · [方法与代码架构](docs/architecture.md)
+[27 页 / 14 图技术报告 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v3/simready-technical-report-zh.pdf) · [逐模块正文](docs/report/technical-report.md) · [新视频说明](examples/new_video/README.md) · [已有场景](examples/scenes/README.md) · [部署](docs/deployment.md) · [方法与模块](docs/architecture.md)
 
-修订版报告共 18 页、8 图，包含三张横向整页架构图与本次一键运行实测。
+## 从新视频启动
+
+准备本仓库、宿主 ffmpeg、RTX GPU 和 [Isaac Docker镜像](docs/deployment.md)，并通过环境提供 `AHOLO_API_KEY`：
+
+```bash
+python -m pip install -e '.[ingest,aholo]'
+simready run --video /path/to/input.mp4 --out runs/new-scene \
+  --submit-reconstruction --accept-eula
+```
+
+![新视频的执行、配置与验收边界](docs/report/figures/new_video_pipeline.svg)
+
+入口自动保存重建凭据并生成可查看的USD、估计碰撞层与巡览视频。`--scene-spec` 接入坐标/尺度证据、显式柜体/按钮及物理参数；`--reconstruction-manifest` 离线复用已有重建；`--resume` 校验产物后恢复；`--prepare-only`只构建和检查USD。配置、产物目录、失败恢复和服务器命令见[新视频完整示例](examples/new_video/README.md)。
+
+单目输入无测量锚点时，真实尺度与材料参数仍未知；新入口不会自动完成全资产语义分割、完整纹理网格或机器人任务。`SCENE_SURVEY_READY`与已有变电站的物理任务通过是不同交付等级。
 
 ## 一条命令运行已准备场景
 
@@ -24,7 +38,7 @@ simready run --scene substation --accept-eula
 
 程序核验包与运行环境，创建唯一输出目录，串接来源检查 → 物理任务 → 独立审计 → 轨迹回放；任一必选阶段失败即停止。`summary.json` 给出最终状态和产物位置，`run-plan.json` 记录输入和执行计划。变电站的视频与物理证据位于 `execution/delivery/`。
 
-将 `--scene` 改为 `starbucks`，并提供对应资产包，可执行 G2 视频流程。它是运动编排演示，不是物理导航。统一入口也支持本机 Isaac Python 与 SSH；完整选项用 `simready run --help` 查看。
+将 `--scene` 改为 `starbucks`，并提供对应资产包，可执行 G2 视频流程。它是运动编排演示，不是物理导航。统一入口也支持本机 Isaac Python 与 SSH；该模式完整选项用 `simready run --scene substation --help` 查看。
 
 ```bash
 # 只读计划：不建输出、不启动进程/GPU、不导出资产
@@ -35,7 +49,7 @@ simready run --scene substation --bundle-spec /path/to/substation.bundle.json \
   --bundle-python /path/to/pxr/python --accept-eula
 ```
 
-`--bundle-spec` 只打包已经准备好的资产，不执行新视频重建或自动资产补建。SDK、镜像和数据准备与任务运行分开；程序不自动提交 Aholo 付费任务。
+`--bundle-spec` 只打包已经准备好的资产，不执行新视频重建或自动资产补建。SDK、镜像和数据准备与任务运行分开；只有新视频模式显式提供 `--submit-reconstruction` 时才提交新 Aholo 任务。
 
 ## 方法总览
 
@@ -47,7 +61,7 @@ simready run --scene substation --bundle-spec /path/to/substation.bundle.json \
 |---|---|---|
 | M1 观测 | 视频 → 哈希、抽帧、清晰度和去重 → 帧清单 | 可执行 |
 | M2 底稿 | 视频 → Aholo → PLY/SPZ | 可执行客户端；VGGT→gsplat 为独立研究支路 |
-| M3 资产 | 底稿与原片 → 配准、纹理/几何、碰撞/交互 → 场景包 | 离线准备仍必要；依赖导出可执行 |
+| M3 资产 | 底稿与参数 → Sim3、可见高斯、体素碰撞、显式盒子/按钮 → USD | 通用准备可执行；完整纹理补建、语义标定仍需专用处理 |
 | M4 任务 | 已准备场景 → 感知、策略、规划、驱动 → 测量日志 | 两个场景专用运行时 |
 | M5 验收 | 传感器与固定合同 → 事件、定位和 FK 重算 → audit | 变电站通过后才录制 |
 | M6 回放 | 实测轨迹 → 独立回放层与 RTX → 视频 | 与物理成功分开验收 |
@@ -66,9 +80,11 @@ Agent 修复循环以固定观测生成缺陷，只从已注册插件中选择�
 
 ## 结果与复现范围
 
-本次 v0.6.0 在 NVIDIA GB10 上使用 Docker 核验统一入口，详见 [一键运行证据](docs/report/one-command-validation.json)：
+v0.7 新入口用真实历史原片与操作者声明关联的已有 PLY 重新生成场景：CPU构建约7.951秒，完整恢复约0.246秒；Docker巡览为640×360、12帧，命令约231.874秒，包含冷启动。独立结构检查通过，但画面仍有原高斯的模糊/空洞，未通过视觉保真度或机器人任务验收。新云任务未执行，不能把这组耗时当成完整重建E2E。详见[新入口证据](docs/report/new-video-validation.json)。
 
-| 本次核验 | 结果 | 范围 |
+历史 v0.6.0 在 NVIDIA GB10 上使用 Docker 核验统一入口，详见 [一键运行证据](docs/report/one-command-validation.json)：
+
+| v0.6 核验 | 结果 | 范围 |
 |---|---|---|
 | 变电站完整流程 | 20/20 审计；28.508 s 模拟、1.294082 m 位移、一次按压；713 帧 1080p / 25 fps / 28.52 s | 入口总 wall 1095.164 s，包含冷 shader；不含新重建或此前资产准备 |
 | 星巴克短预览 | 640×360、30 fps、8 帧；入口总 wall 281.670 s | G2 编排功能验证，非完整 4K 重跑或物理导航 |
