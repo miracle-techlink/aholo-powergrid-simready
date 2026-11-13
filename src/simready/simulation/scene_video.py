@@ -142,104 +142,111 @@ def render_scene(scene, preparation, spec, output):
             rep.orchestrator.wait_until_complete()
         writer.detach()
         rep.orchestrator.wait_until_complete()
-    finally:
-        app.close()
-    images = sorted((output / "frames").glob("rgb_*.png"))
-    if len(images) != count:
-        raise ValueError(f"Expected {count} captures, got {len(images)}")
-    ledger = []
-    # Contiguous names decouple encoder timing from Replicator's writer numbering.
-    import numpy as np
+        images = sorted((output / "frames").glob("rgb_*.png"))
+        if len(images) != count:
+            raise ValueError(f"Expected {count} captures, got {len(images)}")
+        ledger = []
+        # Contiguous names decouple encoder timing from Replicator's writer numbering.
+        import numpy as np
 
-    for index, path in enumerate(images):
-        with Image.open(path) as frame:
-            if frame.size != (width, height):
-                raise ValueError("Unexpected captured resolution")
-            pixels = np.asarray(frame.convert("RGB"), dtype=np.float32)
-            ledger.append(
-                {
-                    "frame": index,
-                    "path": str(path.relative_to(output)),
-                    "sha256": digest(path),
-                    "mean": float(pixels.mean()),
-                    "std": float(pixels.std()),
-                }
+        for index, path in enumerate(images):
+            with Image.open(path) as frame:
+                if frame.size != (width, height):
+                    raise ValueError("Unexpected captured resolution")
+                pixels = np.asarray(frame.convert("RGB"), dtype=np.float32)
+                ledger.append(
+                    {
+                        "frame": index,
+                        "path": str(path.relative_to(output)),
+                        "sha256": digest(path),
+                        "mean": float(pixels.mean()),
+                        "std": float(pixels.std()),
+                    }
+                )
+            path.rename(output / "frames" / f"capture_{index:06d}.png")
+            ledger[-1]["path"] = f"frames/capture_{index:06d}.png"
+        if all(row["std"] < 1 for row in ledger):
+            raise ValueError(
+                "All views are nearly uniform; inspect camera and reconstruction"
             )
-        path.rename(output / "frames" / f"capture_{index:06d}.png")
-        ledger[-1]["path"] = f"frames/capture_{index:06d}.png"
-    if all(row["std"] < 1 for row in ledger):
-        raise ValueError(
-            "All views are nearly uniform; inspect camera and reconstruction"
-        )
-    video = output / "scene_survey.mp4"
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-framerate",
-            str(fps),
-            "-i",
-            str(output / "frames/capture_%06d.png"),
-            "-frames:v",
-            str(count),
-            "-c:v",
-            "libx264",
-            "-threads",
-            "2",
-            "-pix_fmt",
-            "yuv420p",
-            "-crf",
-            "18",
-            "-movflags",
-            "+faststart",
-            str(video),
-        ],
-        check=True,
-    )
-    probe = json.loads(
-        subprocess.check_output(
+        video = output / "scene_survey.mp4"
+        subprocess.run(
             [
-                "ffprobe",
-                "-v",
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
                 "error",
-                "-select_streams",
-                "v:0",
-                "-show_entries",
-                "stream=width,height,nb_frames,avg_frame_rate",
-                "-of",
-                "json",
+                "-framerate",
+                str(fps),
+                "-i",
+                str(output / "frames/capture_%06d.png"),
+                "-frames:v",
+                str(count),
+                "-c:v",
+                "libx264",
+                "-threads",
+                "2",
+                "-pix_fmt",
+                "yuv420p",
+                "-crf",
+                "18",
+                "-movflags",
+                "+faststart",
                 str(video),
             ],
-            text=True,
+            check=True,
         )
-    )["streams"][0]
-    numerator, denominator = map(int, probe["avg_frame_rate"].split("/"))
-    if (probe["width"], probe["height"], int(probe["nb_frames"])) != (
-        width,
-        height,
-        count,
-    ) or numerator / denominator != fps:
-        raise ValueError("Encoded movie does not match requested timing/resolution")
-    write_json(
-        output / "render.json",
-        {
-            "schema_version": 1,
-            "status": "COMPLETE",
-            "video": video.name,
-            "video_sha256": digest(video),
-            "scene_sha256": digest(scene),
-            "spec_sha256": digest(spec),
-            "frames": count,
-            "fps": fps,
-            "width": width,
-            "height": height,
-            "source_consistency_validated": False,
-            "poses_sha256": digest(output / "camera.json"),
-            "captures": ledger,
-        },
-    )
+        probe = json.loads(
+            subprocess.check_output(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "v:0",
+                    "-show_entries",
+                    "stream=width,height,nb_frames,avg_frame_rate",
+                    "-of",
+                    "json",
+                    str(video),
+                ],
+                text=True,
+            )
+        )["streams"][0]
+        numerator, denominator = map(int, probe["avg_frame_rate"].split("/"))
+        if (probe["width"], probe["height"], int(probe["nb_frames"])) != (
+            width,
+            height,
+            count,
+        ) or numerator / denominator != fps:
+            raise ValueError("Encoded movie does not match requested timing/resolution")
+        write_json(
+            output / "render.json",
+            {
+                "schema_version": 1,
+                "status": "COMPLETE",
+                "video": video.name,
+                "video_sha256": digest(video),
+                "scene_sha256": digest(scene),
+                "spec_sha256": digest(spec),
+                "frames": count,
+                "fps": fps,
+                "width": width,
+                "height": height,
+                "source_consistency_validated": False,
+                "poses_sha256": digest(output / "camera.json"),
+                "captures": ledger,
+            },
+        )
+    except BaseException:
+        # Kit fast shutdown can terminate Python; print failures before cleanup.
+        import traceback
+
+        traceback.print_exc()
+        raise
+    finally:
+        # Encoding and receipts must precede Kit's process-terminating shutdown.
+        app.close()
 
 
 def main(argv=None):
