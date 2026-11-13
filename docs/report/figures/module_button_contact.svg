@@ -9,7 +9,7 @@
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>SimReady native method figure builder</dc:title>
+      <dc:title>SimReady 原生方法图生成器</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -293,159 +293,139 @@ z
 " clip-path="url(#pab7b0f6d54)" style="fill: #b07b29; stroke: #b07b29; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
-    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="20.368438" transform="rotate(-0 15.84 20.368438)">Physical primitive and separately bound contact logic</text>
+    <text style="font-weight: 700; font-size: 14px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="21.915" transform="rotate(-0 15.84 21.915)">物理原语与单独绑定的接触逻辑</text>
    </g>
    <g id="text_2">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="360.875313" transform="rotate(-0 259.2 360.875313)">Explicit binding; missing samples reset counts; no observer pose writes.</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="361.613516" transform="rotate(-0 259.2 361.613516)">事件需显式绑定；缺样会清空计数；观测器不改写位姿。</text>
    </g>
    <g id="text_3">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="25.92" y="56.544375" transform="rotate(-0 25.92 56.544375)">a  Authored spring primitive</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="25.92" y="57.912188" transform="rotate(-0 25.92 57.912188)">a  显式构建的弹簧原语</text>
    </g>
    <g id="text_4">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="275.04" y="56.59125" transform="rotate(-0 275.04 56.59125)">b  Measured adapter input</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="275.04" y="57.912188" transform="rotate(-0 275.04 57.912188)">b  适配器的实测输入</text>
    </g>
    <g id="text_5">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="25.92" y="213.55125" transform="rotate(-0 25.92 213.55125)">c  Bound ContactButton: press, release, re-arm</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="25.92" y="214.847812" transform="rotate(-0 25.92 214.847812)">c  接触状态观测：触发、释放、重新就绪</text>
    </g>
    <g id="text_6">
-    <!-- depth $d$ -->
-    <g style="fill: #237f74" transform="translate(107.595 71.425)">
+    <!-- 压入深度 $d$ -->
+    <g style="fill: #237f74" transform="translate(102.15 72.635)">
      <text>
-      <tspan x="0" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">d</tspan>
-      <tspan x="6.982422" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">e</tspan>
-      <tspan x="13.75" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">p</tspan>
-      <tspan x="20.732422" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">t</tspan>
-      <tspan x="25.04541" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">h</tspan>
-      <tspan x="32.01709" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74"> </tspan>
-      <tspan x="35.513672" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">d</tspan>
+      <tspan x="0" y="-0.703125" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #237f74">压</tspan>
+      <tspan x="10.999924" y="-0.703125" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #237f74">入</tspan>
+      <tspan x="21.999847" y="-0.703125" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #237f74">深</tspan>
+      <tspan x="32.999771" y="-0.703125" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #237f74">度</tspan>
+      <tspan x="43.999695" y="-0.703125" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #237f74"> </tspan>
+      <tspan x="46.463684" y="-0.703125" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #237f74">d</tspan>
      </text>
     </g>
    </g>
    <g id="text_7">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #356d9d" x="203.76" y="86.900938" transform="rotate(-0 203.76 86.900938)">tool force</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #356d9d" x="203.76" y="86.962813" transform="rotate(-0 203.76 86.962813)">工具接触力</text>
    </g>
    <g id="text_8">
-    <!-- $F_{spring}=-kd-b\dot d$ -->
-    <g style="fill: #253443" transform="translate(81.84 163.86)">
+    <!-- $F_s=-kd-b\dot d$ -->
+    <g style="fill: #253443" transform="translate(92.7 164.7)">
      <text>
       <tspan x="0" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
-      <tspan x="58.167187" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">k</tspan>
-      <tspan x="65.116406" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
-      <tspan x="87.464062" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">b</tspan>
-      <tspan x="95.08125" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="36.391992" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">k</tspan>
+      <tspan x="43.341211" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="65.688867" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">b</tspan>
+      <tspan x="73.306055" y="-0.96875" style="font-style: oblique; font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
       <tspan x="6.902344" y="0.831244" style="font-style: oblique; font-size: 8.4px; font-family: 'DejaVu Sans'; fill: #253443">s</tspan>
-      <tspan x="11.278711" y="0.831244" style="font-style: oblique; font-size: 8.4px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
-      <tspan x="16.610742" y="0.831244" style="font-style: oblique; font-size: 8.4px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
-      <tspan x="20.064258" y="0.831244" style="font-style: oblique; font-size: 8.4px; font-family: 'DejaVu Sans'; fill: #253443">i</tspan>
-      <tspan x="22.398047" y="0.831244" style="font-style: oblique; font-size: 8.4px; font-family: 'DejaVu Sans'; fill: #253443">n</tspan>
-      <tspan x="27.721875" y="0.831244" style="font-style: oblique; font-size: 8.4px; font-family: 'DejaVu Sans'; fill: #253443">g</tspan>
-      <tspan x="35.719922" y="-0.96875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">=</tspan>
-      <tspan x="48.1125" y="-0.96875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">−</tspan>
-      <tspan x="75.071484" y="-0.96875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">−</tspan>
-      <tspan x="102.409375" y="-4.875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">̇</tspan>
+      <tspan x="13.944727" y="-0.96875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">=</tspan>
+      <tspan x="26.337305" y="-0.96875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">−</tspan>
+      <tspan x="53.296289" y="-0.96875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">−</tspan>
+      <tspan x="80.63418" y="-4.875" style="font-size: 12px; font-family: 'DejaVu Sans'; fill: #253443">̇</tspan>
      </text>
     </g>
    </g>
    <g id="text_9">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #617180" x="287.28" y="116.905844" transform="rotate(-0 287.28 116.905844)">1</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: end; fill: #617180" x="287.28" y="116.927328" transform="rotate(-0 287.28 116.927328)">1</text>
    </g>
    <g id="text_10">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="295.2" y="156.643828" transform="rotate(-0 295.2 156.643828)">0</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="295.2" y="156.671328" transform="rotate(-0 295.2 156.671328)">0</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="386.28" y="156.643828" transform="rotate(-0 386.28 156.643828)">80</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="386.28" y="156.671328" transform="rotate(-0 386.28 156.671328)">80</text>
    </g>
    <g id="text_12">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="477.36" y="156.643828" transform="rotate(-0 477.36 156.643828)">160</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="477.36" y="156.671328" transform="rotate(-0 477.36 156.671328)">160</text>
    </g>
    <g id="text_13">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="387.36" y="73.843828" transform="rotate(-0 387.36 73.843828)">40 ms → event</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="387.36" y="74.026016" transform="rotate(-0 387.36 74.026016)">持续 40 ms → 触发</text>
    </g>
    <g id="text_14">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="171.140938" transform="rotate(-0 383.76 171.140938)">normalized traces · ms · schematic</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="171.2475" transform="rotate(-0 383.76 171.2475)">归一化曲线 · ms · 原理示意</text>
    </g>
    <g id="text_15">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="305.28" y="87.275312" transform="rotate(-0 305.28 87.275312)">depth</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="305.28" y="88.4475" transform="rotate(-0 305.28 88.4475)">深度</text>
    </g>
    <g id="text_16">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="452.88" y="88.340937" transform="rotate(-0 452.88 88.340937)">force</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="452.88" y="88.402813" transform="rotate(-0 452.88 88.402813)">接触力</text>
    </g>
    <g id="text_17">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="78.48" y="280.489844" transform="rotate(-0 78.48 280.489844)">ARMED</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="78.48" y="280.692656" transform="rotate(-0 78.48 280.692656)">允许触发</text>
    </g>
    <g id="text_18">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="437.76" y="280.411641" transform="rotate(-0 437.76 280.411641)">UNARMED</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="437.76" y="280.692656" transform="rotate(-0 437.76 280.692656)">等待释放</text>
    </g>
    <g id="text_19">
-    <!-- $d\geq d_p$ AND $F\geq F_p$ for $N_p$ samples -->
-    <g style="fill: #253443" transform="translate(167.725 237.25)">
+    <!-- $d\geq d_p$ 且 $F\geq F_p$，持续 $N_p$ 个样本 -->
+    <g style="fill: #253443" transform="translate(175.59 237.745)">
      <text>
-      <tspan x="0" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
-      <tspan x="20.485352" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
-      <tspan x="63.873047" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
-      <tspan x="83.703125" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
-      <tspan x="117.336914" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">N</tspan>
-      <tspan x="9.125488" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≥</tspan>
-      <tspan x="32.65625" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="36.152832" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">A</tspan>
-      <tspan x="43.677734" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">N</tspan>
-      <tspan x="51.90625" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">D</tspan>
-      <tspan x="60.376465" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="72.343262" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≥</tspan>
-      <tspan x="95.21875" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="98.715332" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">f</tspan>
-      <tspan x="102.587891" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">o</tspan>
-      <tspan x="109.317871" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
-      <tspan x="113.840332" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="130.753906" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="134.250488" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">s</tspan>
-      <tspan x="139.981445" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">a</tspan>
-      <tspan x="146.722168" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">m</tspan>
-      <tspan x="157.4375" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
-      <tspan x="164.419922" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">l</tspan>
-      <tspan x="167.476074" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">e</tspan>
-      <tspan x="174.243652" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">s</tspan>
-      <tspan x="27.467773" y="1.00937" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
-      <tspan x="90.030273" y="1.00937" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
-      <tspan x="125.56543" y="1.00937" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
+      <tspan x="0" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="20.485352" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="48.584152" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
+      <tspan x="68.41423" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
+      <tspan x="115.393616" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">N</tspan>
+      <tspan x="9.125488" y="-0.734375" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≥</tspan>
+      <tspan x="57.054367" y="-0.734375" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≥</tspan>
+      <tspan x="27.467773" y="0.91562" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
+      <tspan x="74.741379" y="0.91562" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
+      <tspan x="123.622131" y="0.91562" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
+      <tspan x="32.65625" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="35.120239" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">且</tspan>
+      <tspan x="46.120163" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="79.929855" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">，</tspan>
+      <tspan x="90.929779" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">持</tspan>
+      <tspan x="101.929703" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">续</tspan>
+      <tspan x="112.929626" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="128.810608" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="131.274597" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">个</tspan>
+      <tspan x="142.274521" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">样</tspan>
+      <tspan x="153.274445" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">本</tspan>
      </text>
     </g>
    </g>
    <g id="text_20">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="257.76" y="283.115313" transform="rotate(-0 257.76 283.115313)">emit one declared press transition</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="257.76" y="284.248828" transform="rotate(-0 257.76 284.248828)">触发一次已声明的按压状态转移</text>
    </g>
    <g id="text_21">
-    <!-- $d\leq d_r$ AND $F\leq F_r$ for $N_r$ samples -->
-    <g style="fill: #253443" transform="translate(170.31 328.465)">
+    <!-- $d\leq d_r$ 且 $F\leq F_r$，持续 $N_r$ 个样本 -->
+    <g style="fill: #253443" transform="translate(178.175 329.29)">
      <text>
-      <tspan x="0" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
-      <tspan x="20.485352" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
-      <tspan x="62.151074" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
-      <tspan x="81.981152" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
-      <tspan x="113.892969" y="-0.640625" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">N</tspan>
-      <tspan x="9.125488" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≤</tspan>
-      <tspan x="30.934277" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="34.430859" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">A</tspan>
-      <tspan x="41.955762" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">N</tspan>
-      <tspan x="50.184277" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">D</tspan>
-      <tspan x="58.654492" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="70.621289" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≤</tspan>
-      <tspan x="91.774805" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="95.271387" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">f</tspan>
-      <tspan x="99.143945" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">o</tspan>
-      <tspan x="105.873926" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
-      <tspan x="110.396387" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="125.587988" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="129.08457" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">s</tspan>
-      <tspan x="134.815527" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">a</tspan>
-      <tspan x="141.55625" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">m</tspan>
-      <tspan x="152.271582" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">p</tspan>
-      <tspan x="159.254004" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">l</tspan>
-      <tspan x="162.310156" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">e</tspan>
-      <tspan x="169.077734" y="-0.640625" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">s</tspan>
-      <tspan x="27.467773" y="1.00937" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
-      <tspan x="88.308301" y="1.00937" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
-      <tspan x="122.121484" y="1.00937" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
+      <tspan x="0" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="20.485352" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="46.86218" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
+      <tspan x="66.692258" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">F</tspan>
+      <tspan x="111.94967" y="-0.734375" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">N</tspan>
+      <tspan x="9.125488" y="-0.734375" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≤</tspan>
+      <tspan x="55.332394" y="-0.734375" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">≤</tspan>
+      <tspan x="27.467773" y="0.91562" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
+      <tspan x="73.019406" y="0.91562" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
+      <tspan x="120.178186" y="0.91562" style="font-style: oblique; font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
+      <tspan x="30.934277" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="33.398267" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">且</tspan>
+      <tspan x="44.39819" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="76.48591" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">，</tspan>
+      <tspan x="87.485834" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">持</tspan>
+      <tspan x="98.485757" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">续</tspan>
+      <tspan x="109.485681" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="123.64469" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443"> </tspan>
+      <tspan x="126.108679" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">个</tspan>
+      <tspan x="137.108603" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">样</tspan>
+      <tspan x="148.108527" y="-0.734375" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">本</tspan>
      </text>
     </g>
    </g>

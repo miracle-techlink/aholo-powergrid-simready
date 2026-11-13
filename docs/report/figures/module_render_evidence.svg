@@ -9,7 +9,7 @@
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>SimReady native method figure builder</dc:title>
+      <dc:title>SimReady 原生方法图生成器</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -539,22 +539,22 @@ z
     </g>
    </g>
    <g id="text_1">
-    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="20.368438" transform="rotate(-0 15.84 20.368438)">Native rendering and evidence-bound delivery</text>
+    <text style="font-weight: 700; font-size: 14px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="21.95" transform="rotate(-0 15.84 21.95)">原生渲染与证据绑定的交付</text>
    </g>
    <g id="text_2">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="360.875313" transform="rotate(-0 259.2 360.875313)">A survey is a preview; task success comes from the measured mission audit.</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="361.613516" transform="rotate(-0 259.2 361.613516)">巡览仅为预览；任务成功由实测记录的独立审计判定。</text>
    </g>
    <g id="text_3">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="56.438438" transform="rotate(-0 25.92 56.438438)">a  Scene survey</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="57.857813" transform="rotate(-0 25.92 57.857813)">a  场景巡览</text>
    </g>
    <g id="text_4">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="275.04" y="56.544375" transform="rotate(-0 275.04 56.544375)">b  Measured mission replay</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="275.04" y="57.9" transform="rotate(-0 275.04 57.9)">b  实测任务回放</text>
    </g>
    <g id="text_5">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="25.92" y="213.504375" transform="rotate(-0 25.92 213.504375)">c  Native RGB capture, encoding and receipts</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="25.92" y="214.835625" transform="rotate(-0 25.92 214.835625)">c  原生 RGB 采集、编码与凭据</text>
    </g>
    <g id="text_6">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="72.155312" transform="rotate(-0 133.2 72.155312)">bounds or explicit camera</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="73.3275" transform="rotate(-0 133.2 73.3275)">包围盒机位或显式相机</text>
    </g>
    <g id="text_7">
     <!-- $\theta_i=\Theta\,i/\max(1,N-1)$ -->
@@ -580,46 +580,46 @@ z
     </g>
    </g>
    <g id="text_8">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="170.795312" transform="rotate(-0 133.2 170.795312)">no navigation / task claim</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="171.961484" transform="rotate(-0 133.2 171.961484)">不代表导航或任务成功</text>
    </g>
    <g id="text_9">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="71.435313" transform="rotate(-0 383.76 71.435313)">stored body + cap poses</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="72.6075" transform="rotate(-0 383.76 72.6075)">已记录的刚体与按钮帽位姿</text>
    </g>
    <g id="text_10">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="383.76" y="157.115313" transform="rotate(-0 383.76 157.115313)">25 fps · direct pose replay</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="383.76" y="157.478828" transform="rotate(-0 383.76 157.478828)">25 fps · 直接回放实测位姿</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="170.795312" transform="rotate(-0 383.76 170.795312)">isolated copy; physics disabled</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="171.5275" transform="rotate(-0 383.76 171.5275)">独立副本；禁用物理更新</text>
    </g>
    <g id="text_12">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="73.44" y="307.843828" transform="rotate(-0 73.44 307.843828)">RTX RGB</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #796196" x="73.44" y="307.871328" transform="rotate(-0 73.44 307.871328)">RTX RGB</text>
    </g>
    <g id="text_13">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="73.44" y="324.875313" transform="rotate(-0 73.44 324.875313)">timeline paused</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="73.44" y="326.0475" transform="rotate(-0 73.44 326.0475)">时间轴暂停</text>
    </g>
    <g id="text_14">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="188.64" y="307.940938" transform="rotate(-0 188.64 307.940938)">RGB frames</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="188.64" y="308.02" transform="rotate(-0 188.64 308.02)">RGB 帧序列</text>
    </g>
    <g id="text_15">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="188.64" y="325.940938" transform="rotate(-0 188.64 325.940938)">fixed resolution</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="188.64" y="326.042344" transform="rotate(-0 188.64 326.042344)">固定分辨率</text>
    </g>
    <g id="text_16">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="298.8" y="307.940938" transform="rotate(-0 298.8 307.940938)">encode MP4</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="298.8" y="308.075" transform="rotate(-0 298.8 308.075)">编码为 MP4</text>
    </g>
    <g id="text_17">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="298.8" y="324.875313" transform="rotate(-0 298.8 324.875313)">probe dimensions</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="298.8" y="326.036328" transform="rotate(-0 298.8 326.036328)">核验视频尺寸</text>
    </g>
    <g id="text_18">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #237f74" x="432" y="255.283828" transform="rotate(-0 432 255.283828)">SHA-256</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #237f74" x="432" y="255.35" transform="rotate(-0 432 255.35)">SHA-256</text>
    </g>
    <g id="text_19">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #237f74" x="432" y="273.035313" transform="rotate(-0 432 273.035313)">bound receipt</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #237f74" x="432" y="274.18" transform="rotate(-0 432 274.18)">绑定产物凭据</text>
    </g>
    <g id="text_20">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="432" y="305.776172" transform="rotate(-0 432 305.776172)">scene · poses</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="432" y="308.053516" transform="rotate(-0 432 308.053516)">场景 · 位姿</text>
    </g>
    <g id="text_21">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="432" y="325.940938" transform="rotate(-0 432 325.940938)">code · video</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="432" y="326.008828" transform="rotate(-0 432 326.008828)">代码 · 视频</text>
    </g>
   </g>
  </g>

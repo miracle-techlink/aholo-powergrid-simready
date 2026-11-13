@@ -9,7 +9,7 @@
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>SimReady native method figure builder</dc:title>
+      <dc:title>SimReady 原生方法图生成器</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -563,37 +563,37 @@ z
 " clip-path="url(#pab7b0f6d54)" style="fill: #356d9d; stroke: #356d9d; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
-    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="20.368438" transform="rotate(-0 15.84 20.368438)">Registration and three-layer scene preparation</text>
+    <text style="font-weight: 700; font-size: 14px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="21.831875" transform="rotate(-0 15.84 21.831875)">坐标配准与三层场景准备</text>
    </g>
    <g id="text_2">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="360.875313" transform="rotate(-0 259.2 360.875313)">Source appearance, estimated collision and declared objects remain distinct.</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="361.997656" transform="rotate(-0 259.2 361.997656)">来源外观、估计碰撞与显式声明对象分层记录。</text>
    </g>
    <g id="text_3">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="56.59125" transform="rotate(-0 25.92 56.59125)">a  Positive Sim3 and an explicit world frame</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="57.84" transform="rotate(-0 25.92 57.84)">a  正尺度 Sim3 与明确的世界坐标系</text>
    </g>
    <g id="text_4">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #b07b29" x="25.92" y="200.31375" transform="rotate(-0 25.92 200.31375)">b  Bounded collision estimates</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #b07b29" x="25.92" y="200.394375" transform="rotate(-0 25.92 200.394375)">b  有界碰撞估计</text>
    </g>
    <g id="text_5">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="275.04" y="199.104375" transform="rotate(-0 275.04 199.104375)">c  Three runtime layers</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="275.04" y="200.34" transform="rotate(-0 275.04 200.34)">c  三个运行层</text>
    </g>
    <g id="text_6">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="93.412147" y="104.167813" transform="rotate(-0 93.412147 104.167813)">x</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="93.412147" y="104.146328" transform="rotate(-0 93.412147 104.146328)">x</text>
    </g>
    <g id="text_7">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="63.377384" y="136.45185" transform="rotate(-0 63.377384 136.45185)">y</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="63.377384" y="136.28685" transform="rotate(-0 63.377384 136.28685)">y</text>
    </g>
    <g id="text_8">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="51.12" y="92.835666" transform="rotate(-0 51.12 92.835666)">z</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="51.12" y="92.814182" transform="rotate(-0 51.12 92.814182)">z</text>
    </g>
    <g id="text_9">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="302.04" y="124.687813" transform="rotate(-0 302.04 124.687813)">x</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="302.04" y="124.666328" transform="rotate(-0 302.04 124.666328)">x</text>
    </g>
    <g id="text_10">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="254.3472" y="139.095984" transform="rotate(-0 254.3472 139.095984)">y</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="254.3472" y="138.930984" transform="rotate(-0 254.3472 138.930984)">y</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="267.48" y="90.127813" transform="rotate(-0 267.48 90.127813)">z</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="267.48" y="90.106328" transform="rotate(-0 267.48 90.106328)">z</text>
    </g>
    <g id="text_12">
     <!-- $x_w=sRx_s+t$ -->
@@ -612,10 +612,10 @@ z
     </g>
    </g>
    <g id="text_13">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="67.68" y="153.140938" transform="rotate(-0 67.68 153.140938)">source frame</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="67.68" y="153.22" transform="rotate(-0 67.68 153.22)">源坐标系</text>
    </g>
    <g id="text_14">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="281.52" y="157.115313" transform="rotate(-0 281.52 157.115313)">Z-up world</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="281.52" y="158.249688" transform="rotate(-0 281.52 158.249688)">Z 轴向上的世界坐标</text>
    </g>
    <g id="text_15">
     <!-- $s&gt;0,\quad R^\top R=I$ -->
@@ -634,55 +634,51 @@ z
     </g>
    </g>
    <g id="text_16">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="342" y="105.620938" transform="rotate(-0 342 105.620938)">Scale needs evidence</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="342" y="105.705156" transform="rotate(-0 342 105.705156)">尺度需要来源证据</text>
    </g>
    <g id="text_17">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #b07b29" x="412.56" y="141.620938" transform="rotate(-0 412.56 141.620938)">else UNVERIFIED</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #b07b29" x="412.56" y="141.716328" transform="rotate(-0 412.56 141.716328)">否则：尺度未验证</text>
    </g>
    <g id="text_18">
-    <!-- floor: $n^\top x+d=0$ -->
-    <g style="fill: #253443" transform="translate(84.745 290.735)">
+    <!-- 地面：$n^\top x+d=0$ -->
+    <g style="fill: #253443" transform="translate(84.195 290.405)">
      <text>
-      <tspan x="0" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">f</tspan>
-      <tspan x="3.872559" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">l</tspan>
-      <tspan x="6.928711" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">o</tspan>
-      <tspan x="13.658691" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">o</tspan>
-      <tspan x="20.388672" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">r</tspan>
-      <tspan x="24.911133" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">:</tspan>
-      <tspan x="28.617188" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443"> </tspan>
-      <tspan x="58.257741" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">+</tspan>
-      <tspan x="78.743092" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">=</tspan>
-      <tspan x="90.102956" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">0</tspan>
-      <tspan x="32.11377" y="-0.064813" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">n</tspan>
-      <tspan x="49.604909" y="-0.064813" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">x</tspan>
-      <tspan x="69.617604" y="-0.064813" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
-      <tspan x="41.096559" y="-4.607813" style="font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">⊤</tspan>
+      <tspan x="0" y="-0.064813" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">地</tspan>
+      <tspan x="10.999924" y="-0.064813" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">面</tspan>
+      <tspan x="21.999847" y="-0.064813" style="font-size: 11px; font-family: 'Noto Sans CJK SC'; fill: #253443">：</tspan>
+      <tspan x="32.999771" y="-0.064813" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">n</tspan>
+      <tspan x="50.49091" y="-0.064813" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">x</tspan>
+      <tspan x="70.503606" y="-0.064813" style="font-style: oblique; font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">d</tspan>
+      <tspan x="41.982561" y="-4.607813" style="font-size: 7.7px; font-family: 'DejaVu Sans'; fill: #253443">⊤</tspan>
+      <tspan x="59.143742" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">+</tspan>
+      <tspan x="79.629094" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">=</tspan>
+      <tspan x="90.988957" y="-0.064813" style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #253443">0</tspan>
      </text>
     </g>
    </g>
    <g id="text_19">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="133.2" y="309.755313" transform="rotate(-0 133.2 309.755313)">sample ≤100k · proxies ≤2k</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="133.2" y="310.905156" transform="rotate(-0 133.2 310.905156)">采样 ≤10万点 · 代理 ≤2000个</text>
    </g>
    <g id="text_20">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="327.755313" transform="rotate(-0 133.2 327.755313)">defaults; coarsen to meet cap</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="328.471172" transform="rotate(-0 133.2 328.471172)">默认上限；超限时合并体素</text>
    </g>
    <g id="text_21">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="330.48" y="220.306016" transform="rotate(-0 330.48 220.306016)">Appearance</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="330.48" y="221.559844" transform="rotate(-0 330.48 221.559844)">外观层</text>
    </g>
    <g id="text_22">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #617180" x="330.48" y="238.820938" transform="rotate(-0 330.48 238.820938)">source Gaussians</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #617180" x="330.48" y="238.833828" transform="rotate(-0 330.48 238.833828)">来源高斯外观</text>
    </g>
    <g id="text_23">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #b07b29" x="330.48" y="264.740938" transform="rotate(-0 330.48 264.740938)">Collision</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #b07b29" x="330.48" y="264.787344" transform="rotate(-0 330.48 264.787344)">碰撞层</text>
    </g>
    <g id="text_24">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #617180" x="330.48" y="280.955313" transform="rotate(-0 330.48 280.955313)">static proxies</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #617180" x="330.48" y="282.116328" transform="rotate(-0 330.48 282.116328)">静态碰撞代理</text>
    </g>
    <g id="text_25">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="330.48" y="307.220937" transform="rotate(-0 330.48 307.220937)">Interaction</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="330.48" y="307.306016" transform="rotate(-0 330.48 307.306016)">交互层</text>
    </g>
    <g id="text_26">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #617180" x="330.48" y="323.435313" transform="rotate(-0 330.48 323.435313)">explicit objects</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #617180" x="330.48" y="324.563672" transform="rotate(-0 330.48 324.563672)">显式声明的对象</text>
    </g>
   </g>
  </g>

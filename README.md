@@ -4,7 +4,7 @@
 
 v0.7.0 增加新视频入口：观测 → 可恢复重建 → 坐标/资产准备 → 独立结构检查 → 原生巡览。已有变电站仍执行 Lite3+Z1 物理任务，星巴克仍执行 G2 编排演示。新场景的尺度、语义和机器人任务分别保留验证状态。
 
-[27 页 / 14 图技术报告 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v3/simready-technical-report-zh.pdf) · [逐模块正文](docs/report/technical-report.md) · [新视频说明](examples/new_video/README.md) · [已有场景](examples/scenes/README.md) · [部署](docs/deployment.md) · [方法与模块](docs/architecture.md)
+[中文竖版技术白皮书 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v4/simready-technical-report-zh.pdf) · [视频到 Demo 流程](docs/report/pipeline-overview.md) · [白皮书正文](docs/report/technical-report.md) · [新视频说明](examples/new_video/README.md) · [已有场景](examples/scenes/README.md) · [部署](docs/deployment.md) · [方法与模块](docs/architecture.md)
 
 ## 从新视频启动
 

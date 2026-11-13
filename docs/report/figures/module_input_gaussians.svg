@@ -9,7 +9,7 @@
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>SimReady native method figure builder</dc:title>
+      <dc:title>SimReady 原生方法图生成器</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -650,28 +650,28 @@ L 233.856 128.88
 " clip-path="url(#pab7b0f6d54)" style="fill: none; stroke: #237f74; stroke-width: 1.5; stroke-linecap: square"/>
    </g>
    <g id="text_1">
-    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="20.423125" transform="rotate(-0 15.84 20.423125)">From video samples to Gaussian appearance</text>
+    <text style="font-weight: 700; font-size: 14px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="21.775" transform="rotate(-0 15.84 21.775)">从视频采样到高斯外观</text>
    </g>
    <g id="text_2">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="360.875313" transform="rotate(-0 259.2 360.875313)">Raw video feeds Aholo; extracted frames support reference and review.</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="361.613516" transform="rotate(-0 259.2 361.613516)">原视频上传至 Aholo；抽帧用于来源参考与检查。</text>
    </g>
    <g id="text_3">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="56.544375" transform="rotate(-0 25.92 56.544375)">a  Sample and register</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="57.84" transform="rotate(-0 25.92 57.84)">a  抽帧与来源登记</text>
    </g>
    <g id="text_4">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="275.04" y="56.59125" transform="rotate(-0 275.04 56.59125)">b  Gaussian parameters</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="275.04" y="57.78" transform="rotate(-0 275.04 57.78)">b  高斯参数</text>
    </g>
    <g id="text_5">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="25.92" y="214.944375" transform="rotate(-0 25.92 214.944375)">c  Project, shade and composite</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="25.92" y="216.222188" transform="rotate(-0 25.92 216.222188)">c  投影、着色与合成</text>
    </g>
    <g id="text_6">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #617180" x="30.96" y="80.075312" transform="rotate(-0 30.96 80.075312)">Nominal sampling grid</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #617180" x="30.96" y="81.237188" transform="rotate(-0 30.96 81.237188)">名义时间采样网格</text>
    </g>
    <g id="text_7">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="133.2" y="155.675313" transform="rotate(-0 133.2 155.675313)">Sharpness + hash filter</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="133.2" y="156.831172" transform="rotate(-0 133.2 156.831172)">清晰度与哈希筛选</text>
    </g>
    <g id="text_8">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="173.588672" transform="rotate(-0 133.2 173.588672)">train / same-video heldout</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="173.582656" transform="rotate(-0 133.2 173.582656)">训练帧 / 同源视频留出帧</text>
    </g>
    <g id="text_9">
     <!-- $\mu,\;q_{wxyz}$ -->
@@ -718,7 +718,7 @@ L 233.856 128.88
     </g>
    </g>
    <g id="text_12">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="365.04" y="139.835313" transform="rotate(-0 365.04 139.835313)">SH degree 0–3</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="365.04" y="140.985156" transform="rotate(-0 365.04 140.985156)">SH 阶数 0–3</text>
    </g>
    <g id="text_13">
     <!-- $\Sigma=R(q)\,\mathrm{diag}(s^2)\,R(q)^\top$ -->
@@ -747,10 +747,10 @@ L 233.856 128.88
     </g>
    </g>
    <g id="text_14">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="103.68" y="321.620938" transform="rotate(-0 103.68 321.620938)">3D Gaussian</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="103.68" y="321.633828" transform="rotate(-0 103.68 321.633828)">三维高斯</text>
    </g>
    <g id="text_15">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="192.24" y="320.555313" transform="rotate(-0 192.24 320.555313)">2D splat</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="192.24" y="321.688828" transform="rotate(-0 192.24 321.688828)">二维投影斑点</text>
    </g>
    <g id="text_16">
     <!-- $\mathrm{SH}_i(v)=\sum_{\ell,m}\beta_{i,\ell m}Y_{\ell m}(v)$ -->
@@ -782,7 +782,7 @@ L 233.856 128.88
     </g>
    </g>
    <g id="text_17">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #617180" x="237.6" y="276.260938" transform="rotate(-0 237.6 276.260938)">SH basis → view color</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #617180" x="237.6" y="276.3125" transform="rotate(-0 237.6 276.3125)">SH 基函数 → 视角相关颜色</text>
    </g>
    <g id="text_18">
     <!-- $C=\sum_i T_i a_i c_i,\quad T_i=\prod_{j&lt;i}(1-a_j)$ -->
@@ -816,7 +816,7 @@ L 233.856 128.88
     </g>
    </g>
    <g id="text_19">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #617180" x="237.6" y="326.315313" transform="rotate(-0 237.6 326.315313)">Projected alpha · front-to-back order</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #617180" x="237.6" y="327.448828" transform="rotate(-0 237.6 327.448828)">投影不透明度 · 由前至后合成</text>
    </g>
   </g>
  </g>

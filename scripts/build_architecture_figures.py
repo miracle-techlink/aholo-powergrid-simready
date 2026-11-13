@@ -1,8 +1,7 @@
-"""Rebuild publication architecture figures as editable SVG, vector PDF and PNG.
+"""Build Chinese portrait architecture figures as editable SVG, PDF and PNG.
 
 Run: python scripts/build_architecture_figures.py [--out docs/report/figures]
-All geometry, labels and connector routes are authored below. No image assets,
-external render service, Graphviz, or GPU are required.
+All panels and connector routes are drawn natively; no GPU or image assets.
 """
 
 from __future__ import annotations
@@ -10,11 +9,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, FancyBboxPatch, Polygon
-from matplotlib.path import Path as MplPath
+import matplotlib as mpl
 
-plt.switch_backend("Agg")
+mpl.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Polygon
+from matplotlib.path import Path as MplPath
 
 INK = "#263442"
 MUTED = "#607080"
@@ -30,44 +31,28 @@ PALE = {
     PURPLE: "#F3F0F7",
     MUTED: "#F4F6F8",
 }
-
+WIDTH, HEIGHT = 7.2, 9.5
+FONT = "Noto Sans CJK SC"
+font_manager.findfont(
+    font_manager.FontProperties(family=FONT), fallback_to_default=False
+)
 plt.rcParams.update(
     {
-        "font.family": "DejaVu Sans",
-        "font.size": 16,
+        "font.family": FONT,
+        "font.size": 10.5,
         "svg.fonttype": "none",
-        "svg.hashsalt": "simready-architecture-v1",
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-        "axes.linewidth": 0.8,
+        "svg.hashsalt": "simready-architecture-zh-portrait-v2",
+        # Noto CJK uses CFF outlines. Type 3 embeds vectors without a TrueType
+        # mismatch; Matplotlib also reads ps.fonttype for PDF glyph subsets.
+        "pdf.fonttype": 3,
+        "ps.fonttype": 3,
+        "axes.unicode_minus": False,
         "savefig.facecolor": "white",
     }
 )
 
 
-def canvas(title, subtitle):
-    fig, ax = plt.subplots(figsize=(16, 9))
-    fig.subplots_adjust(0, 0, 1, 1)
-    ax.set(xlim=(0, 16), ylim=(0, 9), aspect="equal")
-    ax.axis("off")
-    text(ax, 0.45, 8.55, title, 25, weight="bold")
-    text(ax, 0.45, 8.13, subtitle, 14.5, color=MUTED)
-    return fig, ax
-
-
-def text(
-    ax,
-    x,
-    y,
-    label,
-    size=16,
-    *,
-    color=INK,
-    weight="normal",
-    ha="left",
-    va="center",
-    **kw,
-):
+def text(ax, x, y, label, size=10.5, *, color=INK, weight="normal", ha="left", **kw):
     return ax.text(
         x,
         y,
@@ -76,80 +61,56 @@ def text(
         color=color,
         fontweight=weight,
         ha=ha,
-        va=va,
-        linespacing=1.38,
+        va="center",
+        linespacing=1.35,
         zorder=6,
         **kw,
     )
 
 
-def rect(
-    ax, x, y, w, h, *, color=MUTED, fill=None, dashed=False, lw=1.0, radius=0.10, z=2
-):
+def rect(ax, x, y, w, h, *, color=MUTED, fill="white", dashed=False, lw=0.9):
     patch = FancyBboxPatch(
         (x, y),
         w,
         h,
-        boxstyle=f"round,pad=0,rounding_size={radius}",
-        facecolor=fill or "white",
+        boxstyle="round,pad=0,rounding_size=0.065",
+        facecolor=fill,
         edgecolor=color,
         linewidth=lw,
-        linestyle=(0, (5, 3)) if dashed else "solid",
-        zorder=z,
+        linestyle=(0, (4, 3)) if dashed else "solid",
+        zorder=2,
     )
     ax.add_patch(patch)
     return patch
 
 
-def panel(ax, x, y, w, h, label, color=MUTED, dashed=False):
-    rect(
-        ax,
-        x,
-        y,
-        w,
-        h,
-        color=LINE if not dashed else color,
-        dashed=dashed,
-        lw=0.9,
-        radius=0.12,
-        z=0,
-    )
-    text(ax, x + 0.23, y + h - 0.36, label, 18.5, weight="bold", color=color)
-
-
-def arrow(ax, points, *, color=INK, dashed=False, lw=1.4, scale=12, z=4):
+def arrow(ax, points, *, color=INK, dashed=False, lw=1.0, scale=9):
     path = MplPath(points, [MplPath.MOVETO] + [MplPath.LINETO] * (len(points) - 1))
-    patch = FancyArrowPatch(
-        path=path,
-        arrowstyle="-|>",
-        mutation_scale=scale,
-        linewidth=lw,
-        color=color,
-        fill=True,
-        linestyle=(0, (4, 3)) if dashed else "solid",
-        joinstyle="round",
-        capstyle="round",
-        zorder=z,
-    )
-    ax.add_patch(patch)
-
-
-def line(ax, points, *, color=LINE, lw=1.0, dashed=False, z=4):
-    ax.plot(
-        *zip(*points, strict=True),
-        color=color,
-        lw=lw,
-        linestyle=(0, (4, 3)) if dashed else "solid",
-        zorder=z,
+    ax.add_patch(
+        FancyArrowPatch(
+            path=path,
+            arrowstyle="-|>",
+            mutation_scale=scale,
+            linewidth=lw,
+            color=color,
+            linestyle=(0, (4, 3)) if dashed else "solid",
+            joinstyle="round",
+            capstyle="round",
+            zorder=4,
+        )
     )
 
 
-def node(ax, x, y, w, h, title, detail="", color=BLUE, dashed=False, size=18):
-    rect(ax, x, y, w, h, color=color, fill=PALE[color], dashed=dashed)
+def line(ax, points, *, color=LINE, lw=1.0):
+    ax.plot(*zip(*points, strict=True), color=color, lw=lw, zorder=4)
+
+
+def node(ax, x, y, w, h, title, detail="", *, color=BLUE, size=11.5, detail_size=10):
+    rect(ax, x, y, w, h, color=color, fill=PALE[color])
     text(
         ax,
         x + w / 2,
-        y + h * (0.65 if detail else 0.5),
+        y + h * (0.67 if detail else 0.5),
         title,
         size,
         color=color,
@@ -157,755 +118,572 @@ def node(ax, x, y, w, h, title, detail="", color=BLUE, dashed=False, size=18):
         ha="center",
     )
     if detail:
-        text(ax, x + w / 2, y + h * 0.28, detail, 14.5, color=MUTED, ha="center")
+        text(ax, x + w / 2, y + h * 0.28, detail, detail_size, color=MUTED, ha="center")
 
 
-def badge(ax, x, y, label, color=BLUE, w=0.48):
-    rect(ax, x, y - 0.16, w, 0.32, color=color, fill=color, radius=0.05)
-    text(ax, x + w / 2, y, label, 13.5, color="white", weight="bold", ha="center")
-
-
-def film(ax, x, y, w=1.55, h=0.90, color=BLUE):
-    rect(ax, x - w / 2, y - h / 2, w, h, color=color, fill=PALE[color], radius=0.06)
-    for side in (-1, 1):
-        for i in range(5):
-            rect(
-                ax,
-                x - w / 2 + 0.09 + i * (w - 0.22) / 5,
-                y + side * (h / 2 - 0.12) - 0.035,
-                0.10,
-                0.07,
-                color=color,
-                fill="white",
-                lw=0.5,
-                radius=0.01,
-            )
-    ax.add_patch(
-        Polygon(
-            [(x - 0.13, y - 0.17), (x - 0.13, y + 0.17), (x + 0.20, y)],
-            closed=True,
-            facecolor=color,
-            edgecolor="none",
-            zorder=3,
-        )
-    )
-
-
-def frames(ax, x, y):
-    for dx, dy in ((0.18, 0.14), (0.09, 0.07), (0, 0)):
-        rect(
-            ax,
-            x - 0.61 + dx,
-            y - 0.38 + dy,
-            1.22,
-            0.76,
-            color=BLUE,
-            fill="white",
-            radius=0.03,
-        )
-    line(
-        ax,
-        [
-            (x - 0.48, y - 0.2),
-            (x - 0.12, y + 0.12),
-            (x + 0.08, y - 0.1),
-            (x + 0.34, y + 0.08),
-            (x + 0.48, y - 0.2),
-        ],
-        color=BLUE,
-    )
-    ax.add_patch(
-        Circle((x + 0.27, y + 0.20), 0.06, facecolor=AMBER, edgecolor="none", zorder=4)
-    )
-
-
-def gaussian(ax, x, y):
-    points = [
-        (-0.48, -0.13),
-        (-0.31, 0.19),
-        (-0.12, -0.22),
-        (0.02, 0.13),
-        (0.26, 0.23),
-        (0.44, -0.11),
-        (0.22, -0.30),
-        (-0.25, -0.02),
-        (0.05, -0.05),
-    ]
-    for i, (dx, dy) in enumerate(points):
-        ax.add_patch(
-            Ellipse(
-                (x + dx, y + dy),
-                0.33,
-                0.18,
-                angle=(i * 29) % 180,
-                facecolor=BLUE,
-                edgecolor="none",
-                alpha=0.26 + 0.055 * (i % 4),
-                zorder=3,
-            )
-        )
-
-
-def cabinet(ax, x, y, scale=1.0):
-    w, h = 1.05 * scale, 1.45 * scale
-    rect(ax, x - w / 2, y - h / 2, w, h, color=AMBER, fill="white", radius=0.025)
-    rect(
-        ax,
-        x - w / 2 + 0.08 * scale,
-        y - h / 2 + 0.09 * scale,
-        w - 0.16 * scale,
-        h - 0.18 * scale,
-        color=AMBER,
-        fill=PALE[AMBER],
-        lw=0.7,
-        radius=0.015,
-    )
-    line(
-        ax,
-        [(x + 0.27 * scale, y - 0.08 * scale), (x + 0.27 * scale, y + 0.18 * scale)],
-        color=AMBER,
-        lw=2,
-    )
-    for dx, col in ((-0.22, TEAL), (0.0, AMBER), (0.22, PURPLE)):
-        ax.add_patch(
-            Circle(
-                (x + dx * scale, y + 0.38 * scale),
-                0.055 * scale,
-                facecolor=col,
-                edgecolor="white",
-                lw=0.5,
-                zorder=4,
-            )
-        )
-    rect(
-        ax,
-        x - w / 2 + 0.08 * scale,
-        y - h / 2 + 0.09 * scale,
-        w - 0.16 * scale,
-        0.31 * scale,
-        color=AMBER,
-        fill="white",
-        lw=0.6,
-        radius=0.01,
-    )
-    for xx in (-0.3, -0.12, 0.06, 0.24):
-        line(
-            ax,
-            [
-                (x + xx * scale, y - h / 2 + 0.11 * scale),
-                (x + (xx + 0.13) * scale, y - h / 2 + 0.37 * scale),
-            ],
-            color=AMBER,
-            lw=0.6,
-        )
-
-
-def sheets(ax, x, y, color=TEAL, w=1.1, h=0.72):
-    for offset in (0.14, 0.07, 0):
-        rect(
-            ax,
-            x - w / 2 + offset,
-            y - h / 2 + offset,
-            w,
-            h,
-            color=color,
-            fill="white",
-            radius=0.03,
-        )
-    for yy in (-0.16, 0.02, 0.20):
-        line(ax, [(x - 0.33, y + yy), (x + 0.31, y + yy)], color=color, lw=0.9)
-
-
-def check(ax, x, y, color=PURPLE, scale=0.2):
-    line(
-        ax,
-        [
-            (x - scale * 0.7, y),
-            (x - scale * 0.1, y - scale * 0.55),
-            (x + scale, y + scale * 0.75),
-        ],
-        color=color,
-        lw=2.1,
-        z=4,
-    )
-
-
-def legend_line(ax, x, y, label, color=INK, dashed=False):
-    line(ax, [(x, y), (x + 0.38, y)], color=color, dashed=dashed, lw=1.5)
-    text(ax, x + 0.5, y, label, 14, color=MUTED)
+def canvas(title, subtitle):
+    fig, ax = plt.subplots(figsize=(WIDTH, HEIGHT))
+    fig.subplots_adjust(0, 0, 1, 1)
+    ax.set(xlim=(0, WIDTH), ylim=(0, HEIGHT), aspect="equal")
+    ax.axis("off")
+    text(ax, 0.38, 9.13, title, 16, weight="bold")
+    text(ax, 0.38, 8.78, subtitle, 10.2, color=MUTED)
+    return fig, ax
 
 
 def overview():
     fig, ax = canvas(
-        "Reconstruction-to-interaction overview",
-        "Reviewed / offline preparation is distinct from executable scene delivery",
+        "视频到交互 Demo：方法与交付",
+        "共同来源，不同交付范围；机器人任务与场景巡览分别验收",
     )
-    panel(ax, 0.45, 1.55, 4.65, 6.10, "(a) Source evidence", BLUE)
-    panel(ax, 5.65, 1.55, 4.70, 6.10, "(b) Reviewed preparation", AMBER, dashed=True)
-    panel(ax, 10.90, 1.55, 4.65, 6.10, "(c) Runnable delivery", TEAL)
-    badge(ax, 0.73, 6.84, "M1", BLUE)
-    text(ax, 1.33, 6.84, "Register & observe", 17, weight="bold", color=BLUE)
-    film(ax, 1.55, 5.95)
-    frames(ax, 3.83, 5.95)
-    arrow(ax, [(2.36, 5.95), (3.04, 5.95)])
-    text(ax, 1.55, 5.25, "Source video", 16, ha="center")
-    text(ax, 3.83, 5.25, "Frames + split", 16, ha="center")
-    arrow(ax, [(1.55, 4.99), (1.55, 4.16)])
-    text(ax, 1.73, 4.55, "video upload", 14, color=MUTED)
-    arrow(ax, [(4.54, 5.95), (6.29, 5.95)], color=AMBER, dashed=True)
-    text(ax, 5.40, 6.17, "reference views", 14, color=AMBER, ha="center")
-    rect(ax, 0.77, 2.90, 4.01, 1.23, color=BLUE, fill=PALE[BLUE])
-    gaussian(ax, 1.55, 3.49)
-    badge(ax, 2.20, 3.83, "M2", BLUE)
-    text(ax, 2.79, 3.83, "Spatial prior", 17, weight="bold", color=BLUE)
-    text(ax, 2.20, 3.40, "Aholo · PLY / SPZ", 16)
-    text(ax, 2.20, 3.10, "Receipt-bound cloud job", 14, color=MUTED)
-    rect(ax, 0.77, 1.91, 4.01, 0.63, color=MUTED, fill=PALE[MUTED], dashed=True)
-    text(ax, 0.98, 2.22, "VGGT → gsplat", 16, weight="bold", color=MUTED)
-    text(ax, 4.58, 2.22, "research", 14, ha="right", color=MUTED)
-    text(ax, 0.72, 1.69, "Frame-based study; not the delivery prior", 14, color=MUTED)
-    arrow(
+    node(
         ax,
-        [(4.80, 3.52), (5.93, 3.52), (5.93, 5.13), (6.17, 5.13)],
+        0.48,
+        7.76,
+        6.24,
+        0.68,
+        "视频观测：抽帧、清晰度与来源登记",
+        "原视频＋参考帧＋文件哈希；同视频划分不构成独立测试",
+        color=BLUE,
+        size=12.2,
+        detail_size=10.3,
+    )
+    arrow(ax, [(3.60, 7.73), (3.60, 7.48)], color=BLUE)
+    text(ax, 3.77, 7.61, "原片输入", 9.4, color=MUTED)
+    rect(ax, 0.48, 6.59, 6.24, 0.86, color=BLUE, fill=PALE[BLUE])
+    text(
+        ax,
+        3.60,
+        7.22,
+        "三维重建：空间外观底稿",
+        12.2,
+        color=BLUE,
+        weight="bold",
+        ha="center",
+    )
+    text(
+        ax,
+        3.60,
+        6.97,
+        "Aholo 原视频重建 → PLY / SPZ；服务内部训练为黑盒",
+        10.1,
+        ha="center",
+    )
+    text(
+        ax,
+        3.60,
+        6.74,
+        "研究支路 VGGT → gsplat：历史指标未达门槛，不替换交付底稿",
+        9.4,
+        color=MUTED,
+        ha="center",
+    )
+    arrow(ax, [(3.60, 6.56), (3.60, 6.40), (2.25, 6.40), (2.25, 6.25)], color=AMBER)
+    arrow(ax, [(3.60, 6.40), (5.61, 6.40), (5.61, 6.25)], color=TEAL)
+
+    rect(ax, 0.48, 4.70, 3.55, 1.52, color=AMBER, fill=PALE[AMBER], dashed=True)
+    text(
+        ax, 2.255, 5.99, "M3  历史离线准备", 12, color=AMBER, weight="bold", ha="center"
+    )
+    text(ax, 2.255, 5.68, "坐标／尺度与跨帧来源对应", 10.8, ha="center")
+    text(ax, 2.255, 5.39, "纹理与几何恢复；未观测面估计", 10.6, ha="center")
+    text(
+        ax, 2.255, 5.08, "输出：经核查的外观与资产实例", 10.3, color=MUTED, ha="center"
+    )
+    rect(ax, 4.50, 4.70, 2.22, 1.52, color=TEAL, fill=PALE[TEAL])
+    text(ax, 5.61, 5.99, "新视频候选入口", 12, color=TEAL, weight="bold", ha="center")
+    text(ax, 5.61, 5.68, "保留高斯；按声明变换", 10.1, ha="center")
+    text(ax, 5.61, 5.39, "估计碰撞＋规格对象", 10.3, ha="center")
+    text(ax, 5.61, 5.08, "无自动语义／纹理修复", 10, color=MUTED, ha="center")
+    arrow(ax, [(2.255, 4.67), (2.255, 4.43)], color=AMBER)
+    arrow(ax, [(5.61, 4.67), (5.61, 4.43)], color=TEAL)
+    node(
+        ax,
+        0.48,
+        3.65,
+        3.55,
+        0.75,
+        "碰撞与交互合同",
+        "支撑／限位／关节＋接触与状态绑定",
         color=AMBER,
-        dashed=True,
+        size=11.8,
+        detail_size=10,
     )
-    badge(ax, 5.94, 6.84, "M3", AMBER)
-    text(ax, 6.54, 6.84, "Source-bound assets", 17, weight="bold", color=AMBER)
-    cabinet(ax, 6.80, 5.43, 0.85)
-    text(ax, 7.53, 5.98, "Align + estimate scale", 15.5)
-    text(ax, 7.53, 5.51, "Textures + geometry", 15.5)
-    text(ax, 7.53, 5.04, "Label unseen surfaces", 15.5)
-    text(ax, 8.00, 4.45, "Three-layer USD contract", 17, ha="center", weight="bold")
-    rows = [
-        (3.72, "Appearance", "Gaussian · mesh · texture", BLUE),
-        (3.00, "Collision", "Rigid proxies · limits", TEAL),
-        (2.28, "Interaction", "Joints · contact · state", PURPLE),
-    ]
-    for yy, title, detail, col in rows:
-        rect(ax, 6.18, yy, 3.66, 0.62, color=col, fill=PALE[col], lw=0.8, radius=0.04)
-        text(ax, 6.36, yy + 0.43, title, 15.5, weight="bold", color=col)
-        text(ax, 6.36, yy + 0.16, detail, 14, ha="left", color=MUTED)
-    line(ax, [(9.97, 2.28), (10.08, 2.28), (10.08, 4.30), (9.97, 4.30)], color=AMBER)
-    arrow(ax, [(8.00, 4.78), (8.00, 4.63)], color=AMBER, scale=10)
-    text(
-        ax, 8.00, 1.91, "Scene + rig + control manifests", 14, ha="center", color=MUTED
+    node(
+        ax,
+        4.50,
+        3.65,
+        2.22,
+        0.75,
+        "独立结构审计",
+        "引用、边界与关节合法性",
+        color=PURPLE,
+        size=11.5,
+        detail_size=9.8,
     )
-    arrow(ax, [(10.08, 3.29), (10.60, 3.29), (10.60, 6.25), (11.18, 6.25)], color=TEAL)
-    text(ax, 13.22, 6.89, "simready run", 18, weight="bold", ha="center", color=TEAL)
+    arrow(ax, [(2.255, 3.62), (2.255, 3.37)], color=TEAL)
+    arrow(ax, [(5.61, 3.62), (5.61, 3.37)], color=TEAL)
+    node(
+        ax,
+        0.48,
+        2.56,
+        3.55,
+        0.78,
+        "机器人感知、导航与操作",
+        "RGB-D 定位；Lite3 步态＋Z1 关节驱动",
+        color=TEAL,
+        size=11.8,
+        detail_size=9.6,
+    )
+    node(
+        ax,
+        4.50,
+        2.56,
+        2.22,
+        0.78,
+        "原生相机巡览",
+        "场景候选，不运行机器人",
+        color=TEAL,
+        size=11.5,
+        detail_size=9.8,
+    )
+    arrow(ax, [(2.255, 2.53), (2.255, 2.40), (1.28, 2.40), (1.28, 2.27)], color=PURPLE)
+    node(
+        ax,
+        0.48,
+        1.48,
+        1.60,
+        0.76,
+        "独立任务验收",
+        "传感器／事件／FK",
+        color=PURPLE,
+        size=10.8,
+        detail_size=9.2,
+    )
+    node(
+        ax,
+        2.46,
+        1.48,
+        1.57,
+        0.76,
+        "原生回放 Demo",
+        "实测轨迹 → 视频",
+        color=TEAL,
+        size=10.4,
+        detail_size=9.4,
+    )
+    arrow(ax, [(2.11, 1.86), (2.43, 1.86)], color=TEAL)
+    text(ax, 2.27, 2.06, "通过", 9.0, color=TEAL, ha="center")
+    arrow(ax, [(5.61, 2.53), (5.61, 2.27)], color=TEAL)
+    node(
+        ax,
+        4.50,
+        1.48,
+        2.22,
+        0.76,
+        "场景巡览就绪",
+        "尺度／任务／保真未验收",
+        color=TEAL,
+        size=11.5,
+        detail_size=9.8,
+    )
     text(
         ax,
-        13.22,
-        6.55,
-        "Reviewed bundle + source video",
-        14.5,
+        3.60,
+        1.17,
+        "G2 为编排展示；不进入 Lite3＋Z1 的物理任务门槛。",
+        10.0,
+        color=MUTED,
         ha="center",
+    )
+    rect(ax, 0.48, 0.54, 6.24, 0.44, color=LINE, fill="#F7F9FA")
+    text(
+        ax,
+        3.60,
+        0.76,
+        "来源证据贯穿：观测／估计／配置／版本／传感器／视频",
+        10.4,
         color=MUTED,
-    )
-    node(
-        ax,
-        11.20,
-        5.35,
-        4.05,
-        0.88,
-        "M4  Observe + execute",
-        "Source checks · Lite3 + Z1 task",
-        TEAL,
-        size=17,
-    )
-    arrow(ax, [(13.23, 5.32), (13.23, 4.97)])
-    node(
-        ax,
-        11.20,
-        4.03,
-        4.05,
-        0.88,
-        "M5  Independent audit",
-        "Measured contact · task evidence",
-        PURPLE,
-        size=17,
-    )
-    arrow(ax, [(13.23, 4.00), (13.23, 3.65)])
-    node(
-        ax,
-        11.20,
-        2.71,
-        4.05,
-        0.88,
-        "M6  Native replay",
-        "Measured trajectory → RTX video",
-        TEAL,
-        size=17,
-    )
-    text(
-        ax, 13.22, 2.20, "G2: authored-motion demo only", 14.5, ha="center", color=MUTED
-    )
-    text(
-        ax,
-        13.22,
-        1.86,
-        "Task audit ≠ whole-scene certification",
-        14,
         ha="center",
-        color=MUTED,
     )
-    rect(ax, 0.45, 0.63, 15.1, 0.63, color=LINE, fill="#F7F9FA", radius=0.05, lw=0.7)
-    text(ax, 0.70, 0.95, "EVIDENCE", 14, weight="bold", color=MUTED)
-    text(ax, 2.17, 0.95, "Source hashes + frame IDs", 14.5, color=MUTED)
-    text(ax, 6.00, 0.95, "Observed / estimated / unknown", 14.5, color=MUTED)
-    text(ax, 11.13, 0.95, "Sensors · events · audit · video", 14.5, color=MUTED)
-    for xx in (5.35, 10.60):
-        line(ax, [(xx, 0.77), (xx, 1.12)], color=LINE, lw=0.8)
-    legend_line(ax, 0.55, 0.28, "implemented", INK)
-    legend_line(ax, 3.15, 0.28, "offline / reviewed setup", AMBER, True)
-    legend_line(ax, 7.18, 0.28, "research branch", MUTED, True)
     text(
         ax,
-        15.45,
-        0.28,
-        "New-scene asset preparation is not automatic.",
-        14,
-        ha="right",
+        3.60,
+        0.23,
+        "虚线为离线准备；修复 Agent 是可组合框架，未默认贯穿新视频路径。",
+        9.3,
         color=MUTED,
+        ha="center",
     )
     return fig
 
 
-def scene_map(ax, x, y, w=1.8, h=0.8, defects=False, color=BLUE):
-    rect(
-        ax, x - w / 2, y - h / 2, w, h, color=color, fill="white", radius=0.025, lw=0.8
-    )
-    for xx, yy, ww, hh in (
-        (-0.33, 0.18, 0.42, 0.18),
-        (0.27, 0.18, 0.42, 0.18),
-        (-0.36, -0.18, 0.36, 0.17),
-        (0.27, -0.18, 0.48, 0.17),
-    ):
-        rect(
-            ax,
-            x + xx * w - w * 0.16,
-            y + yy * h - h * 0.10,
-            ww * w * 0.58,
-            hh * h * 1.2,
-            color=color,
-            fill=PALE[color],
-            radius=0.01,
-            lw=0.7,
-        )
-    line(ax, [(x - w * 0.40, y), (x + w * 0.40, y)], color=color, lw=0.7, dashed=True)
-    if defects:
-        for dx, dy in ((-0.2, 0.13), (0.28, -0.13)):
-            ax.add_patch(
-                Circle(
-                    (x + dx * w, y + dy * h),
-                    0.11,
-                    facecolor="white",
-                    edgecolor=AMBER,
-                    lw=1.5,
-                    zorder=5,
-                )
-            )
-            text(
-                ax,
-                x + dx * w,
-                y + dy * h,
-                "!",
-                10.5,
-                color=AMBER,
-                weight="bold",
-                ha="center",
-            )
-
-
 def repair():
     fig, ax = canvas(
-        "Evidence-bound repair, under a frozen development protocol",
-        "Registered proposals change candidates; independent evaluation decides whether the baseline advances",
+        "证据约束的修复闭环",
+        "固定开发协议；Agent 选择已注册动作，独立验收决定是否更新",
     )
-    panel(ax, 0.45, 2.06, 3.15, 5.58, "(a) Observe", BLUE)
-    panel(ax, 4.03, 2.06, 5.77, 5.58, "(b) Propose & execute", TEAL)
-    panel(ax, 10.28, 2.06, 5.27, 5.58, "(c) Independent gate", PURPLE)
-    scene_map(ax, 2.02, 6.47, w=1.95, h=0.68, color=BLUE)
-    text(ax, 2.02, 5.90, "Current scene Cₖ", 17, weight="bold", ha="center")
-    arrow(ax, [(2.02, 5.60), (2.02, 5.24)])
-    node(
-        ax,
-        0.75,
-        4.21,
-        2.55,
-        0.94,
-        "Standard views",
-        "Fixed views + sources",
-        BLUE,
-        size=16,
-    )
-    arrow(ax, [(2.02, 4.18), (2.02, 3.82)])
-    rect(ax, 0.75, 2.40, 2.55, 1.34, color=BLUE, fill=PALE[BLUE])
-    text(ax, 2.02, 3.42, "Defect ledger Dₖ", 17, weight="bold", ha="center", color=BLUE)
-    scene_map(ax, 1.39, 2.84, w=0.91, h=0.60, defects=True, color=BLUE)
-    text(ax, 2.45, 2.84, "Type\nEvidence", 14, ha="center", color=MUTED)
-    arrow(ax, [(3.32, 3.10), (3.81, 3.10), (3.81, 5.90), (4.36, 5.90)])
-    node(
-        ax,
-        4.37,
-        5.20,
-        5.08,
-        1.37,
-        "Agent selects a proposal",
-        "Registered ID · version · parameter bounds",
-        BLUE,
-        size=18,
-    )
-    text(ax, 6.91, 6.86, "Rules / Codex / API", 14.5, color=MUTED, ha="center")
-    arrow(ax, [(5.57, 5.18), (5.57, 4.53)])
-    rect(ax, 4.37, 3.40, 2.38, 1.04, color=TEAL, fill=PALE[TEAL])
-    text(ax, 5.56, 4.10, "Worker DAG", 17, weight="bold", color=TEAL, ha="center")
-    for xx in (4.83, 5.55, 6.27):
-        rect(
+    rect(ax, 0.40, 7.44, 6.32, 1.12, color=LINE)
+    text(ax, 0.58, 8.34, "（a）观测与缺陷定位", 11.8, color=BLUE, weight="bold")
+    for x, title, detail in (
+        (0.58, "当前候选 C_k", "资产＋证据"),
+        (2.75, "标准观测", "固定视角与来源"),
+        (4.92, "缺陷清单 D_k", "实例／区域／度量"),
+    ):
+        node(
             ax,
-            xx - 0.16,
-            3.61,
-            0.32,
-            0.26,
-            color=TEAL,
-            fill="white",
-            radius=0.025,
-            lw=0.9,
+            x,
+            7.59,
+            1.60,
+            0.54,
+            title,
+            detail,
+            color=BLUE,
+            size=10.7,
+            detail_size=9.3,
         )
-    arrow(ax, [(5.01, 3.74), (5.37, 3.74)], color=TEAL, scale=8, lw=1)
-    arrow(ax, [(5.73, 3.74), (6.09, 3.74)], color=TEAL, scale=8, lw=1)
-    arrow(ax, [(6.77, 3.92), (7.15, 3.92)])
-    rect(ax, 7.20, 3.30, 2.25, 1.34, color=TEAL, fill=PALE[TEAL])
-    text(ax, 8.325, 4.37, "Candidate C′", 17, weight="bold", color=TEAL, ha="center")
-    scene_map(ax, 8.325, 3.96, w=1.39, h=0.42, color=TEAL)
-    text(ax, 8.325, 3.48, "Immutable hash", 14, ha="center", color=MUTED)
-    text(ax, 7.35, 4.82, "Trusted, budgeted plugins", 14, color=MUTED, ha="center")
-    arrow(ax, [(9.47, 3.92), (10.04, 3.92), (10.04, 5.89), (10.61, 5.89)])
-    node(
-        ax,
-        10.62,
-        5.20,
-        4.61,
-        1.37,
-        "Frozen-protocol verifier",
-        "Fresh process · scorecard + defects",
-        PURPLE,
-        size=18,
-    )
+    arrow(ax, [(2.21, 7.86), (2.72, 7.86)], color=BLUE)
+    arrow(ax, [(4.38, 7.86), (4.89, 7.86)], color=BLUE)
+    arrow(ax, [(5.72, 7.41), (5.72, 7.25), (3.60, 7.25), (3.60, 7.10)], color=BLUE)
+    rect(ax, 1.00, 6.20, 5.20, 0.87, color=BLUE, fill=PALE[BLUE])
     text(
         ax,
-        12.92,
-        6.86,
-        "Evaluator has no Agent dependency",
-        14.5,
+        3.60,
+        6.82,
+        "（b）Agent 选择修复提案",
+        12,
+        color=BLUE,
+        weight="bold",
+        ha="center",
+    )
+    text(ax, 3.60, 6.56, "规则／Codex／API 只返回提案 ID 与理由", 10.4, ha="center")
+    text(
+        ax,
+        3.60,
+        6.34,
+        "注册实现、版本、参数范围与预算由宿主核对",
+        10,
         color=MUTED,
         ha="center",
     )
-    arrow(ax, [(12.93, 5.18), (12.93, 4.75)], color=PURPLE)
+    arrow(ax, [(3.60, 6.17), (3.60, 6.03), (2.10, 6.03), (2.10, 5.86)], color=TEAL)
+    node(
+        ax,
+        0.75,
+        5.18,
+        2.70,
+        0.65,
+        "可信插件执行",
+        "任务 DAG／独立输出目录",
+        color=TEAL,
+        size=11.5,
+        detail_size=10,
+    )
+    node(
+        ax,
+        4.00,
+        5.18,
+        2.40,
+        0.65,
+        "新候选 C′",
+        "资产产物＋不可变哈希",
+        color=TEAL,
+        size=11.5,
+        detail_size=10,
+    )
+    arrow(ax, [(3.48, 5.505), (3.97, 5.505)], color=TEAL)
+    arrow(ax, [(5.20, 5.15), (5.20, 4.98), (3.60, 4.98), (3.60, 4.86)], color=PURPLE)
+    node(
+        ax,
+        1.00,
+        4.08,
+        5.20,
+        0.75,
+        "（c）独立验收器重算",
+        "新进程读取冻结协议与观测 → 评分卡＋缺陷",
+        color=PURPLE,
+        size=12,
+        detail_size=10.4,
+    )
+    arrow(ax, [(3.60, 4.05), (3.60, 3.85)], color=PURPLE)
     ax.add_patch(
         Polygon(
-            [(12.93, 4.70), (14.38, 4.11), (12.93, 3.52), (11.48, 4.11)],
+            [(3.60, 3.82), (5.00, 3.42), (3.60, 3.02), (2.20, 3.42)],
             closed=True,
             facecolor=PALE[PURPLE],
             edgecolor=PURPLE,
-            lw=1.1,
+            lw=1,
             zorder=2,
         )
     )
     text(
         ax,
-        12.93,
-        4.11,
-        "Improved\n+ no regression?",
-        14.0,
-        weight="bold",
+        3.60,
+        3.42,
+        "必选项至少一项改善\n且无必选项退化？",
+        10.5,
         color=PURPLE,
+        weight="bold",
         ha="center",
     )
-    arrow(ax, [(11.48, 4.11), (11.34, 4.11), (11.34, 3.08)], color=TEAL)
-    arrow(ax, [(14.38, 4.11), (14.53, 4.11), (14.53, 3.08)], color=MUTED)
-    text(ax, 11.37, 3.50, "yes", 14, color=TEAL, ha="left")
-    text(ax, 14.57, 3.50, "no", 14, color=MUTED, ha="left")
-    node(ax, 10.62, 2.36, 1.91, 0.68, "Accept", color=TEAL, size=17)
-    node(ax, 13.01, 2.36, 2.22, 0.68, "Keep baseline", color=MUTED, size=16)
-    arrow(
+    arrow(ax, [(2.17, 3.42), (1.50, 3.42), (1.50, 2.86)], color=TEAL)
+    arrow(ax, [(5.03, 3.42), (5.70, 3.42), (5.70, 2.86)], color=MUTED)
+    text(ax, 1.68, 3.10, "是", 10.5, color=TEAL)
+    text(ax, 5.87, 3.10, "否", 10.5, color=MUTED)
+    node(ax, 0.50, 2.30, 2.00, 0.53, "接受改进", color=TEAL, size=11.5)
+    node(ax, 4.70, 2.30, 2.00, 0.53, "保留原候选", color=MUTED, size=11.5)
+    arrow(ax, [(0.47, 2.565), (0.22, 2.565), (0.22, 7.86), (0.55, 7.86)], color=TEAL)
+    arrow(ax, [(1.50, 2.27), (1.50, 2.15), (3.60, 2.15), (3.60, 2.02)], color=AMBER)
+    line(ax, [(5.70, 2.27), (5.70, 2.15), (3.60, 2.15)], color=AMBER)
+    node(
         ax,
-        [(11.58, 2.33), (11.58, 1.73), (0.22, 1.73), (0.22, 6.47), (1.35, 6.47)],
-        color=TEAL,
+        1.00,
+        1.49,
+        5.20,
+        0.50,
+        "成功与失败均记录 Episode／Memory",
+        color=AMBER,
+        size=11,
     )
-    text(ax, 1.15, 1.87, "Advance only on improvement", 14, color=TEAL)
-    rect(ax, 4.37, 2.36, 5.08, 0.68, color=AMBER, fill=PALE[AMBER], radius=0.06)
+    arrow(ax, [(3.60, 1.46), (3.60, 1.31)], color=AMBER)
+    rect(ax, 0.65, 0.40, 5.90, 0.88, color=AMBER, fill=PALE[AMBER])
     text(
         ax,
-        6.91,
-        2.71,
-        "Evidence memory + recipe library",
-        16,
+        3.60,
+        1.06,
+        "Skill 晋升：已接受且整体通过",
+        11.5,
+        color=AMBER,
         weight="bold",
         ha="center",
-        color=AMBER,
+    )
+    text(
+        ax,
+        3.60,
+        0.79,
+        "至少 2 个不同场景（含验证）→ 协议／插件版本匹配",
+        9.8,
+        ha="center",
+    )
+    text(
+        ax,
+        3.60,
+        0.54,
+        "默认不自动晋升；退化退役；不更新基础模型权重",
+        9.8,
+        color=MUTED,
+        ha="center",
     )
     arrow(
         ax,
-        [(14.12, 2.33), (14.12, 2.18), (10.04, 2.18), (10.04, 2.70), (9.48, 2.70)],
-        color=AMBER,
-    )
-    ax.add_patch(
-        Circle((11.58, 2.18), 0.035, facecolor=AMBER, edgecolor="none", zorder=5)
-    )
-    text(ax, 10.04, 3.02, "episodes", 14, color=AMBER, ha="center")
-    arrow(
-        ax,
-        [(4.37, 2.70), (4.17, 2.70), (4.17, 5.55), (4.36, 5.55)],
+        [(6.58, 0.84), (6.98, 0.84), (6.98, 6.64), (6.23, 6.64)],
         color=AMBER,
         dashed=True,
     )
-    text(
-        ax, 6.91, 3.15, "All outcomes are evidence-bound", 14, color=MUTED, ha="center"
-    )
-    rect(ax, 0.45, 0.59, 15.10, 0.72, color=LINE, fill="#F7F9FA", radius=0.05, lw=0.7)
-    text(ax, 0.70, 0.95, "REUSE GATE", 14, weight="bold", color=AMBER)
-    text(ax, 2.35, 0.95, "Candidate passes", 14.5, color=MUTED)
-    text(ax, 5.50, 0.95, "≥2 scenes + validation run", 14.5, color=MUTED)
-    text(ax, 10.15, 0.95, "Matching protocol / plugin version", 14.5, color=MUTED)
-    for xx in (5.13, 9.78):
-        arrow(ax, [(xx - 0.28, 0.95), (xx + 0.10, 0.95)], color=AMBER, scale=10)
+    text(ax, 6.62, 6.85, "兼容经验", 9.3, color=AMBER, ha="center")
     text(
         ax,
-        0.55,
-        0.23,
-        "Budget, no progress or missing evidence → stop",
-        14,
+        3.60,
+        0.16,
+        "缺证据、无进展或超预算即停止；开发接受不等于发布授权。",
+        9.3,
         color=MUTED,
-    )
-    text(
-        ax,
-        15.45,
-        0.23,
-        "Development acceptance ≠ automatic release; model weights are unchanged.",
-        14,
-        ha="right",
-        color=MUTED,
+        ha="center",
     )
     return fig
 
 
-def spring(ax, x, y, w=0.55, h=0.18, color=AMBER):
-    pts = [(x, y)]
-    for i in range(8):
-        pts.append((x + w * (i + 0.5) / 8, y + (-1 if i % 2 else 1) * h))
-    pts.append((x + w, y))
-    line(ax, pts, color=color, lw=1.2)
-
-
 def robot():
     fig, ax = canvas(
-        "Task control, device binding and physical evidence",
-        "Lite3 + Z1 validated task · high-level navigation and manipulation remain scene-specific",
+        "机器人控制与独立测量证据",
+        "Lite3＋Z1 既有任务；高层感知、导航与操作仍受场景合同约束",
     )
-    rect(ax, 0.45, 6.64, 15.10, 1.03, color=BLUE, fill=PALE[BLUE], radius=0.1)
-    text(ax, 0.72, 7.42, "TASK SUPERVISOR", 15, weight="bold", color=BLUE)
-    text(ax, 15.25, 7.42, "Measured state transitions", 14, color=MUTED, ha="right")
+    rect(ax, 0.48, 7.62, 6.24, 1.00, color=BLUE, fill=PALE[BLUE])
+    text(ax, 0.67, 8.39, "任务监督器：按实测条件推进", 11.5, color=BLUE, weight="bold")
     states = [
-        ("Stand", 1.42),
-        ("Navigate", 3.27),
-        ("Settle", 5.12),
-        ("Reach", 6.97),
-        ("Press", 8.82),
-        ("Withdraw", 10.67),
-        ("Retract", 12.52),
-        ("Success", 14.37),
+        (1.22, 8.10, "站立"),
+        (2.80, 8.10, "接近"),
+        (4.38, 8.10, "停稳"),
+        (5.96, 8.10, "伸臂"),
+        (5.96, 7.80, "按压"),
+        (4.38, 7.80, "撤离"),
+        (2.80, 7.80, "收臂"),
+        (1.22, 7.80, "成功"),
     ]
-    for i, (label, x) in enumerate(states):
-        ax.add_patch(
-            Circle(
-                (x, 6.84), 0.055, facecolor=BLUE, edgecolor="white", lw=0.8, zorder=4
-            )
-        )
-        text(ax, x, 7.08, label, 14.5, ha="center", color=BLUE)
-        if i < len(states) - 1:
-            arrow(
-                ax,
-                [(x + 0.13, 6.84), (states[i + 1][1] - 0.13, 6.84)],
-                color=BLUE,
-                lw=1.1,
-                scale=9,
-            )
-    panel(ax, 0.45, 1.78, 4.30, 4.50, "(a) Task controllers", BLUE)
-    panel(ax, 5.18, 1.78, 5.24, 4.50, "(b) Device + articulation", TEAL)
-    panel(ax, 10.85, 1.78, 4.70, 4.50, "(c) Physics + evidence", PURPLE)
-    node(
+    for x, y, label in states:
+        text(ax, x, y, label, 10.7, color=BLUE, ha="center")
+    for i in (0, 1, 2):
+        x, y, _ = states[i]
+        arrow(ax, [(x + 0.28, y), (states[i + 1][0] - 0.28, y)], color=BLUE, scale=7)
+    arrow(
         ax,
-        0.76,
-        4.46,
-        3.68,
-        0.91,
-        "Known-map navigation",
-        "Measured base pose → ONNX gait",
-        BLUE,
-        size=17,
+        [(6.24, 8.10), (6.45, 8.10), (6.45, 7.80), (6.24, 7.80)],
+        color=BLUE,
+        scale=7,
     )
+    for i in (4, 5, 6):
+        x, y, _ = states[i]
+        arrow(ax, [(x - 0.28, y), (states[i + 1][0] + 0.28, y)], color=BLUE, scale=7)
+    arrow(ax, [(3.60, 7.59), (3.60, 7.35)], color=BLUE)
+    rect(ax, 0.48, 6.00, 6.24, 1.32, color=LINE)
+    text(ax, 0.67, 7.09, "（a）任务控制器", 11.8, color=BLUE, weight="bold")
     node(
         ax,
-        0.76,
-        3.25,
-        3.68,
-        0.91,
-        "RGB-D target localization",
-        "Unique image target → 3D surface",
-        BLUE,
-        size=17,
+        0.64,
+        6.18,
+        1.73,
+        0.66,
+        "已知地图导航",
+        "位姿 → ONNX 步态",
+        color=BLUE,
+        size=10.6,
+        detail_size=9.1,
     )
     node(
         ax,
-        0.76,
-        2.04,
-        3.68,
-        0.91,
-        "FK / IK + collision checks",
-        "Bounded joint path + press control",
-        BLUE,
-        size=17,
+        2.73,
+        6.18,
+        1.67,
+        0.66,
+        "RGB-D 定位",
+        "唯一目标 → 表面点",
+        color=BLUE,
+        size=10.6,
+        detail_size=9.0,
     )
-    arrow(ax, [(2.60, 3.22), (2.60, 2.98)], color=BLUE, scale=10)
-    line(ax, [(4.46, 4.91), (4.94, 4.91), (4.94, 2.49), (4.46, 2.49)], color=BLUE)
-    arrow(ax, [(4.94, 4.91), (5.48, 4.91)], color=BLUE)
-    rect(ax, 5.49, 4.30, 4.62, 1.10, color=TEAL, fill=PALE[TEAL])
-    text(ax, 7.80, 5.13, "RobotInterface", 19, weight="bold", ha="center", color=TEAL)
-    text(ax, 7.80, 4.78, "describe · observe · command", 14.5, ha="center", color=MUTED)
-    text(
-        ax, 7.80, 4.47, "Joint position / effort targets", 14, ha="center", color=MUTED
+    node(
+        ax,
+        4.87,
+        6.18,
+        1.69,
+        0.66,
+        "FK／IK 与避碰",
+        "限位内规划与按压",
+        color=BLUE,
+        size=10.3,
+        detail_size=9.0,
     )
+    arrow(ax, [(4.43, 6.51), (4.84, 6.51)], color=BLUE, scale=8)
+    line(ax, [(1.505, 6.15), (1.505, 5.89), (5.715, 5.89), (5.715, 6.15)], color=BLUE)
+    arrow(ax, [(3.60, 5.89), (3.60, 5.73)], color=TEAL)
+    rect(ax, 0.74, 4.70, 5.72, 1.00, color=TEAL, fill=PALE[TEAL])
     text(
         ax,
-        7.80,
-        5.72,
-        "Joint order · units · tensor shape",
-        14.5,
+        3.60,
+        5.47,
+        "（b）设备端口 RobotInterface",
+        12.2,
+        color=TEAL,
+        weight="bold",
+        ha="center",
+    )
+    text(
+        ax,
+        3.60,
+        5.17,
+        "描述／观测／命令；关节顺序、单位与张量形状对齐",
+        10.3,
+        ha="center",
+    )
+    text(
+        ax,
+        3.60,
+        4.91,
+        "物理模式仅 joint_drive；任务中不写根位姿",
+        10.3,
         color=MUTED,
         ha="center",
     )
-    arrow(ax, [(7.80, 4.27), (7.80, 3.94)], color=TEAL)
-    rect(ax, 5.49, 2.04, 4.62, 1.82, color=TEAL, fill=PALE[TEAL], radius=0.08)
+    arrow(ax, [(3.60, 4.67), (3.60, 4.47)], color=TEAL)
+    rect(ax, 0.74, 3.16, 5.72, 1.28, color=TEAL, fill=PALE[TEAL])
     text(
         ax,
-        7.80,
-        3.61,
-        "19-DOF combined articulation",
-        16,
+        3.60,
+        4.20,
+        "组合机构：12 腿关节＋6 臂关节＋1 被动工具",
+        11,
+        color=TEAL,
         weight="bold",
         ha="center",
-        color=TEAL,
     )
-    # Free-base quadruped body and four articulated legs.
-    rect(ax, 6.03, 2.87, 1.10, 0.26, color=TEAL, fill="white", radius=0.035, lw=1.2)
-    for xx, shift in ((6.15, -0.18), (6.37, 0.04), (6.84, -0.04), (7.02, 0.18)):
+    rect(ax, 1.69, 3.67, 1.12, 0.23, color=TEAL)
+    for x, shift in ((1.82, -0.13), (2.04, 0.05), (2.47, -0.03), (2.69, 0.12)):
         line(
             ax,
-            [(xx, 2.87), (xx + shift, 2.64), (xx + shift - 0.08, 2.40)],
+            [(x, 3.67), (x + shift, 3.57), (x + shift - 0.08, 3.44)],
             color=TEAL,
-            lw=1.4,
+            lw=1.2,
         )
         ax.add_patch(
             Circle(
-                (xx + shift, 2.64),
-                0.035,
+                (x + shift, 3.57),
+                0.025,
                 facecolor="white",
                 edgecolor=TEAL,
-                lw=0.8,
+                lw=0.7,
                 zorder=5,
             )
         )
-    # Mounted serial arm; passive spring is mechanically attached at its tip.
-    arm = [(6.82, 3.13), (7.30, 3.20), (7.83, 2.82), (8.43, 3.18), (8.95, 3.03)]
-    line(ax, arm, color=TEAL, lw=2.0)
-    for xx, yy in arm[:-1]:
+    arm = [(2.48, 3.90), (2.98, 3.97), (3.51, 3.60), (4.08, 3.94), (4.61, 3.77)]
+    line(ax, arm, color=TEAL, lw=1.5)
+    for x, y in arm[:-1]:
         ax.add_patch(
-            Circle((xx, yy), 0.055, facecolor="white", edgecolor=TEAL, lw=1.2, zorder=5)
+            Circle((x, y), 0.045, facecolor="white", edgecolor=TEAL, lw=1, zorder=5)
         )
-    spring(ax, 8.98, 3.03, w=0.60, h=0.10)
-    line(ax, [(9.59, 2.89), (9.59, 3.17)], color=AMBER, lw=1.6)
-    text(ax, 6.49, 2.22, "Lite3 · 12", 14.5, color=TEAL, ha="center")
-    text(ax, 8.01, 2.22, "Z1 · 6", 14.5, color=TEAL, ha="center")
-    text(ax, 9.29, 2.22, "Spring · 1", 14.5, color=AMBER, ha="center")
-    arrow(ax, [(10.13, 2.97), (10.64, 2.97), (10.64, 4.91), (11.15, 4.91)], color=TEAL)
+    spring = [(4.63, 3.77)]
+    for i in range(8):
+        spring.append((4.63 + 0.60 * (i + 0.5) / 8, 3.77 + (0.09 if i % 2 else -0.09)))
+    spring.append((5.23, 3.77))
+    line(ax, spring, color=AMBER, lw=1.1)
+    line(ax, [(5.25, 3.62), (5.25, 3.92)], color=AMBER, lw=1.2)
+    text(
+        ax,
+        3.60,
+        3.27,
+        "Lite3 基座                 Z1 机械臂            弹簧末端",
+        10.3,
+        color=MUTED,
+        ha="center",
+    )
+    arrow(ax, [(3.60, 3.13), (3.60, 2.89)], color=TEAL)
     node(
         ax,
-        11.16,
-        4.30,
-        4.08,
-        1.10,
-        "PhysX robot + scene",
-        "Contacts · displacement · state",
-        TEAL,
-        size=18,
+        0.74,
+        2.22,
+        5.72,
+        0.64,
+        "（c）PhysX：机器人与场景物理",
+        "返回实测接触、位移、姿态与关节状态",
+        color=TEAL,
+        size=11.7,
+        detail_size=10.1,
     )
-    arrow(ax, [(13.20, 4.27), (13.20, 3.91)], color=PURPLE)
-    rect(ax, 11.16, 3.15, 4.08, 0.68, color=PURPLE, fill=PALE[PURPLE])
-    text(
+    arrow(ax, [(6.49, 2.54), (6.98, 2.54), (6.98, 8.39), (6.75, 8.39)], color=TEAL)
+    text(ax, 5.69, 8.39, "测量反馈", 10.1, color=TEAL, ha="center")
+    arrow(ax, [(3.60, 2.19), (3.60, 1.97)], color=PURPLE)
+    node(
         ax,
-        13.20,
-        3.49,
-        "Frozen traces + RGB-D + replay",
-        15.5,
-        ha="center",
+        0.74,
+        1.43,
+        5.72,
+        0.51,
+        "冻结日志：传感器／RGB-D／刚体轨迹",
         color=PURPLE,
+        size=11,
     )
-    arrow(ax, [(12.13, 3.12), (12.13, 2.81)], color=PURPLE)
-    arrow(ax, [(14.25, 3.12), (14.25, 2.81)], color=PURPLE)
-    node(ax, 11.16, 2.05, 1.93, 0.69, "Audit", color=PURPLE, size=17)
-    node(ax, 13.31, 2.05, 1.93, 0.69, "RTX replay", color=TEAL, size=16)
-    arrow(ax, [(13.10, 2.40), (13.30, 2.40)], color=PURPLE, scale=9)
-    text(ax, 12.15, 1.91, "20 task checks", 14, ha="center", color=MUTED)
-    text(ax, 14.26, 1.91, "Audit pass only", 14, ha="center", color=MUTED)
-    arrow(
-        ax,
-        [(15.27, 4.91), (15.77, 4.91), (15.77, 1.32), (2.60, 1.32), (2.60, 1.73)],
-        color=TEAL,
-    )
+    arrow(ax, [(3.60, 1.40), (3.60, 1.27), (1.96, 1.27), (1.96, 1.15)], color=PURPLE)
+    node(ax, 0.74, 0.62, 2.44, 0.50, "独立任务审计：20 项", color=PURPLE, size=10.7)
+    node(ax, 4.02, 0.62, 2.44, 0.50, "原生 RTX 测量回放", color=TEAL, size=10.7)
+    arrow(ax, [(3.21, 0.87), (3.99, 0.87)], color=TEAL)
+    text(ax, 3.60, 1.07, "通过后", 9.3, color=TEAL, ha="center")
     text(
         ax,
-        8.35,
-        1.48,
-        "Measured articulation state + contact feedback",
-        15,
-        color=TEAL,
+        3.60,
+        0.28,
+        "任务审计仅覆盖当前合同；G2 是独立的 root_pose 编排分支。",
+        9.6,
+        color=MUTED,
         ha="center",
-    )
-    arrow(ax, [(2.60, 6.61), (2.60, 6.31)], color=BLUE, scale=11)
-    text(
-        ax,
-        0.56,
-        0.78,
-        "Physical port: joint_drive only; no task-time root-pose writes.",
-        14.5,
-        color=MUTED,
-    )
-    text(
-        ax,
-        0.56,
-        0.35,
-        "Feedback uses native runtime buffers; port.observe exposes the same state contract.",
-        14,
-        color=MUTED,
-    )
-    text(
-        ax,
-        15.45,
-        0.78,
-        "G2 root_pose is a separate kinematic adapter.",
-        14.5,
-        color=MUTED,
-        ha="right",
-    )
-    text(
-        ax,
-        15.45,
-        0.35,
-        "Task audit does not certify all scene assets.",
-        14,
-        color=MUTED,
-        ha="right",
     )
     return fig
 
@@ -926,7 +704,9 @@ def main():
     ):
         fig = builder()
         for suffix in ("svg", "pdf", "png"):
-            metadata = {"Creator": "SimReady native architecture figure builder"}
+            metadata = {
+                "Creator": "SimReady Chinese portrait architecture figure builder"
+            }
             if suffix == "pdf":
                 metadata.update(CreationDate=None, ModDate=None)
             elif suffix == "svg":
@@ -939,7 +719,9 @@ def main():
                     + "\n"
                 )
         plt.close(fig)
-        print(f"{name}: 16 x 9 in; SVG/PDF vector; PNG 3840 x 2160")
+        print(
+            f"{name}: 7.2 x 9.5 in; editable Chinese SVG / vector PDF; PNG 1728 x 2280"
+        )
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>SimReady native method figure builder</dc:title>
+      <dc:title>SimReady 原生方法图生成器</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -376,76 +376,76 @@ L 46.656 321.12
 " clip-path="url(#pab7b0f6d54)" style="fill: none; stroke: #237f74; stroke-width: 1.5; stroke-linecap: square"/>
    </g>
    <g id="text_1">
-    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="20.423125" transform="rotate(-0 15.84 20.423125)">Pinned observations and separate acceptance contracts</text>
+    <text style="font-weight: 700; font-size: 14px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="15.84" y="21.88" transform="rotate(-0 15.84 21.88)">固定观测与分层验收合同</text>
    </g>
    <g id="text_2">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="360.875313" transform="rotate(-0 259.2 360.875313)">Recompute evidence; rendered appearance alone cannot certify task success.</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="259.2" y="361.613516" transform="rotate(-0 259.2 361.613516)">验收重新计算证据；仅凭渲染外观不能判定任务成功。</text>
    </g>
    <g id="text_3">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="57.75375" transform="rotate(-0 25.92 57.75375)">a  Standard observations</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #356d9d" x="25.92" y="57.834375" transform="rotate(-0 25.92 57.834375)">a  标准观测</text>
    </g>
    <g id="text_4">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #b07b29" x="275.04" y="57.75375" transform="rotate(-0 275.04 57.75375)">b  Localized defects</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #b07b29" x="275.04" y="57.91875" transform="rotate(-0 275.04 57.91875)">b  缺陷定位</text>
    </g>
    <g id="text_5">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="25.92" y="212.784375" transform="rotate(-0 25.92 212.784375)">c  Candidate regression</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #237f74" x="25.92" y="214.002188" transform="rotate(-0 25.92 214.002188)">c  候选回归</text>
    </g>
    <g id="text_6">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="275.04" y="212.83125" transform="rotate(-0 275.04 212.83125)">d  Independent audits</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="275.04" y="214.152188" transform="rotate(-0 275.04 214.152188)">d  独立审计</text>
    </g>
    <g id="text_7">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="105.12" y="148.820938" transform="rotate(-0 105.12 148.820938)">reference</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="105.12" y="148.916328" transform="rotate(-0 105.12 148.916328)">参考观测</text>
    </g>
    <g id="text_8">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="184.32" y="148.820938" transform="rotate(-0 184.32 148.820938)">candidate</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="184.32" y="148.866484" transform="rotate(-0 184.32 148.866484)">候选观测</text>
    </g>
    <g id="text_9">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="167.915312" transform="rotate(-0 133.2 167.915312)">fixed view / ROI / input hash</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="168.553828" transform="rotate(-0 133.2 168.553828)">固定视角 / ROI / 输入哈希</text>
    </g>
    <g id="text_10">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="379.44" y="87.523828" transform="rotate(-0 379.44 87.523828)">asset + ROI</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="379.44" y="87.666484" transform="rotate(-0 379.44 87.666484)">资产 + ROI</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="379.44" y="111.668672" transform="rotate(-0 379.44 111.668672)">metric / limit</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="379.44" y="111.640312" transform="rotate(-0 379.44 111.640312)">指标 / 阈值</text>
    </g>
    <g id="text_12">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="379.44" y="135.515313" transform="rotate(-0 379.44 135.515313)">severity</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="379.44" y="136.682344" transform="rotate(-0 379.44 136.682344)">严重程度</text>
    </g>
    <g id="text_13">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #b07b29" x="383.76" y="166.723828" transform="rotate(-0 383.76 166.723828)">root cause: UNCONFIRMED</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #b07b29" x="383.76" y="166.911172" transform="rotate(-0 383.76 166.911172)">根因：尚未确认</text>
    </g>
    <g id="text_14">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="71.64" y="255.020938" transform="rotate(-0 71.64 255.020938)">before</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="71.64" y="255.1275" transform="rotate(-0 71.64 255.1275)">修复前</text>
    </g>
    <g id="text_15">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="182.52" y="255.020938" transform="rotate(-0 182.52 255.020938)">after</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #253443" x="182.52" y="255.093984" transform="rotate(-0 182.52 255.093984)">修复后</text>
    </g>
    <g id="text_16">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #237f74" x="133.2" y="227.675313" transform="rotate(-0 133.2 227.675313)">development only</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #237f74" x="133.2" y="228.830313" transform="rotate(-0 133.2 228.830313)">仅开发阶段</text>
    </g>
    <g id="text_17">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="289.595313" transform="rotate(-0 133.2 289.595313)">same frozen protocol</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="133.2" y="290.74" transform="rotate(-0 133.2 290.74)">同一冻结协议</text>
    </g>
    <g id="text_18">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="55.44" y="310.475313" transform="rotate(-0 55.44 310.475313)">no required regression</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="55.44" y="311.608828" transform="rotate(-0 55.44 311.608828)">所有必选项均无退化</text>
    </g>
    <g id="text_19">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="55.44" y="328.475313" transform="rotate(-0 55.44 328.475313)">at least one improvement</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="55.44" y="329.608828" transform="rotate(-0 55.44 329.608828)">至少一项指标改善</text>
    </g>
    <g id="text_20">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="325.44" y="236.563828" transform="rotate(-0 325.44 236.563828)">USD structure</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="325.44" y="236.745156" transform="rotate(-0 325.44 236.745156)">USD 结构</text>
    </g>
    <g id="text_21">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="325.44" y="255.035313" transform="rotate(-0 325.44 255.035313)">layers · bounds · joints</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="325.44" y="256.162813" transform="rotate(-0 325.44 256.162813)">图层 · 包围盒 · 关节</text>
    </g>
    <g id="text_22">
-    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #796196" x="325.44" y="292.100938" transform="rotate(-0 325.44 292.100938)">Measured task</text>
+    <text style="font-weight: 700; font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #796196" x="325.44" y="292.246172" transform="rotate(-0 325.44 292.246172)">实测任务</text>
    </g>
    <g id="text_23">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #253443" x="325.44" y="310.475313" transform="rotate(-0 325.44 310.475313)">sensors + body replay</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: start; fill: #253443" x="325.44" y="311.62" transform="rotate(-0 325.44 311.62)">传感器与刚体轨迹回放</text>
    </g>
    <g id="text_24">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="330.260938" transform="rotate(-0 383.76 330.260938)">20 checks for the tested task</text>
+    <text style="font-size: 11px; font-family: 'Noto Sans CJK SC', 'DejaVu Sans'; text-anchor: middle; fill: #617180" x="383.76" y="330.356328" transform="rotate(-0 383.76 330.356328)">该测试任务的 20 项检查</text>
    </g>
   </g>
  </g>
