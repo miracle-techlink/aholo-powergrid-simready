@@ -1,112 +1,204 @@
-# SimReady Pipeline
+<div align="center">
 
-**将来源视频、可交互资产、机器人任务与独立验收连接起来。**
+# Video to SimReady
 
-v0.7.0 增加新视频入口：观测 → 可恢复重建 → 坐标/资产准备 → 独立结构检查 → 原生巡览。已有变电站仍执行 Lite3+Z1 物理任务，星巴克仍执行 G2 编排演示。新场景的尺度、语义和机器人任务分别保留验证状态。
+**从真实场景视频，到可交互、可验证的机器人仿真环境。**
 
-[中文竖版技术白皮书 PDF](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf) · [视频到 Demo 流程](docs/report/pipeline-overview.md) · [白皮书正文](docs/report/technical-report.md) · [新视频说明](examples/new_video/README.md) · [已有场景](examples/scenes/README.md) · [部署](docs/deployment.md) · [方法与模块](docs/architecture.md) · [代码模块构造](docs/software-architecture.md)
+Video reconstruction · USD scene preparation · Robot interaction · Evidence-driven repair
 
-## 从新视频启动
+[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml) [![Runtime](https://img.shields.io/badge/Runtime-v0.7.0-2A8078)](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3) [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
-准备本仓库、宿主 ffmpeg、RTX GPU 和 [Isaac Docker镜像](docs/deployment.md)，并通过环境提供 `AHOLO_API_KEY`：
+[快速开始](#快速开始) · [技术白皮书](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf) · [架构与代码](docs/software-architecture.md) · [部署指南](docs/deployment.md) · [示例](examples/scenes/README.md)
+
+</div>
+
+Video to SimReady 将视频观测、三维重建、分层场景资产、机器人控制与独立验收组织成可复用的流水线。系统用 3D Gaussian 表达场景外观，用独立几何、碰撞和关节表达可操作对象，并保存来源、配置、测量和产物之间的关联。
+
+当前提供三类入口：**新视频生成场景与巡览、已有场景复现机器人演示、独立的 Agent 修复与经验复用框架**。项目包含 45 页中文技术白皮书、12 张可编辑架构与方法图，以及本地、Docker 和服务器部署代码。
+
+## 演示
+
+| 变电站 · Lite3 + Z1 | 星巴克 · G2 |
+|:---:|:---:|
+| [![变电站内 Lite3 与 Z1 的原生任务画面](docs/report/figures/substation_navigation.jpg)](docs/report/technical-report.md) | [![星巴克场景中的 G2 原生渲染画面](docs/report/figures/starbucks.jpg)](docs/report/technical-report.md) |
+| 导航接近 → RGB-D 确认 → 机械臂按压 → 接触审计 | 已准备场景中的移动编排、跟随相机与原生渲染 |
+
+以上为历史已准备场景的实际渲染画面。变电站有物理任务证据；星巴克为 G2 编排展示。新视频通用入口当前输出场景候选和巡览，仍需场景专用的资产准备与机器人适配，才能获得同等级的任务演示。
+
+[查看真实验证结果](#验证结果) · [两个场景的启动说明](examples/scenes/README.md) · [下载报告与图册](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)
+
+## 核心能力
+
+- **视频到场景候选**：来源登记、抽帧、Aholo 重建提交与恢复、已有 PLY 复用，以及坐标与高斯格式处理。
+- **资产物理化**：外观、碰撞、交互分层；生成有界碰撞代理、显式盒体和弹簧按钮，以相对引用组合为 USD。
+- **机器人运行时**：统一设备端口，接入步态、RGB-D 定位、FK/IK、路径检查和接触监督；具体能力按机器人与任务验证。
+- **独立验收**：分别检查 USD 结构、固定视角质量、资产一致性和机器人任务，保存测量、缺陷、审计与交付记录。
+- **Agent 与 RSI**：从注册插件生成有限修复方案，独立复验后决定接受；Memory/Skill 复用经验证的参数配方。
+- **可恢复执行**：显式输入与产物哈希、阶段回执、失败目录、进程监督，以及可单独复用的任务图、资源租约和内容缓存。
+
+## 快速开始
+
+### 1. 安装编排包
+
+在 Linux 的 Python 3.10+ 环境中：
 
 ```bash
+git clone https://github.com/miracle-techlink/video-to-simready.git
+cd video-to-simready
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install -e '.[ingest,aholo]'
+simready --help
+```
+
+Python 要求指宿主编排环境；仿真 worker 使用所选 Isaac 环境的解释器与依赖。发行包名仍为 `simready-pipeline`，CLI 仍为 `simready`。
+
+| 运行方式 | 还需要准备 |
+|---|---|
+| 新视频 → USD 与巡览 | 原视频、宿主 FFmpeg、匹配的 Isaac 镜像和 RTX 环境；新云任务另需 `AHOLO_API_KEY` |
+| 已有场景 → 任务或展示视频 | 对应的资产 bundle、机器人及策略，以及 Isaac worker 环境 |
+| CPU 修复框架示例 | 下文的测试依赖；无需 Isaac、GPU、模型账号或私有场景 |
+
+默认渲染后端为 Docker。镜像构建、环境检查、匹配版本与服务器命令见[部署指南](docs/deployment.md)。原视频、机器人资产、权重和 Isaac SDK 由使用者按许可准备。
+
+### 2. 从新视频生成场景
+
+通过环境或密钥管理器提供 `AHOLO_API_KEY`，准备好上面的运行环境后：
+
+```bash
 simready run --video /path/to/input.mp4 --out runs/new-scene \
   --submit-reconstruction --accept-eula
 ```
 
-![新视频的执行、配置与验收边界](docs/report/figures/new_video_pipeline.svg)
+命令串接 **观测 → 重建 → 场景准备 → 独立结构审计 → 原生巡览**。`--submit-reconstruction` 显式允许创建云任务；已有来源绑定产物可通过 `--reconstruction-manifest` 离线复用。`--accept-eula` 用于已阅读并接受适用的 Isaac 许可条款。
 
-入口自动保存重建凭据并生成可查看的USD、估计碰撞层与巡览视频。`--scene-spec` 接入坐标/尺度证据、显式柜体/按钮及物理参数；`--reconstruction-manifest` 离线复用已有重建；`--resume` 校验产物后恢复；`--prepare-only`只构建和检查USD。配置、产物目录、失败恢复和服务器命令见[新视频完整示例](examples/new_video/README.md)。
+常用扩展：
 
-单目输入无测量锚点时，真实尺度与材料参数仍未知；新入口不会自动完成全资产语义分割、完整纹理网格或机器人任务。`SCENE_SURVEY_READY`与已有变电站的物理任务通过是不同交付等级。
+| 参数 | 用途 |
+|---|---|
+| `--scene-spec /path/to/scene.json` | 声明坐标、尺度来源、对象与物理参数 |
+| `--reconstruction-manifest /path/to/reconstruction.json` | 使用与源视频绑定的已有 PLY；无需新云提交 |
+| `--resume` | 输入、实现身份与产物均匹配时恢复原运行 |
+| `--prepare-only --backend local --python /path/to/usd/python` | 使用兼容 OpenUSD 的解释器，只构建与检查场景 |
+| `--dry-run` | 只读检查输入并打印计划 |
 
-## 一条命令运行已准备场景
+主产物包括 `scene.usda`、外观/碰撞/对象层、`asset_catalog.json`、结构审计和 `scene_survey.mp4`。运行根目录的 `summary.json` 指向实际交付位置。
 
-先在源码目录安装编排包：
+**`SCENE_SURVEY_READY` 表示场景与巡览已生成。** 真实尺度、视觉保真度、全资产完整性和机器人任务仍需各自验证。完整命令、产物目录与恢复示例见[新视频指南](examples/new_video/README.md)。
+
+### 3. 复现变电站或星巴克
+
+先按[资产准备说明](examples/scenes/README.md)导出 `data/substation/bundle.json` 或 `data/starbucks/bundle.json`，再按需选择一条命令：
 
 ```bash
-python -m pip install -e '.[ingest,aholo]'
-```
-
-准备条件：本机可用的 Isaac Docker 镜像、支持 RTX 的 GPU，以及按 [资产合同](examples/scenes/README.md) 导出的 `data/substation/bundle.json`。原视频、机器人模型和策略权重由使用者按许可提供；[部署文档](docs/deployment.md) 给出镜像构建方法。
-
-```bash
+# Lite3 + Z1：物理任务 → 独立审计 → 实测轨迹回放
 simready run --scene substation --accept-eula
+
+# G2：已准备场景中的编排展示
+simready run --scene starbucks --accept-eula
 ```
 
-程序核验包与运行环境，创建唯一输出目录，串接来源检查 → 物理任务 → 独立审计 → 轨迹回放；任一必选阶段失败即停止。`summary.json` 给出最终状态和产物位置，`run-plan.json` 记录输入和执行计划。变电站的视频与物理证据位于 `execution/delivery/`。
+程序创建独立运行目录。变电站只有任务审计通过才继续录制，视频与证据位于该次运行的 `execution/delivery/`。`--bundle-spec` 可从已有资产规格导出；`--backend local` 选择本机解释器，已有场景模式另支持 `--backend ssh`，要求远端代码、镜像与资产事先就绪。
 
-将 `--scene` 改为 `starbucks`，并提供对应资产包，可执行 G2 视频流程。它是运动编排演示，不是物理导航。统一入口也支持本机 Isaac Python 与 SSH；该模式完整选项用 `simready run --scene substation --help` 查看。
+资产 bundle 不随源码发布。上述场景入口复现已准备资产；任意新视频的几何、控件与任务参数需要先完成适配。
+
+### 4. 先在 CPU 上体验修复闭环
 
 ```bash
-# 只读计划：不建输出、不启动进程/GPU、不导出资产
-simready run --scene substation --dry-run
-
-# 已有资产规格：先用带 pxr 的 Python 导出，再运行默认 Docker 流程
-simready run --scene substation --bundle-spec /path/to/substation.bundle.json \
-  --bundle-python /path/to/pxr/python --accept-eula
+python -m pip install -e '.[test]'
+python -m examples.repair_workflow.run_learning_demo --out runs/repair-demo
 ```
 
-`--bundle-spec` 只打包已经准备好的资产，不执行新视频重建或自动资产补建。SDK、镜像和数据准备与任务运行分开；只有新视频模式显式提供 `--submit-reconstruction` 时才提交新 Aholo 任务。
+默认使用规则 Provider 和三个合成场景，演示修复、独立评分、跨场景验证、Skill 晋升与复用。它用于验证框架合同，不代表真实三维修复质量。更换模型 Provider、接入插件与共享经验库见[Agent / Memory / Skill 手册](docs/runtime.md)。
 
-## 方法总览
+## 系统如何工作
 
-![视频到 Demo：来源观测、资产准备、机器人任务与独立验收](docs/report/figures/architecture_overview.svg)
+```mermaid
+flowchart LR
+    V[源视频] --> R[Aholo 重建或来源绑定的 PLY]
+    V --> O[参考观测与来源登记]
+    R --> S[坐标对齐与分层 USD]
+    S --> A[独立结构审计]
+    A --> P[新场景巡览]
+    O -.来源身份绑定.-> P
+    S -.专用资产准备与机器人标定.-> M[感知、规划与物理控制]
+    M --> Q[独立任务审计]
+    Q --> D[实测轨迹回放 Demo]
+```
 
-高斯底稿保留外观；独立几何、碰撞和关节使指定任务可执行；测量与独立审计决定动作是否成立。外观、碰撞、交互是三个运行层，来源证据链贯穿所有层。
+三层场景各有职责：**外观层**负责成像，**碰撞层**定义接触空间，**交互层**定义可动部件、关节和事件。通用新视频路径与已有场景任务通过各自合同验收。历史 VGGT→gsplat 是独立重建研究支路，当前交付底稿采用 Aholo。
 
-| 阶段 | 输入 → 方法 → 输出 | 当前状态 |
+修复工作流另行组合：冻结观测 → 缺陷清单 → 注册方案 → Agent 选择 → 可信插件执行 → 独立复验 → 接受或回退。经验只在版本和评估规则相容时复用，Skill 晋升需要跨场景验证；真实修复插件仍在逐项接入，新视频默认入口不会隐式运行整个循环。
+
+[完整流程图](docs/report/pipeline-overview.md) · [3D 资产如何成为 SimReady](docs/report/asset-to-simready.md) · [十个代码模块的内部构造](docs/software-architecture.md)
+
+## 验证结果
+
+下表保留各实验的输入与执行范围；演示生成、结构通过和任务通过分别记录。
+
+| 实验 | 已核验结果 | 运行范围 |
 |---|---|---|
-| M1 观测 | 视频 → 哈希、抽帧、清晰度和去重 → 帧清单 | 可执行 |
-| M2 底稿 | 视频 → Aholo → PLY/SPZ | 可执行客户端；VGGT→gsplat 为独立研究支路 |
-| M3 资产 | 底稿与参数 → Sim3、可见高斯、体素碰撞、显式盒子/按钮 → USD | 通用准备可执行；完整纹理补建、语义标定仍需专用处理 |
-| M4 任务 | 已准备场景 → 感知、策略、规划、驱动 → 测量日志 | 两个场景专用运行时 |
-| M5 验收 | 传感器与固定合同 → 事件、定位和 FK 重算 → audit | 变电站通过后才录制 |
-| M6 回放 | 实测轨迹 → 独立回放层与 RTX → 视频 | 与物理成功分开验收 |
+| 变电站已有场景入口 v0.6 | Lite3+Z1，**20/20** 项审计；一次按压；**713 帧、1080p、28.52 秒** | 入口 wall **1095.164 秒**，含启动和冷 shader；不含新重建或前置资产准备 |
+| 星巴克展示 | 历史完整视频为 **4K、900 帧、30 秒**；v0.6 入口另完成 8 帧预览 | G2 编排展示；8 帧预览 wall 281.670 秒，与历史完整视频分别记账 |
+| 新视频入口 v0.7 | 历史原片与声明绑定 PLY：CPU 导出 **7.951 秒**，恢复 **0.246 秒**；Docker 12 帧巡览 **231.874 秒** | 结构通过；原高斯仍有模糊和空洞，未验证视觉保真度、独立尺度或机器人任务 |
 
-Agent 修复循环以固定观测生成缺陷，只从已注册插件中选择提案；可信 worker 执行，独立 verifier 决定接受或保留旧候选。Memory/Skill 复用通过回归的参数配方，不更新基础模型权重。真实插件尚未覆盖任意新视频，详见 [闭环方法](docs/architecture.md) 与 [使用手册](docs/runtime.md)。
+这些是功能与任务验证记录，不作为加速对照。包含一次全新云重建的完整端到端时间尚未测得。
 
-## 机器人能力边界
+证据：[新视频 v0.7](docs/report/new-video-validation.json) · [已有场景 v0.6](docs/report/one-command-validation.json) · [历史任务与研究结果](docs/report/evidence.json) · [性能协议](docs/benchmarks/substation_goal15.md)
 
-| 接入 | 统一端口提供的能力 | 已知范围 |
+### 机器人接入
+
+| 构型 | 统一端口能力 | 当前验证范围 |
 |---|---|---|
-| G2 | `root_pose`，读取/写入 USD authored 变换 | 编排展示，无物理导航驱动 |
-| Lite3+Z1 | `joint_drive`，读取 articulation 实测状态 | 已有步态、RGB-D 与 Z1 控制，禁止端口改写物理根位姿 |
-| 独立 Lite3 / Z1 | 同一工厂的绑定模板 | CPU 合同验证，无独立 GPU 任务成功证据 |
+| Lite3 + Z1 | `joint_drive`，读取 articulation 实测状态 | 已有变电站步态、视觉定位、机械臂操作与接触审计 |
+| G2 | `root_pose`，读写 USD authored 变换 | 星巴克编排展示；没有物理导航成绩 |
+| 独立 Lite3 / Z1 | 相同接口的绑定模板 | CPU 合同验证；仍需对应构型的 GPU 任务验证 |
 
-端口统一 `describe`、`observe`、`command`，显式约定米/弧度、关节顺序与 `xyzw` 四元数。新构型仍需策略、安装/TCP 和传感器标定；导入 USD 不会自动获得导航或操作能力。见 [机器人接入示例](examples/robots/README.md)。
+公共端口为 `describe`、`observe`、`command`。新增机器人还需关节映射、策略、安装/TCP、传感器和运动规划适配。见[机器人接入指南](examples/robots/README.md)。
 
-## 结果与复现范围
+## 扩展与开发
 
-v0.7 新入口用真实历史原片与操作者声明关联的已有 PLY 重新生成场景：CPU构建约7.951秒，完整恢复约0.246秒；Docker巡览为640×360、12帧，命令约231.874秒，包含冷启动。独立结构检查通过，但画面仍有原高斯的模糊/空洞，未通过视觉保真度或机器人任务验收。新云任务未执行，不能把这组耗时当成完整重建E2E。详见[新入口证据](docs/report/new-video-validation.json)。
+运行包位于 `src/simready`，按十个领域组织；CLI 只负责分发。完整类、函数、调用链和状态归属见[软件架构](docs/software-architecture.md)。
 
-历史 v0.6.0 在 NVIDIA GB10 上使用 Docker 核验统一入口，详见 [一键运行证据](docs/report/one-command-validation.json)：
-
-| v0.6 核验 | 结果 | 范围 |
+| 要扩展的能力 | 对应模块 | 入口文档 |
 |---|---|---|
-| 变电站完整流程 | 20/20 审计；28.508 s 模拟、1.294082 m 位移、一次按压；713 帧 1080p / 25 fps / 28.52 s | 入口总 wall 1095.164 s，包含冷 shader；不含新重建或此前资产准备 |
-| 星巴克短预览 | 640×360、30 fps、8 帧；入口总 wall 281.670 s | G2 编排功能验证，非完整 4K 重跑或物理导航 |
-| CPU 与静态检查 | 297 passed、1 skipped；Ruff、格式、编译与架构检查通过 | 包含实际 bundle spec 导出及缺少 Isaac 环境时的拒绝检查 |
+| 视频输入与重建来源 | `ingestion`、`workflows` | [采集、编排与执行构造](docs/report/code-parts-workflows.md) |
+| 资产、机器人、任务与录像 | `simulation`、`geometry` | [仿真模块构造](docs/report/code-parts-simulation.md) |
+| 修复插件与模型决策 | `repair`、`agents` | [质量与决策模块](docs/report/code-parts-quality.md) |
+| 指标、经验和 Skill | `evaluation`、`experience` | [验收与经验机制](docs/report/code-parts-quality.md) |
+| 进程、缓存、资源与证据 | `execution`、`core` | [执行机制](docs/report/code-parts-workflows.md)、[基础模块](docs/report/code-parts-foundation.md) |
 
-以上耗时用于功能验证，不作加速比较。变电站整轮源码绑定 `10c250b`；其后两处失败分支保护由 5 个 CPU 负例验证，控制/物理/渲染代码未变，最终源码另完成星巴克预览。完整来源与差异哈希见证据清单。
+```bash
+python -m pip install -e '.[test,dev]'
+python scripts/check_architecture.py
+python -m pytest -q
+```
 
-以下为保留的历史结果：
+CI 在 Python 3.10/3.12 上执行静态检查、CPU 测试和构包；依赖私有资产或 SDK 的检查按环境执行，GPU 任务证据单独保存。提交修复、插件或机器人适配前，请阅读[开发规范](docs/development.md)，明确输入输出、失败行为和验证范围。问题与建议可通过 [Issues](https://github.com/miracle-techlink/video-to-simready/issues) 提交。
 
-| 证据 | 已有结果 | 解释 |
-|---|---|---|
-| 历史变电站任务 | 28.528 s 模拟、1.2945 m 位移、一次按压、20 项审计通过；714 帧原生 1080p 视频 | 单个选定模拟任务，非真实电气认证 |
-| 历史星巴克视频 | 4K、30 fps、900 帧、30 s | G2 编排，非自主导航 |
-| VGGT→gsplat v3 | PSNR 14.2357 dB、SSIM 0.6205、LPIPS 0.6117 | 未达 22 dB 门槛，非交付底稿 |
-| v0.5 包装核验 | 已有资产完整本机复现 756.632 s；接口 Docker 物理另通过 20/20 审计 | 不含云重建/资产再处理；镜像与资产版本分开记录 |
+### 后续方向
 
-历史数据和代码身份见 [历史证据](docs/report/evidence.json) 与 [v0.5 核验](docs/report/packaging-validation.json)，与本次新入口实测分开记录。
+- 跨场景语义资产化、来源约束的纹理恢复与真实修复插件。
+- 带尺度、实例和留出视角标注的多场景 benchmark。
+- 新机器人与新布局的感知、规划、接触和回撤验证。
+- 固定质量与任务门槛后的性能优化，以及跨节点调度与存储。
 
-未观测柜面、尺度和物理参数仍有估计。121 个按钮和 49 个旋钮只是当前低压资产候选，不证明整场景完备。SSH 尚无远端完整任务证据。历史约 56 分钟是多轮工程窗口；15 分钟全工作量目标未达，性能优化保持暂停。
+当前完整能力与待完成项见[项目状态](docs/release-status.md)。
 
-## 开发与许可
+## 文档与发布
 
-[模块/API](docs/architecture.md) · [Agent / Memory / Skill](docs/runtime.md) · [测试与开发](docs/development.md) · [性能口径](docs/benchmarks/substation_goal15.md) · [首版报告](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13)
+| 想了解什么 | 入口 |
+|---|---|
+| 技术原理、公式与真实实验 | [45 页中文白皮书](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf) |
+| 全链路与模块内部构造 | [流水线总览](docs/report/pipeline-overview.md) / [代码架构](docs/software-architecture.md) |
+| 图片、PDF 与可编辑生成源码 | [技术报告发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5) |
+| 本地 Docker 与远端服务器 | [部署指南](docs/deployment.md) |
+| 新视频配置、恢复与输出 | [新视频指南](examples/new_video/README.md) |
+| 已有场景与资产迁移 | [变电站 / 星巴克示例](examples/scenes/README.md) |
+| Agent、Memory、Skill 接入 | [运行手册](docs/runtime.md) |
 
-原创代码采用 MIT。Isaac SDK、机器人资产、权重、场景视频和云服务按各自许可使用；本仓库不重新授权第三方材料。参见 [第三方说明](THIRD_PARTY_NOTICES.md)。
+## 许可与技术基础
+
+原创代码采用 [MIT License](LICENSE)。Isaac SDK、场景视频、机器人资产、模型权重及云服务遵循各自许可；第三方材料的使用范围见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+项目基于或参考 [3D Gaussian Splatting](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/)、[Aholo](https://labs.aholo.ai/api-docs/en/openapi.json)、[OpenUSD](https://openusd.org/)、[Isaac Sim](https://github.com/isaac-sim/IsaacSim) 与 [Isaac Lab](https://github.com/isaac-sim/IsaacLab)。研究分支及 SAM、DINOv2、Difix 等方法的具体使用范围和出处见技术白皮书。

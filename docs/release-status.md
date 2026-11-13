@@ -2,11 +2,11 @@
 
 状态核对日期：2026-11-13。性能优化已暂停；当前工作范围是封装、机器人接口、复现与技术报告发布。
 
-中文竖版白皮书已按视频到 Demo 的技术主线重组，工程命令与字段集中到附录；运行代码和实验数据沿用 v0.7。见[白皮书发布页](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v5)与[流程总览](report/pipeline-overview.md)。
+中文竖版白皮书已按视频到 Demo 的技术主线重组，工程命令与字段集中到附录；运行代码和实验数据沿用 v0.7。见[白皮书发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)与[流程总览](report/pipeline-overview.md)。
 
 ## v0.7 本版完成范围
 
-代码见 [PR #7](https://github.com/miracle-techlink/aholo-powergrid-simready/pull/7)，发布材料见 [逐模块技术报告 Release](https://github.com/miracle-techlink/aholo-powergrid-simready/releases/tag/technical-report-2026-11-13-v3)。
+代码见 [PR #7](https://github.com/miracle-techlink/video-to-simready/pull/7)，发布材料见 [逐模块技术报告 Release](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3)。
 
 | 项目 | 已完成 | 本轮实测边界 |
 |---|---|---|
@@ -24,9 +24,9 @@
 
 ## 历史 v0.6 与 v0.5
 
-[PR #6](https://github.com/miracle-techlink/aholo-powergrid-simready/pull/6)提供已有场景统一入口；变电站20/20审计、713帧1080p/28.52秒，入口1095.164秒；星巴克8帧预览281.670秒。详见[v0.6清单](report/one-command-validation.json)。它们不包含新视频重建或本轮通用资产准备。
+[PR #6](https://github.com/miracle-techlink/video-to-simready/pull/6)提供已有场景统一入口；变电站20/20审计、713帧1080p/28.52秒，入口1095.164秒；星巴克8帧预览281.670秒。详见[v0.6清单](report/one-command-validation.json)。它们不包含新视频重建或本轮通用资产准备。
 
-[PR #5](https://github.com/miracle-techlink/aholo-powergrid-simready/pull/5)完成初始包装与设备接口；其验证保留在[v0.5清单](report/packaging-validation.json)。历史结果分别归属原版本，不混计为本次成功。
+[PR #5](https://github.com/miracle-techlink/video-to-simready/pull/5)完成初始包装与设备接口；其验证保留在[v0.5清单](report/packaging-validation.json)。历史结果分别归属原版本，不混计为本次成功。
 
 ## 后续需求：本次不冒充已完成
 

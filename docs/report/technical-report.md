@@ -737,7 +737,7 @@ check 定义 metric、op、limit、required、severity、track 和 calibration�
 | 镜像依赖与 SDK | urllib3 完整分发与 Kit 启动检查 | 未重跑完整物理任务 |
 | SSH / Aholo | 命令构造；已有任务一次只读 GET 与复用 | 无远端完整执行或新付费重建 |
 
-项目与历史发布：https://github.com/miracle-techlink/aholo-powergrid-simready
+项目与历史发布：https://github.com/miracle-techlink/video-to-simready
 
 - v0.7 新视频功能实测：`docs/report/new-video-validation.json`。
 - v0.6 已有场景完整入口：`docs/report/one-command-validation.json`。
