@@ -27,6 +27,8 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 
 以上为历史已准备场景的实际渲染画面。变电站有物理任务证据；星巴克为 G2 编排展示。新视频通用入口当前输出场景候选和巡览，仍需场景专用的资产准备与机器人适配，才能获得同等级的任务演示。
 
+新增[星巴克双桌搬杯示例](examples/starbucks_grasp/README.md)：G2_90d 用合成 RGB-D 定位独立重建杯子，经关节驱动抓起并放到另一张桌子，保存接触力、实测位姿和独立验收。它覆盖固定基座与局部修复任务区，尚不代表整店修复或自主导航通过。
+
 [查看真实验证结果](#验证结果) · [两个场景的启动说明](examples/scenes/README.md) · [下载报告与图册](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)
 
 ## 核心能力
@@ -47,7 +49,7 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 | 上游云端重建 | **群核科技 Aholo**：运行云端三维重建服务，提供任务状态和 PLY / SPZ 等产物。 |
 | 重建结果到机器人仿真 | **Video to SimReady**：实现 API 客户端与可恢复编排、坐标与高斯格式处理、外观／碰撞／交互分层 USD、机器人运行时、独立验收和原生渲染，并提供插件化修复与 Memory／Skill 经验复用框架。 |
 
-本仓库开源 API 接入、工作流编排与仿真处理代码；Aholo 的云端重建模型与训练实现由服务方提供。当前示例的重建底稿采用 Aholo，VGGT→gsplat 保留为独立研究分支。将新场景用于机器人任务仍需对应的资产准备、尺度标定和任务验证，具体范围见[验证结果](#验证结果)。
+本仓库开源 API 接入、工作流编排与仿真处理代码；Aholo 的云端重建模型与训练实现由服务方提供。既有变电站与历史星巴克示例的重建底稿采用 Aholo，VGGT→gsplat 保留为独立研究分支。新增双桌搬杯案例复用 Aholo 三视图重建杯；任务区使用本地 3DGS 配准参考、原片纹理投影和显式几何补建，分别记录来源。将新场景用于机器人任务仍需对应的资产准备、尺度标定和任务验证，具体范围见[验证结果](#验证结果)。
 
 - **Aholo 平台与 API Key 入口**：[Aholo 空间智能实验室 · labs.aholo3d.cn](https://labs.aholo3d.cn/)
 - **官方 API 文档**：[接口简介 · labs.aholo.ai/api-docs/intro](https://labs.aholo.ai/api-docs/intro) · [调用流程与密钥配置](https://labs.aholo.ai/api-docs/quickstart)
@@ -119,6 +121,16 @@ simready run --scene starbucks --accept-eula
 
 资产 bundle 不随源码发布。上述场景入口复现已准备资产；任意新视频的几何、控件与任务参数需要先完成适配。
 
+固定基座 G2 的“从桌 A 搬杯到桌 B”用独立入口：
+
+```bash
+python examples/starbucks_grasp/run.py \
+  --assets /path/to/cup_assets --out runs/cup_transfer \
+  --model-python /path/to/model_env/bin/python --render
+```
+
+场景、输入准备、参数先验与限制见[双桌搬杯说明](examples/starbucks_grasp/README.md)。
+
 ### 4. 先在 CPU 上体验修复闭环
 
 ```bash
@@ -171,6 +183,7 @@ flowchart LR
 |---|---|---|
 | 变电站已有场景入口 v0.6 | Lite3+Z1，**20/20** 项审计；一次按压；**713 帧、1080p、28.52 秒** | 入口 wall **1095.164 秒**，含启动和冷 shader；不含新重建或前置资产准备 |
 | 星巴克展示 | 历史完整视频为 **4K、900 帧、30 秒**；v0.6 入口另完成 8 帧预览 | G2 编排展示；8 帧预览 wall 281.670 秒，与历史完整视频分别记账 |
+| 星巴克双桌搬杯 | 一次固定基座运行通过 **18 项**检查；视觉定位误差 **0.58 mm**，放置误差 **7.05 mm**，松爪后支撑力 **0.834 N** | 合成 RGB-D、已知杯模型/桌面、预设物性；无导航、实物标定或跨场景成功率结论 |
 | 新视频入口 v0.7 | 历史原片与声明绑定 PLY：CPU 导出 **7.951 秒**，恢复 **0.246 秒**；Docker 12 帧巡览 **231.874 秒** | 结构通过；原高斯仍有模糊和空洞，未验证视觉保真度、独立尺度或机器人任务 |
 
 这些是功能与任务验证记录，不作为加速对照。包含一次全新云重建的完整端到端时间尚未测得。
@@ -183,6 +196,7 @@ flowchart LR
 |---|---|---|
 | Lite3 + Z1 | `joint_drive`，读取 articulation 实测状态 | 已有变电站步态、视觉定位、机械臂操作与接触审计 |
 | G2 | `root_pose`，读写 USD authored 变换 | 星巴克编排展示；没有物理导航成绩 |
+| G2_90d 双桌任务 | 独立的原生 articulation 关节驱动入口 | 固定基座，右臂抓杯、跨桌放置与接触验收；尚未替换通用 G2 端口 |
 | 独立 Lite3 / Z1 | 相同接口的绑定模板 | CPU 合同验证；仍需对应构型的 GPU 任务验证 |
 
 公共端口为 `describe`、`observe`、`command`。新增机器人还需关节映射、策略、安装/TCP、传感器和运动规划适配。见[机器人接入指南](examples/robots/README.md)。
