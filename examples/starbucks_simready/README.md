@@ -21,6 +21,8 @@ python examples/starbucks_simready/run.py --case tour \
 
 默认输出为 1920×1080、30 fps。搬杯为 22.5 秒，巡逻为 30 秒。省略 `--render` 只运行验证；失败时停止，不录制未通过版本。需要本地 `simready-isaac:6.1.0` Docker 镜像；部署方式见 [Isaac 部署](../../docs/deployment.md)。模型环境需安装项目及已缓存的 Grounding DINO/SAM 权重。
 
+此例默认每个输出帧使用 2 个 RTX 子帧；可用 `--render-subframes 6` 提高采样预算。每一输出帧都实际渲染，不插帧、不重复帧扩展时长。单 GPU 建议依次运行两个案例，避免多个 RTX 进程同时占用设备。
+
 建模时写出的 `build.json` / `scene_contract.json` 保持原始候选状态，避免验收后改写资产哈希。最终结果以本次运行的 `artifacts/readiness.json`、`task/artifacts/audit.json`（搬杯）、`artifacts/route/route_check.json`（巡逻）及 `timing.json` 为准。首次 RTX 冷缓存初始化可能耗时数分钟；录制等待真实、非空白帧就绪后才推进相机和机器人。
 
 搬杯控制保持 240 Hz 物理步进，使用起止速度、加速度为零的五次时间插值，闭爪目标为 0.70 rad。接触门槛保持不变；闭合目标是当前已知杯模型的任务设置，不是适用于任意杯子的通用夹持策略。运行保存全部瞬态接触力，未对峰值做平滑或删减。

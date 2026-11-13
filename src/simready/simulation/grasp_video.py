@@ -17,6 +17,7 @@ def main():
     ap.add_argument("--observe", action="store_true")
     ap.add_argument("--scene", type=Path)
     ap.add_argument("--width", type=int, choices=[1280, 1920], default=1280)
+    ap.add_argument("--subframes", type=int, choices=range(1, 33), default=6)
     args = ap.parse_args()
     if not args.observe and not args.rollout:
         ap.error("--rollout is required for measured replay")
@@ -210,7 +211,7 @@ def main():
                 Gf.Matrix4d().SetLookAt(eye, target, Gf.Vec3d(0, 0, 1)).GetInverse()
             )
             rep.orchestrator.step(
-                rt_subframes=12 if args.preview else 6,
+                rt_subframes=12 if args.preview else args.subframes,
                 delta_time=0.0,
                 pause_timeline=True,
             )
@@ -269,6 +270,7 @@ def main():
                     "frames": mappings,
                     "appearance_only_uv_repairs": uv_repairs,
                     "background": str(args.scene),
+                    "rt_subframes": 12 if args.preview else args.subframes,
                     "scene_contract": contract,
                     "visible_gaussian_prims": [
                         str(p.GetPath())

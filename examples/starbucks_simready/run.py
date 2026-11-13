@@ -21,6 +21,7 @@ def main():
     ap.add_argument("--gpu", default="0")
     ap.add_argument("--render", action="store_true")
     ap.add_argument("--width", type=int, choices=[1280, 1920], default=1920)
+    ap.add_argument("--render-subframes", type=int, choices=range(1, 33), default=2)
     args = ap.parse_args()
     repo = Path(__file__).resolve().parents[2]
     args.assets = args.assets.resolve()
@@ -160,6 +161,8 @@ def main():
                             "/output/video",
                             "--width",
                             str(args.width),
+                            "--subframes",
+                            str(args.render_subframes),
                         ],
                         assets=audit_assets,
                     ),
@@ -210,7 +213,7 @@ def main():
                             str(args.width),
                             str(args.width * 9 // 16),
                             "--subframes",
-                            "6",
+                            str(args.render_subframes),
                             "--out",
                             "/output/video",
                             "--encode",
