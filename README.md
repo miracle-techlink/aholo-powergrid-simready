@@ -2,7 +2,7 @@
 
 核心 video → reconstruction → USD pipeline，以及隔离的 Isaac Sim 容器部署。
 
-[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) · [工程指南：架构、测试与扩展](docs/README.md)
+[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) · [开发者指南：架构、baseline 与 benchmark 接入](docs/README.md)
 
 | 分支 | 内容 |
 |---|---|
@@ -40,4 +40,4 @@ python scripts/launch_isaac.py --assets examples/pipeline --out runs/isaac-check
 
 ## 开发边界
 
-模块分工、baseline 接入、测试与合并流程统一见[工程指南](docs/README.md)。公开示例验证接口与恢复，完整几何、真实物性与模型精度需各自评测。唯一命令入口为 `simready`；专用场景、Agent 及旧 CLI 别名使用完整分支。
+模块分工、代码构造、baseline／benchmark 接入及测试流程统一见[开发者指南](docs/README.md)，包含可运行的后端接入与独立评分示例。公开示例验证接口与恢复，完整几何、真实物性与模型精度需各自评测。唯一命令入口为 `simready`；专用场景、Agent 及旧 CLI 别名使用完整分支。
