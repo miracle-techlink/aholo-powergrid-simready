@@ -1,10 +1,10 @@
 # 新视频入口：视频到场景与巡览
 
-`simready run --video` 构建新场景；规范化配置、后端替换和局部升级使用 `simready run --pipeline`，见[Pipeline](../../docs/pipeline.md)。
+`simready run --video` 构建新场景；规范化配置、后端替换和局部升级使用 `simready run --pipeline`，见[工程指南](../../docs/README.md#规范流水线)。
 
 ## 首次运行
 
-先安装本仓库、宿主 ffmpeg，并按[部署说明](../../docs/deployment.md)准备 `simready-isaac-core:6.1.0` 镜像与 NVIDIA RTX 环境：
+先安装本仓库、宿主 ffmpeg，并按[容器与运行说明](../../docs/README.md#容器与运行)准备 `simready-isaac-core:6.1.0` 镜像与 NVIDIA RTX 环境：
 
 ```bash
 python -m pip install -e '.[ingest,aholo]'

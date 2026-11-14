@@ -2,7 +2,7 @@
 
 核心 video → reconstruction → USD pipeline，以及隔离的 Isaac Sim 容器部署。
 
-[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) · [文档](docs/README.md) · [Pipeline](docs/pipeline.md) · [容器部署](docs/deployment.md)
+[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) · [工程指南：架构、测试与扩展](docs/README.md)
 
 | 分支 | 内容 |
 |---|---|
@@ -36,10 +36,8 @@ python scripts/launch_isaac.py --assets examples/pipeline --out runs/isaac-check
   --doctor --launch-smoke --accept-eula
 ```
 
-执行前准备 Docker、NVIDIA Container Toolkit、适用的 NVIDIA 许可与 GPU 环境。源码与输入只读挂载；镜像不包含场景、模型权重或密钥。完整步骤、镜像身份及 GPU 验收见[部署指南](docs/deployment.md)。
+执行前准备 Docker、NVIDIA Container Toolkit、适用的 NVIDIA 许可与 GPU 环境。源码与输入只读挂载；镜像不包含场景、模型权重或密钥。环境身份和运行约束见[容器与运行](docs/README.md#容器与运行)。
 
 ## 开发边界
 
-八个领域的依赖由[架构合同](docs/architecture.md)与 CI 约束。配置、阶段恢复和局部升级见 [Pipeline](docs/pipeline.md)；新增模型保留独立 worker 环境。公开示例用于合同验证，完整几何、真实物性与模型精度仍需各自评测。
-
-v0.9 移出了专用场景与 Agent 命令，迁移到完整分支或核心入口见[迁移说明](docs/migration.md)。PR 必须通过双 Python 回归、隔离 wheel 流水线和合并门槛；main 交付绑定提交身份的安装包。
+模块分工、baseline 接入、测试与合并流程统一见[工程指南](docs/README.md)。公开示例验证接口与恢复，完整几何、真实物性与模型精度需各自评测。v0.9 的唯一命令入口为 `simready`；专用场景、Agent 及旧 CLI 别名使用完整分支。
