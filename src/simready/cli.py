@@ -6,7 +6,7 @@ from collections.abc import Sequence
 
 COMMANDS = {
     "run": (
-        "simready.workflows.pipeline_entry",
+        "simready.workflows.pipelines.entry",
         "Video reconstruction, USD compilation and independent scene validation",
     ),
     "simulation": (

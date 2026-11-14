@@ -8,8 +8,15 @@ from threading import Barrier
 import pytest
 
 from simready.core.artifacts import digest, read_json, write_json
-from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
-from simready.workflows.stage_ledger import StageLedger, VideoStages, stage_identity
+from simready.execution.processes.local import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+)
+from simready.workflows.contracts.stage_ledger import (
+    StageLedger,
+    VideoStages,
+    stage_identity,
+)
 
 
 def recipe(**changes):
@@ -282,7 +289,7 @@ def test_reuse_rejects_corrupt_evidence_without_running_action(tmp_path, corrupt
 def test_failed_index_publication_keeps_canonical_reusable_and_old_index_intact(
     tmp_path, monkeypatch
 ):
-    from simready.workflows import stage_ledger
+    from simready.workflows.contracts import stage_ledger
 
     old, new = stage_identity(recipe()), stage_identity(recipe(version="v2.0"))
     VideoStages(tmp_path, "plan-one").run(
@@ -341,7 +348,7 @@ def test_failure_accounting_preserves_the_original_exception(tmp_path, error, st
 
 
 def test_failure_receipt_io_error_does_not_mask_cancellation(tmp_path, monkeypatch):
-    from simready.workflows import stage_ledger
+    from simready.workflows.contracts import stage_ledger
 
     original = ProcessCancelledError(0)
 

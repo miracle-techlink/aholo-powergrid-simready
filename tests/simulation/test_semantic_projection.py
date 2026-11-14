@@ -11,7 +11,7 @@ from simready.simulation.semantic_projection import (
     build_semantic_spec,
     visible_point_pixels,
 )
-from simready.workflows.semantic_assets import run_semantic_assets
+from simready.workflows.pipelines.semantic_assets import run_semantic_assets
 
 
 def test_front_surface_occlusion_and_pixel_convention():

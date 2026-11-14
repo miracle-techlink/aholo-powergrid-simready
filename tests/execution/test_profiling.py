@@ -4,7 +4,7 @@ import sys
 import pytest
 
 from simready.core.artifacts import read_json, write_json
-from simready.execution.profiling import profile_command, summarize_profiles
+from simready.execution.workers.profiling import profile_command, summarize_profiles
 
 
 def test_unknown_usage_is_not_reported_as_complete_zero(tmp_path):
@@ -103,7 +103,7 @@ def test_aborted_profile_never_leaves_a_running_receipt(
     def fail(*args, **kwargs):
         raise error("test aborted process")
 
-    monkeypatch.setattr("simready.execution.profiling.run_process", fail)
+    monkeypatch.setattr("simready.execution.workers.profiling.run_process", fail)
     with pytest.raises(error):
         profile_command(
             [sys.executable, "-c", "pass"],

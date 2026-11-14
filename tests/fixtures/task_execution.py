@@ -1,6 +1,6 @@
 """Shared synthetic inputs; no test collection or real device initialization."""
 
-from simready.execution.task_graph import run_task_graph
+from simready.execution.tasks.graph import run_task_graph
 from tests.paths import REPOSITORY_ROOT
 
 WORKER = REPOSITORY_ROOT / "tests/fixtures/synthetic_task.py"

@@ -3,8 +3,8 @@
 import pytest
 
 from simready.core.artifacts import digest, read_json, write_json
-from simready.execution.remote_polling import poll_existing_job
-from simready.ingestion import aholo_reconstruction as worker
+from simready.execution.processes.remote_polling import poll_existing_job
+from simready.ingestion.reconstruction import aholo_reconstruction as worker
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def fake_cloud(monkeypatch):
             urls["spzPath"] = "https://assets.example.invalid/spz"
         return {"status": "SUCCEEDED", "assets": {"splats": {"urls": urls}}}
 
-    monkeypatch.setattr("simready.ingestion.aholo_client.Client", Client)
+    monkeypatch.setattr("simready.ingestion.reconstruction.aholo_client.Client", Client)
     monkeypatch.setattr(worker, "poll_existing_job", poll)
     monkeypatch.setattr(requests, "get", download)
     return calls
@@ -167,7 +167,7 @@ def test_module_supervision_preserves_explicit_submission_flag(
 
 def test_ssl_retry_resumes_receipt_and_reuses_verified_download(tmp_path, monkeypatch):
     pytest.importorskip("requests")
-    from simready.ingestion import aholo_reconstruction as submit_panel
+    from simready.ingestion.reconstruction import aholo_reconstruction as submit_panel
 
     video = tmp_path / "source.mp4"
     video.write_bytes(b"video fixture")

@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from simready.core.artifacts import write_json
-from simready.execution.resource_pool import ResourcePool
-from simready.execution.task_graph import run_task_graph
-from simready.execution.task_schema import validate
+from simready.execution.resources.resource_pool import ResourcePool
+from simready.execution.tasks.graph import run_task_graph
+from simready.execution.tasks.schema import validate
 from tests.fixtures.task_execution import INVENTORY, execute, task
 
 
@@ -20,6 +20,26 @@ def interval(root, name):
         for line in (root / name / "stdout.log").read_text().splitlines()
     ]
     return rows[0]["start"], rows[-1]["end"]
+
+
+def test_nested_execution_code_change_invalidates_task_cache(tmp_path, monkeypatch):
+    from simready.execution.tasks import graph
+
+    first = execute(tmp_path, [task()], name="first")
+    assert first["status"] == "SUCCESS"
+    assert execute(tmp_path, [task()], name="reused")["cache_hits"] == 1
+    original = graph.digest
+    monkeypatch.setattr(
+        graph,
+        "digest",
+        lambda path: (
+            "0" * 64
+            if Path(path).as_posix().endswith("execution/resources/gpu_capability.py")
+            else original(path)
+        ),
+    )
+    changed = execute(tmp_path, [task()], name="changed")
+    assert changed["status"] == "SUCCESS" and changed["cache_hits"] == 0
 
 
 def test_parallel_branches_and_join(tmp_path):
@@ -313,7 +333,7 @@ def test_lease_close_is_idempotent_and_copies_resource_spec(tmp_path):
 def test_graph_interruption_cancels_owned_descendants_and_retains_receipts(
     tmp_path, monkeypatch
 ):
-    from simready.execution import task_graph
+    from simready.execution.tasks import graph as task_graph
 
     ready, late = tmp_path / "ready", tmp_path / "late"
     child = f"import pathlib,time; time.sleep(.7); pathlib.Path({str(late)!r}).touch(); time.sleep(10)"
@@ -354,7 +374,7 @@ def test_graph_interruption_cancels_owned_descendants_and_retains_receipts(
 def test_submission_error_releases_acquired_lease_and_records_graph_failure(
     tmp_path, monkeypatch
 ):
-    from simready.execution import task_graph
+    from simready.execution.tasks import graph as task_graph
 
     leases = []
     acquire = ResourcePool.acquire

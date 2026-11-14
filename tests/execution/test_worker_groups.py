@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from simready.execution.worker_groups import run_worker_group
+from simready.execution.workers.worker_groups import run_worker_group
 
 
 def test_children_share_owned_lease_with_bounded_overlap(tmp_path, device_inventory):
@@ -15,7 +15,7 @@ def test_children_share_owned_lease_with_bounded_overlap(tmp_path, device_invent
     script.write_text(
         "import json,time,sys\n"
         "from pathlib import Path\n"
-        "from simready.execution.worker_groups import gpu_worker_lease\n"
+        "from simready.execution.workers.worker_groups import gpu_worker_lease\n"
         "with gpu_worker_lease() as lock:\n"
         "    start=time.time()\n"
         "    time.sleep(.2)\n"
@@ -75,7 +75,7 @@ def test_plain_file_or_environment_cannot_bypass_exclusive_lease(tmp_path):
             [
                 sys.executable,
                 "-c",
-                "from simready.execution.worker_groups import gpu_worker_lease\nwith gpu_worker_lease(): pass",
+                "from simready.execution.workers.worker_groups import gpu_worker_lease\nwith gpu_worker_lease(): pass",
             ],
             env={**os.environ, "SIMREADY_GPU_LEASE_FD": str(stream.fileno())},
             pass_fds=(stream.fileno(),),
@@ -107,7 +107,7 @@ def test_failed_child_releases_only_its_group_lock(tmp_path, device_inventory):
 def test_interrupted_group_cancels_owned_workers_before_releasing_lease(
     tmp_path, monkeypatch, device_inventory
 ):
-    from simready.execution import worker_groups
+    from simready.execution.workers import worker_groups
 
     ready, late = tmp_path / "ready", tmp_path / "late"
     profile = worker_groups.profile_command

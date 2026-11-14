@@ -10,7 +10,7 @@ from PIL import Image
 from simready.core.artifacts import digest, write_json
 from simready.core.types import JsonObject, PathLike
 from simready.core.validation import number
-from simready.execution.processes import run_process
+from simready.execution.processes.local import run_process
 
 
 def gradient_hash(image):

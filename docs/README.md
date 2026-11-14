@@ -25,13 +25,25 @@ main 维护视频到 USD 的核心 pipeline、独立验收和 Isaac Sim 容器�
 | evaluation | 独立指标、结构及参数读回 | core、execution |
 | workflows | 配置、阶段编排、恢复／升级、baseline 比较 | 除 geometry 外的上述领域 |
 
-架构检查拒绝越界依赖、环及未声明的动态导入。运行时代码不导入 tests 或 examples；evaluation 不导入资产 writer；模型和 SDK 在选定 worker 内加载，`--help` 不启动它们。
+域内按以下职责组织；core、geometry 及小型仿真 worker 保持平铺：
+
+```text
+execution/  resources → processes → workers / tasks
+workflows/  contracts → stages → planning → pipelines
+ingestion/  reconstruction / segmentation（视频和物性适配器保持独立）
+assets/     appearance / association / physics / compilation
+evaluation/ inspection（独立 USD 读回）；观测、评分和协议位于域根
+```
+
+箭头表示从底层到组合层；实际允许依赖以合同为准。compilation 内分开规格校验、碰撞几何、USD 写入和场景组合；inspection 内分开期望解释、数值比较、物理检查和报告。架构检查同时拒绝越界依赖、子模块反向依赖、实际导入环、未分类根模块及未声明的动态导入。运行时代码不导入 tests 或 examples；evaluation 不导入资产 writer；模型和 SDK 在选定 worker 内加载，`--help` 不启动它们。
+
+v0.10 调整了内部 Python 模块路径，公共 `simready` 命令、配置 schema 与验收阈值保持不变；已有八个 simulation 资产兼容入口继续转发到唯一实现。自定义 Python 调用应更新到对应子包。代码身份覆盖子目录，旧运行不能伪装为新代码结果；使用新目录或显式 `--upgrade`，保留旧计划及证据。
 
 `tests/` 与实现同版本维护；`scripts/` 只保留架构检查、CI 门禁检查和 Isaac 启动入口；`.github/workflows/` 配置自动执行这些检查。三者留在 main，便于 PR 审查及复现；测试与脚本不进入安装用 wheel，源码包保留它们。
 
 ## 规范流水线
 
-入口：`simready run --pipeline pipeline.json --out runs/<新运行>`。与 `--video` 共用视频工作流及阶段回执。配置解析见 [pipeline_config.py](../src/simready/workflows/pipeline_config.py)，可运行输入见 [CPU 示例](../examples/pipeline/README.md)。
+入口：`simready run --pipeline pipeline.json --out runs/<新运行>`。与 `--video` 共用视频工作流及阶段回执。配置解析见 [pipeline_config.py](../src/simready/workflows/pipelines/pipeline_config.py)，可运行输入见 [CPU 示例](../examples/pipeline/README.md)。
 
 ```mermaid
 flowchart LR

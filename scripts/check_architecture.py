@@ -18,9 +18,18 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
             f"Domain inventory mismatch: actual={sorted(actual)}, declared={sorted(domains)}"
         )
     parsed = {}
+    module_paths = {
+        ".".join(
+            [rules["package"], *p.relative_to(source).with_suffix("").parts]
+        ).removesuffix(".__init__"): p
+        for p in source.rglob("*.py")
+    }
+    module_edges = {name: set() for name in module_paths}
     for path in sorted(source.rglob("*.py")):
         relative = path.relative_to(source)
-        module = ".".join([rules["package"], *relative.with_suffix("").parts])
+        module = ".".join(
+            [rules["package"], *relative.with_suffix("").parts]
+        ).removesuffix(".__init__")
         tree = ast.parse(path.read_text(), filename=str(path))
         parsed[module] = tree
         domain = relative.parts[0] if len(relative.parts) > 1 else None
@@ -50,7 +59,13 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
                     errors.append(
                         f"{relative}:{node.lineno}: use explicit absolute imports"
                     )
-                imports = [node.module or ""]
+                base = node.module or ""
+                imports = [
+                    f"{base}.{alias.name}"
+                    if f"{base}.{alias.name}" in module_paths
+                    else base
+                    for alias in node.names
+                ]
             elif isinstance(node, ast.Import):
                 imports = [a.name for a in node.names]
             elif isinstance(node, ast.Call):
@@ -84,6 +99,8 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
                             f"{relative}:{node.lineno}: dynamic import requires a declared CLI router"
                         )
             for target in imports:
+                if target in module_edges:
+                    module_edges[module].add(target)
                 parts = target.split(".")
                 if parts[0] in rules["forbidden_runtime_roots"]:
                     errors.append(
@@ -93,6 +110,19 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
                     continue
                 dependency = parts[1] if len(parts) > 1 else None
                 if dependency == domain:
+                    layers = domains[domain].get("layers")
+                    if layers:
+                        layer = relative.parts[1] if len(relative.parts) > 2 else "."
+                        target_layer = (
+                            parts[2] if len(parts) > 2 and parts[2] in layers else "."
+                        )
+                        if target_layer != layer and target_layer not in layers.get(
+                            layer, []
+                        ):
+                            errors.append(
+                                f"{relative}:{node.lineno}: forbidden submodule dependency "
+                                f"{domain}.{layer} -> {domain}.{target_layer}"
+                            )
                     continue
                 if dependency not in domains.get(domain, {}).get(
                     "allowed_dependencies", []
@@ -103,6 +133,26 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
     for domain in domains:
         if not (source / domain / "__init__.py").is_file():
             errors.append(f"{domain}: missing package marker")
+        specification = domains[domain]
+        layers = specification.get("layers")
+        if layers:
+            actual_layers = {
+                p.name
+                for p in (source / domain).iterdir()
+                if p.is_dir() and not p.name.startswith("_")
+            }
+            if actual_layers != set(layers) - {"."}:
+                errors.append(f"{domain}: submodule inventory mismatch")
+            for layer in set(layers) - {"."}:
+                if not (source / domain / layer / "__init__.py").is_file():
+                    errors.append(f"{domain}.{layer}: missing package marker")
+            if "root_modules" in specification:
+                actual_roots = {p.stem for p in (source / domain).glob("*.py")}
+                if actual_roots != set(specification["root_modules"]):
+                    errors.append(f"{domain}: unclassified root modules")
+            errors.extend(_cycles(layers, f"Submodule dependency in {domain}"))
+
+    errors.extend(_cycles(module_edges, "Module dependency"))
 
     # The declared dependency graph must be acyclic, including edges not imported yet.
     def visit(domain, visiting, visited):
@@ -151,6 +201,31 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
         if not ast.get_docstring(function):
             errors.append(f"{api}: public API needs a responsibility docstring")
     return sorted(set(errors))
+
+
+def _cycles(graph: dict, label: str) -> list[str]:
+    """Check declared sublayers and actual imports, including function-local imports."""
+    errors, visited, stack = [], set(), []
+
+    def visit(node):
+        if node in stack:
+            cycle = " -> ".join([*stack[stack.index(node) :], node])
+            errors.append(f"{label} cycle: {cycle}")
+            return
+        if node in visited:
+            return
+        stack.append(node)
+        for target in sorted(graph[node]):
+            if target not in graph:
+                errors.append(f"{label}: unknown dependency {target}")
+            else:
+                visit(target)
+        stack.pop()
+        visited.add(node)
+
+    for node in sorted(graph):
+        visit(node)
+    return errors
 
 
 def main() -> int:

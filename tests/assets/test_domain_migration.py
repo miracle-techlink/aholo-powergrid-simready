@@ -92,7 +92,7 @@ def test_legacy_module_patch_reaches_canonical_preparation(tmp_path, monkeypatch
 
 
 def test_both_cli_paths_compile_identical_real_usd_and_pass_independent_audit(tmp_path):
-    from simready.evaluation.physical_assets import inspect_physical_assets
+    from simready.evaluation.inspection.physical_assets import inspect_physical_assets
     from tests.fixtures.scene_preparation import cloud, write_ply
 
     pytest.importorskip("pxr")

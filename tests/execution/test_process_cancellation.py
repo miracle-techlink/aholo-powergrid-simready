@@ -5,7 +5,7 @@ from threading import Event, Timer
 
 import pytest
 
-from simready.execution.processes import (
+from simready.execution.processes.local import (
     ProcessCancelledError,
     ProcessTimeoutError,
     run_process,

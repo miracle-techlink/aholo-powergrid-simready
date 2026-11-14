@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from simready.core.artifacts import digest, read_json, write_json
-from simready.workflows import video_execution
+from simready.workflows.stages import video_execution
 from tests.fixtures.video_worker import gaussian_ply, worker_inputs
 
 
@@ -86,7 +86,10 @@ def test_zero_exit_without_outputs_is_not_success(tmp_path, monkeypatch):
 def test_failed_stage_keeps_timing_and_specific_terminal_state(
     tmp_path, monkeypatch, mode
 ):
-    from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
+    from simready.execution.processes.local import (
+        ProcessCancelledError,
+        ProcessTimeoutError,
+    )
 
     def stop(*args, **kwargs):
         assert 0 < kwargs["timeout"] <= 7
@@ -164,7 +167,7 @@ def test_worker_never_overwrites_previous_evidence(tmp_path, monkeypatch):
 
 def test_structure_audit_rejects_unresolved_authored_reference(tmp_path):
     pytest.importorskip("pxr")
-    from simready.evaluation.scene_package import inspect_scene
+    from simready.evaluation.inspection.scene_package import inspect_scene
     from simready.simulation.scene_preparation import prepare_scene
 
     scene = tmp_path / "scene"

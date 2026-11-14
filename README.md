@@ -40,4 +40,4 @@ python scripts/launch_isaac.py --assets examples/pipeline --out runs/isaac-check
 
 ## 开发边界
 
-模块分工、baseline 接入、测试与合并流程统一见[工程指南](docs/README.md)。公开示例验证接口与恢复，完整几何、真实物性与模型精度需各自评测。v0.9 的唯一命令入口为 `simready`；专用场景、Agent 及旧 CLI 别名使用完整分支。
+模块分工、baseline 接入、测试与合并流程统一见[工程指南](docs/README.md)。公开示例验证接口与恢复，完整几何、真实物性与模型精度需各自评测。唯一命令入口为 `simready`；专用场景、Agent 及旧 CLI 别名使用完整分支。

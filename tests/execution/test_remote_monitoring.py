@@ -6,12 +6,12 @@ import sys
 import pytest
 
 from simready.core.artifacts import read_json
-from simready.execution.process_supervision import supervise_process
-from simready.execution.remote_polling import (
+from simready.execution.processes.remote_polling import (
     RemoteJobError,
     RetryablePollError,
     poll_existing_job,
 )
+from simready.execution.processes.supervision import supervise_process
 
 
 class Clock:

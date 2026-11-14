@@ -8,7 +8,7 @@ import sys
 import pytest
 
 from simready.core.artifacts import read_json, write_json
-from simready.evaluation.physical_assets import inspect_physical_assets
+from simready.evaluation.inspection.physical_assets import inspect_physical_assets
 
 pytest.importorskip("pxr", reason="Optional USD bindings are required for readback")
 from pxr import Gf, Usd, UsdGeom, UsdPhysics, UsdShade  # noqa: E402
@@ -357,7 +357,7 @@ def test_cli_reopens_files_in_a_fresh_process_and_records_failure(package, tmp_p
     command = [
         sys.executable,
         "-m",
-        "simready.evaluation.physical_assets",
+        "simready.evaluation.inspection.physical_assets",
         "--scene-directory",
         str(directory),
         "--scene-spec",
@@ -381,7 +381,7 @@ def test_existing_result_is_never_overwritten(package, tmp_path):
     directory, source = package
     output = tmp_path / "existing.json"
     output.write_text("keep")
-    from simready.evaluation.physical_assets import main
+    from simready.evaluation.inspection.physical_assets import main
 
     with pytest.raises(FileExistsError):
         main(

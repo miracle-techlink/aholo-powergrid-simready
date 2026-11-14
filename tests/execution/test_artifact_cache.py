@@ -5,7 +5,7 @@ import json
 import pytest
 
 from simready.core.artifacts import digest, write_json
-from simready.execution.artifact_cache import cache_hit, hash_outputs
+from simready.execution.tasks.cache import cache_hit, hash_outputs
 
 
 @pytest.fixture

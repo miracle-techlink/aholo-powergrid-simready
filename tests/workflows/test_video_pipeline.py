@@ -9,8 +9,11 @@ import pytest
 
 from simready.cli import main
 from simready.core.artifacts import digest, object_digest, read_json, write_json
-from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
-from simready.workflows import video_pipeline
+from simready.execution.processes.local import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+)
+from simready.workflows.pipelines import video_pipeline
 
 
 def test_video_help_does_not_import_numeric_or_gpu_libraries(tmp_path):
@@ -96,7 +99,7 @@ def test_resume_reuses_only_verified_completed_stage(tmp_path):
         path.write_bytes(b"model")
         return {"model": str(path)}, [path]
 
-    from simready.workflows.stage_ledger import StageLedger
+    from simready.workflows.contracts.stage_ledger import StageLedger
 
     assert video_pipeline.VideoStages is StageLedger
     first = video_pipeline.VideoStages(tmp_path, "identity")

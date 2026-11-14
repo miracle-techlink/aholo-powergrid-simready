@@ -6,13 +6,46 @@ import pytest
 
 from simready.cli import main
 from simready.core.artifacts import digest, read_json, write_json
-from simready.workflows import video_pipeline
-from simready.workflows.pipeline_spec import load_pipeline
+from simready.workflows.pipelines import video_pipeline
+from simready.workflows.planning.pipeline_spec import load_pipeline
 from tests.fixtures.pipeline import configured as configured
 
 
 def command(path, output, *flags):
     return ["run", "--pipeline", str(path), "--out", str(output), *flags]
+
+
+@pytest.mark.parametrize(
+    "helper",
+    [
+        "assets/compilation/spec_validation.py",
+        "assets/compilation/collision_geometry.py",
+        "assets/compilation/usd_layers.py",
+        "evaluation/inspection/comparison.py",
+        "evaluation/inspection/expectations.py",
+        "evaluation/inspection/physical_checks.py",
+    ],
+)
+def test_changed_nested_delivery_code_invalidates_only_delivery(
+    configured, monkeypatch, helper
+):
+    from simready.workflows.planning import pipeline_spec
+
+    path, output = configured
+    plan = video_pipeline.make_plan(load_pipeline(path, output))
+    before = pipeline_spec.stage_recipes(plan)["identities"]
+    original = pipeline_spec.digest
+    monkeypatch.setattr(
+        pipeline_spec,
+        "digest",
+        lambda path: (
+            "0" * 64 if Path(path).as_posix().endswith(helper) else original(path)
+        ),
+    )
+    after = pipeline_spec.stage_recipes(plan)["identities"]
+    assert {name for name in before if before[name] != after[name]} == {
+        "scene_delivery"
+    }
 
 
 def test_partial_resume_and_downstream_only_upgrade(configured):
@@ -148,7 +181,7 @@ def test_secret_command_cannot_reuse_outer_stage_receipts(configured, monkeypatc
 def test_command_completion_recovers_before_outer_receipt_publication(
     configured, monkeypatch
 ):
-    from simready.ingestion import reconstruction_providers
+    from simready.ingestion.reconstruction import providers as reconstruction_providers
 
     path, output = configured
     value = read_json(path)

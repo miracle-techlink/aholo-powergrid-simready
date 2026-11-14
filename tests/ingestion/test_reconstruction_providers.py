@@ -7,8 +7,11 @@ import pytest
 
 from simready.core.artifacts import digest, read_json, write_json
 from simready.core.reconstruction_contract import verify_bundle
-from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
-from simready.ingestion import reconstruction_providers as providers
+from simready.execution.processes.local import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+)
+from simready.ingestion.reconstruction import providers as providers
 
 
 def ref(path):

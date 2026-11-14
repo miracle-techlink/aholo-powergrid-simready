@@ -51,6 +51,10 @@ def test_real_verifier_boundary_respects_feedback_phase(tmp_path, phase):
         timeout=30,
     )
     assert scorecard["status"] == "PASS"
+    assert "evaluation/inspection/physical_checks.py" in scorecard["evaluator_files"]
+    assert (
+        tmp_path / "verification/verifier_code/evaluation/inspection/physical_checks.py"
+    ).is_file()
     if phase == "sealed_release":
         assert defects["status"] == observations["status"] == "WITHHELD"
         assert "defects" not in defects

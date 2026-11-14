@@ -6,9 +6,13 @@ import pytest
 
 from examples.assets.semantic_fixture import create_fixture
 from simready.core.artifacts import digest, read_json, write_json
-from simready.evaluation.physical_receipt import verify_physical_receipt
-from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
-from simready.workflows import semantic_assets, video_execution, video_pipeline
+from simready.evaluation.inspection.physical_receipt import verify_physical_receipt
+from simready.execution.processes.local import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+)
+from simready.workflows.pipelines import semantic_assets, video_pipeline
+from simready.workflows.stages import video_execution
 from tests.fixtures.video_worker import worker_inputs
 
 
@@ -122,7 +126,7 @@ def test_semantic_workflow_zero_exit_cannot_promote_a_failed_audit(
     original = semantic_assets._worker
 
     def invalid_audit(*args):
-        if "simready.evaluation.physical_assets" not in args[0]:
+        if "simready.evaluation.inspection.physical_assets" not in args[0]:
             return original(*args)
         write_json(out / "physical_audit.json", {"status": "FAIL", "passed": False})
         return 0

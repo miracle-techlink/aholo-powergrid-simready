@@ -9,7 +9,7 @@ from threading import Event, Thread
 
 import pytest
 
-from simready.execution.processes import (
+from simready.execution.processes.local import (
     ProcessCancelledError,
     ProcessTimeoutError,
     run_process,
@@ -21,7 +21,7 @@ def nested_script(root):
     script.write_text(
         "import os,sys,time,json\n"
         "from pathlib import Path\n"
-        "from simready.execution.profiling import profile_command\n"
+        "from simready.execution.workers.profiling import profile_command\n"
         "root=Path(sys.argv[1]); depth=int(sys.argv[2])\n"
         "if depth == 0:\n"
         "    (root/'leaf.pid').write_text(str(os.getpid()))\n"
@@ -91,7 +91,7 @@ def test_nested_sessions_cancel_and_write_terminal_profiles(tmp_path, cancel):
 def test_owner_death_cascades_eof_to_nested_sessions(tmp_path):
     script = nested_script(tmp_path)
     owner_code = (
-        "from simready.execution.processes import run_process; import sys; "
+        "from simready.execution.processes.local import run_process; import sys; "
         f"run_process([sys.executable,{str(script)!r},{str(tmp_path)!r},'2'],cwd={str(tmp_path)!r},timeout=20,stdout={str(tmp_path / 'stdout')!r},stderr={str(tmp_path / 'stderr')!r})"
     )
     owner = subprocess.Popen([sys.executable, "-c", owner_code])
@@ -117,7 +117,7 @@ def test_owner_death_cascades_eof_to_nested_sessions(tmp_path):
 
 
 def test_acknowledged_but_unresponsive_owner_has_bounded_grace(tmp_path):
-    code = "from simready.execution.process_scope import parent_cancellation; import time; parent_cancellation(); time.sleep(20)"
+    code = "from simready.execution.processes.cancellation import parent_cancellation; import time; parent_cancellation(); time.sleep(20)"
     started = time.monotonic()
     with pytest.raises(ProcessTimeoutError):
         run_process(

@@ -12,13 +12,13 @@ from simready.core.artifacts import digest, read_json, write_json
 from simready.core.evidence import reference
 from simready.ingestion.nerf2physics import run_estimation
 from simready.simulation.physical_candidate import compile_candidate
-from simready.workflows.physical_estimation import (
+from simready.workflows.pipelines.video_pipeline import VideoStages
+from simready.workflows.stages.physical_estimation import (
     estimation_plan,
     produce_estimation,
     verify_compilation,
 )
-from simready.workflows.video_execution import execute
-from simready.workflows.video_pipeline import VideoStages
+from simready.workflows.stages.video_execution import execute
 
 
 @pytest.fixture

@@ -144,7 +144,7 @@ def evaluate_candidate(
     )
     output = Path(output).resolve()
     require(not output.exists(), f"Output must be a new directory: {output}")
-    files = sorted(Path(__file__).parent.glob("*.py")) + [
+    files = sorted(Path(__file__).parent.rglob("*.py")) + [
         *sorted((Path(__file__).parents[1] / "core").glob("*.py"))
     ]
     code = {
