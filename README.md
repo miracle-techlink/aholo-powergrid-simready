@@ -232,6 +232,8 @@ python -m pytest -q
 
 CI 在 Python 3.10/3.12 上执行静态检查、CPU 测试和构包；依赖私有资产或 SDK 的检查按环境执行，GPU 任务证据单独保存。提交修复、插件或机器人适配前，请阅读[开发规范](docs/development.md)，明确输入输出、失败行为和验证范围。问题与建议可通过 [Issues](https://github.com/miracle-techlink/video-to-simready/issues) 提交。
 
+[PR 与 CI/CD 合并流程](docs/ci-cd.md)：`merge-gate` 汇总静态检查、双版本完整测试和隔离 wheel 验证，全部成功且分支更新到 main 后才允许合并。合并后的提交重新通过门槛，生成带校验和及 CPU 证据的 `main-package-<SHA>`。
+
 ### 后续方向
 
 - 跨场景语义资产化、来源约束的纹理恢复与真实修复插件。

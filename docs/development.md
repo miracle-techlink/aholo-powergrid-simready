@@ -41,3 +41,5 @@ python -m build
 测试应验证行为、失败处理、证据一致性或兼容性。重构必须保留已有质量阈值与数据语义。涉及 GPU/外部 API 的效果，需记录实际运行证据；合成示例或 mock 通过不等同于真实场景验收。
 
 PR 描述写清职责变化、旧→新 API、兼容边界和验证结果。迁移表同步到 `docs/migration.md`，当前架构同步到 `docs/architecture.md`；旧审计报告留在 `docs/audits/`，不改写历史结果。
+
+PR 自动执行静态检查、Python 3.10 / 3.12 CPU 回归与隔离 wheel 验证；`merge-gate` 要求所有检查成功。main 保护规则、合并顺序和合并后构包交付见 [CI/CD 流程](ci-cd.md)。工作流及保护配置随代码审查，CPU 检查不替代 GPU／外部模型验收。
