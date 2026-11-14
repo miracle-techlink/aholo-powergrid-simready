@@ -2,12 +2,19 @@
 
 import argparse
 import json
-import subprocess
 import sys
 import time
 from pathlib import Path
 
-from simready.core.artifacts import digest, read_json, write_json
+from simready.core.artifacts import digest, object_digest, read_json, write_json
+from simready.core.validation import number
+from simready.execution.device_lease import device_lease
+from simready.execution.processes import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+    run_process,
+)
+from simready.execution.resource_pool import DEFAULT_LOCK_DIR
 from simready.simulation.asset_bundle import verify_bundle
 
 
@@ -26,11 +33,25 @@ def validate_scene_config(config, scene):
         raise ValueError("Measured substation replay uses the frozen 25 fps sampling")
 
 
-def verify_scene_delivery(output, config):
+def verify_scene_delivery(output, config, *, assets=None, timing=None):
     """Check final receipts and their artifact bindings before reporting success."""
     output = Path(output)
     scene = config["scene"]
-    timing = read_json(output / "timing.json")
+    if assets is not None:
+        assets = Path(assets)
+        bundle = verify_bundle(assets)
+        plan = read_json(output / "plan.json")
+        if (
+            plan.get("scene") != scene
+            or bundle["scene"] != scene
+            or plan.get("bundle_sha256") != digest(assets / "bundle.json")
+            or plan.get("source_video_sha256") != bundle["source_video_sha256"]
+            or plan.get("config_identity") != object_digest(config)
+        ):
+            raise ValueError(
+                "Delivery plan is not bound to the requested bundle and configuration"
+            )
+    timing = read_json(output / "timing.json") if timing is None else timing
     expected = (
         ["observations", "render"]
         if scene == "starbucks"
@@ -99,8 +120,20 @@ def verify_scene_delivery(output, config):
 
 
 def run_scene_delivery(
-    config_path, assets, output, python=None, dry_run=False, progress=None
+    config_path,
+    assets,
+    output,
+    python=None,
+    dry_run=False,
+    progress=None,
+    *,
+    timeout_s=7200,
+    cancel_event=None,
+    process_environment=None,
+    pass_fds=(),
 ):
+    if number(timeout_s, "timeout_s") <= 0:
+        raise ValueError("timeout_s must be positive")
     config_path, assets, output = (
         Path(p).resolve() for p in (config_path, assets, output)
     )
@@ -202,33 +235,68 @@ def run_scene_delivery(
         "cloud_submission": False,
         "bundle_sha256": digest(assets / "bundle.json"),
         "config_sha256": digest(config_path),
+        "config_identity": object_digest(config),
         "source_video_sha256": bundle["source_video_sha256"],
         "stages": [{"name": n, "argv": c} for n, c in stages],
         "video": str(video),
+        "timeout_s": timeout_s,
     }
     if dry_run:
         return plan
     output.mkdir(parents=True, exist_ok=False)
     write_json(output / "plan.json", plan)
     start = time.monotonic()
+    deadline = start + timeout_s
     report = {"status": "RUNNING", "stages": [], "new_reconstruction": False}
     from simready.execution.isaac_environment import isaac_environment
 
     env = isaac_environment()
     env["PYTHONUNBUFFERED"] = "1"
+    env.update(process_environment or {})
+
+    def remaining():
+        if cancel_event is not None and cancel_event.is_set():
+            raise ProcessCancelledError(time.monotonic() - start)
+        value = deadline - time.monotonic()
+        if value <= 0:
+            raise ProcessTimeoutError(timeout_s, time.monotonic() - start)
+        return value
+
     try:
         for name, command in stages:
             if progress:
                 progress(name, "RUNNING")
             before = time.monotonic()
-            with (output / f"{name}.log").open("w") as log:
-                code = subprocess.run(
-                    command, env=env, stdout=log, stderr=subprocess.STDOUT, check=False
+            row = {"name": name, "returncode": None, "status": "RUNNING"}
+            try:
+                code = run_process(
+                    command,
+                    cwd=None,
+                    env=env,
+                    stdout=output / f"{name}.log",
+                    stderr=output / f"{name}.stderr.log",
+                    timeout=remaining(),
+                    cancel_event=cancel_event,
+                    pass_fds=pass_fds,
                 ).returncode
-            report["stages"].append(
-                {"name": name, "wall_s": time.monotonic() - before, "returncode": code}
-            )
-            write_json(output / "timing.json", report)
+                row.update(returncode=code, status="FAILED" if code else "COMPLETE")
+            except BaseException as error:
+                row["status"] = (
+                    "TIMEOUT"
+                    if isinstance(error, ProcessTimeoutError)
+                    else "CANCELLED"
+                    if isinstance(error, ProcessCancelledError)
+                    else "FAILED"
+                    if isinstance(error, Exception)
+                    else "INTERRUPTED"
+                )
+                if progress:
+                    progress(name, row["status"])
+                raise
+            finally:
+                row["wall_s"] = time.monotonic() - before
+                report["stages"].append(row)
+                write_json(output / "timing.json", report)
             if progress:
                 progress(name, "FAILED" if code else "COMPLETE")
             if code:
@@ -237,14 +305,28 @@ def run_scene_delivery(
                 )
         if not video.is_file() or not video.stat().st_size:
             raise RuntimeError("Capture exited without a nonempty video")
+        remaining()
         report.update(
             status="COMPLETE",
             video=str(video),
             video_sha256=digest(video),
             physics_validated=bundle["scene"] == "substation",
         )
+        if digest(config_path) != plan["config_sha256"]:
+            raise ValueError("Scene configuration changed during execution")
+        verify_scene_delivery(output, config, assets=assets, timing=report)
+        remaining()
     except BaseException as error:
-        report.update(status="FAILED", error=str(error))
+        report.update(
+            status="TIMEOUT"
+            if isinstance(error, ProcessTimeoutError)
+            else "CANCELLED"
+            if isinstance(error, ProcessCancelledError)
+            else "FAILED"
+            if isinstance(error, Exception)
+            else "INTERRUPTED",
+            error=str(error) or type(error).__name__,
+        )
         raise
     finally:
         report["wall_s"] = time.monotonic() - start
@@ -259,10 +341,37 @@ def main(argv=None):
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--python")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--timeout-s", type=float, default=7200)
+    parser.add_argument("--resource-kind", choices=("rtx", "cpu"), default="rtx")
+    parser.add_argument("--gpu", default="0")
+    parser.add_argument("--device-inventory", type=Path)
+    parser.add_argument("--lock-dir", type=Path, default=Path(DEFAULT_LOCK_DIR))
     args = parser.parse_args(argv)
-    result = run_scene_delivery(
-        args.config, args.assets, args.out, args.python, args.dry_run
+    planned = run_scene_delivery(
+        args.config, args.assets, args.out, args.python, True, timeout_s=args.timeout_s
     )
+    if args.dry_run:
+        result = planned
+    else:
+        # Public host entry owns the device. Container launchers use the internal
+        # scene_execution entry instead and retain the lease for the container.
+        with device_lease(
+            resource_kind=args.resource_kind,
+            gpu=args.gpu,
+            device_inventory=read_json(args.device_inventory)
+            if args.device_inventory
+            else None,
+            lock_dir=args.lock_dir,
+        ) as lease:
+            result = run_scene_delivery(
+                args.config,
+                args.assets,
+                args.out,
+                args.python,
+                timeout_s=args.timeout_s,
+                process_environment=lease.environment,
+                pass_fds=lease.pass_fds,
+            )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

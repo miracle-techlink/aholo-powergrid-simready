@@ -311,6 +311,23 @@ def test_matching_catalog_and_usd_tamper_cannot_replace_source_expectation(packa
     assert "chair.body.mass_kg" in _failures(report)
 
 
+@pytest.mark.parametrize("extra", ["collision", "joint"])
+def test_additional_physics_prims_cannot_bypass_declared_object_inventory(
+    package, extra
+):
+    directory, _ = package
+    stage = Usd.Stage.Open(str(directory / "scene.usda"))
+    path = "/World/Objects/chair/Undeclared"
+    if extra == "collision":
+        prim = UsdGeom.Cube.Define(stage, path).GetPrim()
+        UsdPhysics.CollisionAPI.Apply(prim)
+    else:
+        joint = UsdPhysics.FixedJoint.Define(stage, path)
+        joint.CreateBody1Rel().SetTargets(["/World/Objects/chair"])
+    stage.GetRootLayer().Save()
+    assert "chair." + extra + "_inventory" in _failures(_inspect(package))
+
+
 def test_claiming_measured_provenance_without_source_change_is_rejected(package):
     directory, _ = package
     catalog = read_json(directory / "asset_catalog.json")

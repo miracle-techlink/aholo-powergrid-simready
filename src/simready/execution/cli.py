@@ -10,14 +10,36 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Execute a bounded, resource-aware scene DAG (Linux)."
     )
-    command = parser.add_subparsers(dest="command", required=True).add_parser("run")
+    commands = parser.add_subparsers(dest="command", required=True)
+    command = commands.add_parser("run")
     command.add_argument("--plan", required=True, type=Path)
     command.add_argument("--inventory", required=True, type=Path)
     command.add_argument("--out", required=True, type=Path)
     command.add_argument("--cache", required=True, type=Path)
     command.add_argument("--lock-dir", default="/tmp/simready-device-leases", type=Path)
     command.add_argument("--max-workers", default=8, type=int)
+    recovery = commands.add_parser(
+        "recover-device",
+        help="Recheck owned container termination before clearing quarantine",
+    )
+    recovery.add_argument("--gpu-uuid", required=True)
+    recovery.add_argument(
+        "--lock-dir", default="/tmp/simready-device-leases", type=Path
+    )
+    recovery.add_argument("--out", required=True, type=Path)
+    recovery.add_argument("--timeout-s", default=15, type=float)
     args = parser.parse_args(argv)
+    if args.command == "recover-device":
+        from simready.execution.device_recovery import recover_device
+
+        result = recover_device(
+            args.gpu_uuid,
+            directory=args.out,
+            lock_dir=args.lock_dir,
+            timeout_s=args.timeout_s,
+        )
+        print(json.dumps(result))
+        return 0 if result["status"] in {"RECOVERED", "NOT_QUARANTINED"} else 2
     try:
         result = run_task_graph(
             read_json(args.plan),

@@ -8,9 +8,14 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     selector = argparse.ArgumentParser(add_help=False)
     group = selector.add_mutually_exclusive_group()
+    group.add_argument("--pipeline")
     group.add_argument("--video")
     group.add_argument("--scene")
     mode, _ = selector.parse_known_args(argv)
+    if mode.pipeline is not None:
+        from simready.workflows.pipeline_config import main as pipeline_main
+
+        return pipeline_main(argv)
     if mode.video is not None:
         from simready.workflows.video_pipeline import main as video_main
 
@@ -29,6 +34,9 @@ def main(argv=None):
         ),
     )
     group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--pipeline", help="Versioned modular pipeline configuration JSON"
+    )
     group.add_argument("--video", help="Video → reconstruction → scene → survey video")
     group.add_argument("--scene", choices=("substation", "starbucks"))
     parser.parse_args(argv)

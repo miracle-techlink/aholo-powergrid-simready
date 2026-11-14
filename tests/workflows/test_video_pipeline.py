@@ -9,6 +9,7 @@ import pytest
 
 from simready.cli import main
 from simready.core.artifacts import digest, object_digest, read_json, write_json
+from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
 from simready.workflows import video_pipeline
 
 
@@ -32,6 +33,7 @@ main(['run','--video','input.mp4','--help'])
     )
     assert result.returncode == 0, result.stderr
     assert "--submit-reconstruction" in result.stdout
+    assert "--worker-timeout" in result.stdout
 
 
 def test_public_dry_run_is_offline_and_does_not_create_files(
@@ -47,6 +49,29 @@ def test_public_dry_run_is_offline_and_does_not_create_files(
     plan = json.loads(capsys.readouterr().out)
     assert plan["status"] == "PLANNED" and plan["mode"] == "video_to_scene"
     assert plan["new_cloud_submission_authorized"] is False
+    assert plan["worker_timeout_s"] == 7200.0
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "nan", "inf"])
+def test_invalid_worker_budget_is_rejected_before_execution(tmp_path, value):
+    video = tmp_path / "input.mp4"
+    video.write_bytes(b"source")
+    output = tmp_path / "out"
+    assert (
+        main(
+            [
+                "run",
+                "--video",
+                str(video),
+                "--out",
+                str(output),
+                "--worker-timeout",
+                value,
+            ]
+        )
+        == 3
+    )
     assert not output.exists()
 
 
@@ -92,6 +117,37 @@ def test_failed_stage_is_not_recorded_as_success(tmp_path):
     with pytest.raises(RuntimeError):
         video_pipeline.VideoStages(tmp_path, "identity").run("prepare", fail)
     assert not (tmp_path / "stages/prepare.json").exists()
+
+
+@pytest.mark.parametrize("reused", [False, True])
+def test_contract_failure_preserves_success_evidence_and_records_attempt(
+    tmp_path, reused
+):
+    artifact = tmp_path / "model.ply"
+    artifact.write_bytes(b"model")
+    receipt = tmp_path / "stages/reconstruction.json"
+
+    def action():
+        return {"model": str(artifact)}, [artifact]
+
+    if reused:
+        video_pipeline.VideoStages(tmp_path, "id").run("reconstruction", action)
+    before = receipt.read_bytes() if reused else None
+
+    def reject(result, artifacts):
+        assert result["model"] == str(artifact)
+        assert artifacts[0]["sha256"] == digest(artifact)
+        raise ValueError("Semantic contract rejected")
+
+    stages = video_pipeline.VideoStages(tmp_path, "id")
+    with pytest.raises(ValueError, match="Semantic contract"):
+        stages.run("reconstruction", action, reject)
+    assert (receipt.read_bytes() if receipt.exists() else None) == before
+    failure = read_json(
+        next((tmp_path / "stage-failures/reconstruction").glob("*.json"))
+    )
+    assert failure["status"] == "FAILED" and failure["reused"] is reused
+    assert stages.history == [failure]
 
 
 def test_stage_receipt_cannot_read_outside_run(tmp_path):
@@ -183,7 +239,12 @@ def offline_video_run(tmp_path, monkeypatch):
         assert source == video
         target.mkdir()
         (target / "frame.png").write_bytes(b"frame fixture")
-        result = {"frames": [{"path": "frame.png"}]}
+        result = {
+            "schema_version": 1,
+            "video_sha256": digest(source),
+            "fps": kwargs["fps"],
+            "frames": [{"path": "frame.png", "sha256": digest(target / "frame.png")}],
+        }
         write_json(target / "manifest.json", result)
         return result
 
@@ -241,6 +302,7 @@ def offline_video_run(tmp_path, monkeypatch):
                 "metric_scale_verified": False,
                 "metric_scale_independently_validated": False,
                 "physics_configured": False,
+                "physical_asset_validation": "NOT_EVALUATED",
                 "robot_task_validated": False,
                 "limitations": ["fixture"],
                 "artifacts": [
@@ -303,6 +365,205 @@ def test_public_video_pipeline_offline_import_and_complete_resume(offline_video_
     assert all(item["reused"] for item in resumed["stages"])
     assert job["calls"]["observations"] == 1
     assert len(job["calls"]["execution"]) == 1
+
+
+@pytest.mark.parametrize("status", ["TIMEOUT", "CANCELLED"])
+def test_inner_worker_terminal_state_reaches_video_summary(
+    offline_video_run, monkeypatch, status
+):
+    job = offline_video_run
+
+    def launch(*args, **kwargs):
+        write_json(
+            Path(kwargs["output"]) / "pipeline-status.json",
+            {"status": status, "stage": "preparation", "wall_s": 1},
+        )
+        return 2
+
+    monkeypatch.setattr(video_pipeline, "launch_worker", launch)
+    assert main(job["args"]) == 2
+    assert read_json(job["output"] / "summary.json")["status"] == status
+    failures = list((job["output"] / "stage-failures/scene_delivery").glob("*.json"))
+    assert len(failures) == 1 and read_json(failures[0])["status"] == status
+
+
+@pytest.mark.parametrize(
+    ("error", "status"),
+    [
+        (ProcessTimeoutError(0.25, 0.25), "TIMEOUT"),
+        (ProcessCancelledError(0.1), "CANCELLED"),
+        (KeyboardInterrupt(), "INTERRUPTED"),
+    ],
+)
+def test_worker_budget_and_terminal_state_survive_resume(
+    offline_video_run, monkeypatch, error, status
+):
+    job = offline_video_run
+    args = [*job["args"], "--worker-timeout", "0.25"]
+    failed_attempts = []
+
+    def launch(argv, **kwargs):
+        assert kwargs["timeout_s"] == 0.25
+        current = read_json(job["output"] / "summary.json")
+        assert current["status"] == "RUNNING" and current["stage"] == "scene_delivery"
+        output = Path(kwargs["output"])
+        output.mkdir(parents=True)
+        (output / "stderr.log").write_text("partial worker evidence")
+        failed_attempts.append(output)
+        raise error
+
+    monkeypatch.setattr(video_pipeline, "launch_worker", launch)
+    if isinstance(error, KeyboardInterrupt):
+        with pytest.raises(KeyboardInterrupt):
+            main(args)
+    else:
+        assert main(args) == 2
+    assert read_json(job["output"] / "run-plan.json")["worker_timeout_s"] == 0.25
+    source = read_json(job["output"] / "worker_inputs/attempt-0001/input.json")
+    assert source["worker_timeout_s"] == 0.25
+    summary = read_json(job["output"] / "summary.json")
+    assert summary["status"] == status and summary["stage"] == "scene_delivery"
+    failure_path = next(
+        (job["output"] / "stage-failures/scene_delivery").glob("*.json")
+    )
+    before = failure_path.read_bytes()
+    assert read_json(failure_path)["status"] == status
+    assert summary["stages"][-1]["status"] == status
+    assert not (job["output"] / "stages/scene_delivery.json").exists()
+    monkeypatch.setattr(video_pipeline, "launch_worker", job["launch"])
+    assert main([*args, "--resume"]) == 0
+    assert failure_path.read_bytes() == before
+    assert (failed_attempts[0] / "stderr.log").read_text() == "partial worker evidence"
+    assert job["calls"]["execution"][0] != failed_attempts[0]
+
+
+def test_worker_budget_change_invalidates_resume_plan(offline_video_run):
+    job = offline_video_run
+    assert main([*job["args"], "--worker-timeout", "37"]) == 0
+    before = (job["output"] / "summary.json").read_bytes()
+    assert main([*job["args"], "--worker-timeout", "38", "--resume"]) == 3
+    assert (job["output"] / "summary.json").read_bytes() == before
+    assert len(job["calls"]["execution"]) == 1
+
+
+def test_worker_input_budget_cannot_drift_from_plan(offline_video_run):
+    job = offline_video_run
+    assert main(job["args"]) == 0
+    source_path = job["output"] / "worker_inputs/attempt-0001/input.json"
+    source = read_json(source_path)
+    source["worker_timeout_s"] += 1
+    write_json(source_path, source)
+    receipt_path = job["output"] / "stages/worker_inputs.json"
+    receipt = read_json(receipt_path)
+    for item in receipt["artifacts"]:
+        if item["path"].endswith("/input.json"):
+            item.update(sha256=digest(source_path), bytes=source_path.stat().st_size)
+    write_json(receipt_path, receipt)
+    assert main([*job["args"], "--resume"]) == 2
+    summary = read_json(job["output"] / "summary.json")
+    assert summary["stage"] == "worker_inputs" and summary["status"] == "FAILED"
+    assert "frozen run plan" in summary["error"]
+    assert len(job["calls"]["execution"]) == 1
+
+
+@pytest.mark.parametrize("field", ["scene", "delivery_level", "execution"])
+def test_resume_rejects_delivery_result_drift_from_verified_receipt(
+    offline_video_run, field
+):
+    job = offline_video_run
+    assert main(job["args"]) == 0
+    path = job["output"] / "stages/scene_delivery.json"
+    receipt = read_json(path)
+    receipt["result"][field] = "unbacked-result"
+    write_json(path, receipt)
+    assert main([*job["args"], "--resume"]) == 2
+    assert len(job["calls"]["execution"]) == 1
+    assert read_json(job["output"] / "summary.json")["status"] == "FAILED"
+
+
+@pytest.mark.parametrize(
+    "field", ["ply_sha256", "source_video_sha256", "manifest_path"]
+)
+def test_resume_rejects_reconstruction_result_drift(offline_video_run, field):
+    job = offline_video_run
+    assert main(job["args"]) == 0
+    path = job["output"] / "stages/reconstruction.json"
+    receipt = read_json(path)
+    receipt["result"][field] = "unbacked-result"
+    write_json(path, receipt)
+    assert main([*job["args"], "--resume"]) == 2
+    assert len(job["calls"]["execution"]) == 1
+
+
+def test_resume_after_published_reconstruction_allows_new_cache_invocation_flags(
+    offline_video_run,
+):
+    job = offline_video_run
+    assert main(job["args"]) == 0
+    # Simulate the crash window after a completion manifest was published but
+    # before its workflow-stage receipt. The artifact content remains identical.
+    completion = job["output"] / "reconstruction/reconstruction.json"
+    published = read_json(completion)
+    published.update(cache_hit=False, new_submission=True, resumed=False)
+    write_json(completion, published)
+    (job["output"] / "stages/reconstruction.json").unlink()
+    assert main([*job["args"], "--resume"]) == 0
+    restored = read_json(job["output"] / "stages/reconstruction.json")["result"]
+    assert restored["cache_hit"] is True
+    assert restored["new_submission"] is False
+    assert read_json(completion)["new_submission"] is True
+    assert len(job["calls"]["execution"]) == 1
+
+
+def test_worker_cannot_rebind_input_to_another_video(offline_video_run, monkeypatch):
+    job = offline_video_run
+
+    def launch(argv, **kwargs):
+        path = Path(kwargs["assets"]) / "input.json"
+        source = read_json(path)
+        source["source_video_sha256"] = "another-video"
+        write_json(path, source)
+        return job["launch"](argv, **kwargs)
+
+    monkeypatch.setattr(video_pipeline, "launch_worker", launch)
+    assert main(job["args"]) == 2
+    assert "frozen inputs" in read_json(job["output"] / "summary.json")["error"]
+    assert not (job["output"] / "stages/scene_delivery.json").exists()
+
+
+@pytest.mark.parametrize("corruption", ["hash", "missing", "unlisted"])
+def test_parent_rechecks_structure_audit_dependencies(
+    offline_video_run, monkeypatch, corruption
+):
+    job = offline_video_run
+
+    def launch(argv, **kwargs):
+        code = job["launch"](argv, **kwargs)
+        output = Path(kwargs["output"])
+        audit_path = output / "structure-audit.json"
+        audit = read_json(audit_path)
+        if corruption == "missing":
+            audit["dependencies"] = []
+        elif corruption == "hash":
+            audit["dependencies"][0]["sha256"] = "another-scene"
+        else:
+            hidden = output / "scene/unlisted.usda"
+            hidden.write_text("# a dependency omitted from the delivery manifest")
+            audit["dependencies"].append(
+                {"path": hidden.name, "sha256": digest(hidden)}
+            )
+        write_json(audit_path, audit)
+        evidence = read_json(output / "delivery.json")
+        for item in evidence["artifacts"]:
+            if item["path"] == "structure-audit.json":
+                item["sha256"] = digest(audit_path)
+                item["bytes"] = audit_path.stat().st_size
+        write_json(output / "delivery.json", evidence)
+        return code
+
+    monkeypatch.setattr(video_pipeline, "launch_worker", launch)
+    assert main(job["args"]) == 2
+    assert "Structure audit" in read_json(job["output"] / "summary.json")["error"]
 
 
 @pytest.mark.parametrize(
@@ -557,7 +818,19 @@ def test_parent_verifies_render_receipt_and_required_artifacts(
             if item["path"] != "render/camera.json"
         ]
     if corruption is None:
-        video_pipeline.verify_delivery(output, evidence, source, config)
+        video_pipeline.verify_delivery(
+            output,
+            evidence,
+            source,
+            config,
+            job["output"] / "worker_inputs/attempt-0001/scene-spec.json",
+        )
     else:
         with pytest.raises(ValueError):
-            video_pipeline.verify_delivery(output, evidence, source, config)
+            video_pipeline.verify_delivery(
+                output,
+                evidence,
+                source,
+                config,
+                job["output"] / "worker_inputs/attempt-0001/scene-spec.json",
+            )

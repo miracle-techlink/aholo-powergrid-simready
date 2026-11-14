@@ -21,13 +21,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from simready.core.artifacts import digest, write_json
-from simready.simulation.physical_authoring import (
+from simready.assets.physics.physical_authoring import (
     author_physics_metadata,
     author_rigid_body,
     bind_contact_material,
 )
-from simready.simulation.physical_spec import normalize_physics
+from simready.assets.physics.physical_spec import normalize_physics
+from simready.core.artifacts import digest, write_json
 
 PROTOCOL = {
     "version": "synthetic-physical-response-v1",

@@ -45,6 +45,7 @@ def task(name="one", deps=(), delay=0.05):
         timeout_s=3,
         queue_timeout_s=3,
         runtime_identity="fixture-v1",
+        environment={"inherit": []},
         seed=12,
     )
 
@@ -387,3 +388,80 @@ def test_lease_close_is_idempotent_and_copies_resource_spec(tmp_path):
     lease.close()
     lease.close()
     assert pool.cpu == INVENTORY["cpu_slots"] and pool.ram == INVENTORY["ram_gb"]
+
+
+def test_graph_interruption_cancels_owned_descendants_and_retains_receipts(
+    tmp_path, monkeypatch
+):
+    from simready.execution import task_graph
+
+    ready, late = tmp_path / "ready", tmp_path / "late"
+    child = f"import pathlib,time; time.sleep(.7); pathlib.Path({str(late)!r}).touch(); time.sleep(10)"
+    item = task()
+    item["timeout_s"] = 3
+    item["argv"] = [
+        "{python}",
+        "-c",
+        "import pathlib,subprocess,sys,time; subprocess.Popen([sys.executable,'-c',sys.argv[1]]); pathlib.Path(sys.argv[2]).touch(); time.sleep(10)",
+        child,
+        str(ready),
+    ]
+    original_wait = task_graph.wait
+
+    def interrupt_when_started(*args, **kwargs):
+        if ready.exists():
+            raise KeyboardInterrupt("test cancellation")
+        return original_wait(*args, **kwargs)
+
+    monkeypatch.setattr(task_graph, "wait", interrupt_when_started)
+    start = time.monotonic()
+    with pytest.raises(KeyboardInterrupt):
+        execute(tmp_path, [item, task("later", ["one"])])
+    assert time.monotonic() - start < 2
+    report = json.loads((tmp_path / "run/result.json").read_text())
+    assert report["status"] == "INTERRUPTED"
+    assert report["tasks"]["one"]["status"] == "CANCELLED"
+    assert report["tasks"]["later"]["status"] == "CANCELLED"
+    assert (
+        json.loads((tmp_path / "run/one/result.json").read_text())["status"]
+        == "CANCELLED"
+    )
+    assert not list((tmp_path / "cache").iterdir())
+    time.sleep(0.8)
+    assert not late.exists()
+
+
+def test_submission_error_releases_acquired_lease_and_records_graph_failure(
+    tmp_path, monkeypatch
+):
+    from simready.execution import task_graph
+
+    leases = []
+    acquire = ResourcePool.acquire
+
+    def capture(pool, resources):
+        lease = acquire(pool, resources)
+        leases.append(lease)
+        return lease
+
+    def fail_submit(*args, **kwargs):
+        raise RuntimeError("executor rejected submission")
+
+    monkeypatch.setattr(ResourcePool, "acquire", capture)
+    monkeypatch.setattr(task_graph.ThreadPoolExecutor, "submit", fail_submit)
+    with pytest.raises(RuntimeError, match="rejected submission"):
+        execute(tmp_path, [task()])
+    assert leases and leases[0].closed
+    assert leases[0].pool.cpu == INVENTORY["cpu_slots"]
+    assert json.loads((tmp_path / "run/result.json").read_text())["status"] == "FAILED"
+
+
+def test_cpu_task_cannot_inherit_a_stale_gpu_identity(tmp_path, monkeypatch):
+    monkeypatch.setenv("SIMREADY_GPU_UUID", "GPU-parent-worker")
+    item = task()
+    item["argv"] = [
+        "{python}",
+        "-c",
+        "import os,pathlib; assert 'SIMREADY_GPU_UUID' not in os.environ; assert os.environ['CUDA_VISIBLE_DEVICES']==''; pathlib.Path('artifact.json').write_text('cpu')",
+    ]
+    assert execute(tmp_path, [item])["status"] == "SUCCESS"

@@ -2,6 +2,10 @@
   "schema_version": 1,
   "package": "simready",
   "source_directory": "src/simready",
+  "dynamic_import_routers": {
+    "cli.py": "Top-level COMMANDS allowlist; only dispatches domains",
+    "simulation/cli.py": "WORKERS allowlist; only dispatches simulation workers"
+  },
   "forbidden_runtime_roots": [
     "legacy",
     "tests",
@@ -22,7 +26,7 @@
       "allowed_dependencies": []
     },
     "geometry": {
-      "responsibility": "Camera poses and quaternion conventions",
+      "responsibility": "Coordinate conventions, transform validation and pure projection geometry",
       "allowed_dependencies": []
     },
     "execution": {
@@ -35,7 +39,9 @@
       "responsibility": "Extract video observations and produce source-bound semantic masks",
       "allowed_dependencies": [
         "core",
-        "execution"
+        "execution",
+        "geometry",
+        "assets"
       ]
     },
     "agents": {
@@ -48,7 +54,8 @@
     "repair": {
       "responsibility": "Repair capabilities, executable plugins and task-plan construction",
       "allowed_dependencies": [
-        "core"
+        "core",
+        "geometry"
       ]
     },
     "evaluation": {
@@ -66,7 +73,7 @@
       ]
     },
     "workflows": {
-      "responsibility": "Coordinate the bounded observe\u2013repair\u2013verify\u2013remember loop",
+      "responsibility": "Coordinate the bounded observe–repair–verify–remember loop",
       "allowed_dependencies": [
         "core",
         "agents",
@@ -75,15 +82,24 @@
         "evaluation",
         "experience",
         "ingestion",
-        "simulation"
+        "simulation",
+        "assets"
       ]
     },
     "simulation": {
-      "responsibility": "Portable scene composition, robot control, contact audit and native video workers",
+      "responsibility": "Simulation lifecycle, robot control, measured observations and native simulation workers",
       "allowed_dependencies": [
         "core",
         "geometry",
-        "execution"
+        "execution",
+        "assets"
+      ]
+    },
+    "assets": {
+      "responsibility": "Portable appearance, evidence association, physical declarations and CPU scene compilation",
+      "allowed_dependencies": [
+        "core",
+        "geometry"
       ]
     }
   },
@@ -98,11 +114,14 @@
     "simready.agents.provider_factory.create_decision_provider",
     "simready.ingestion.grounded_segmentation.grounded_segment_image",
     "simready.ingestion.semantic_segmentation.segment_image",
-    "simready.simulation.semantic_projection.build_semantic_spec",
-    "simready.simulation.depth_projection.backproject_depth",
-    "simready.simulation.physical_spec.normalize_physics",
+    "simready.assets.association.semantic_projection.build_semantic_spec",
+    "simready.geometry.depth_projection.backproject_depth",
+    "simready.assets.physics.physical_spec.normalize_physics",
     "simready.simulation.camera_calibration.rendered_camera_calibration",
     "simready.evaluation.physical_assets.inspect_physical_assets",
-    "simready.workflows.semantic_assets.run_semantic_assets"
+    "simready.evaluation.physical_receipt.verify_physical_receipt",
+    "simready.workflows.semantic_assets.run_semantic_assets",
+    "simready.assets.physics.physical_candidate.compile_candidate",
+    "simready.assets.compilation.scene_preparation.prepare_scene"
   ]
 }

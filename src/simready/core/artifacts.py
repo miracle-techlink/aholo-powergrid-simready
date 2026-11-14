@@ -45,6 +45,27 @@ def digest(path):
     return result.hexdigest()
 
 
+def scene_dependency_hashes(directory):
+    """Bind evidence to geometry, occupancy, provenance and texture contents."""
+    directory = Path(directory)
+    suffixes = {
+        ".usd",
+        ".usda",
+        ".usdc",
+        ".json",
+        ".npy",
+        ".npz",
+        ".png",
+        ".jpg",
+        ".jpeg",
+    }
+    return {
+        str(p.relative_to(directory)): digest(p)
+        for p in sorted(directory.rglob("*"))
+        if p.is_file() and p.suffix.lower() in suffixes
+    }
+
+
 def object_digest(value):
     return hashlib.sha256(
         json.dumps(

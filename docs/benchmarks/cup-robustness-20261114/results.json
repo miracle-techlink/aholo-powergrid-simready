@@ -1,0 +1,128 @@
+{
+  "scope": "fixed controller, fixed-base prepared two-table cup task; mass/contact hypotheses only",
+  "all": {
+    "episodes": 4,
+    "successes": 3,
+    "success_rate": 0.75,
+    "wilson_95": [
+      0.30064184258240184,
+      0.9544127391902995
+    ],
+    "execution_failures_or_missing": 0
+  },
+  "by_split": {
+    "development": {
+      "episodes": 2,
+      "successes": 1,
+      "success_rate": 0.5,
+      "wilson_95": [
+        0.09453120573423074,
+        0.9054687942657693
+      ],
+      "execution_failures_or_missing": 0
+    },
+    "heldout": {
+      "episodes": 2,
+      "successes": 2,
+      "success_rate": 1.0,
+      "wilson_95": [
+        0.34238022750665303,
+        1
+      ],
+      "execution_failures_or_missing": 0
+    }
+  },
+  "wall_s": 320.25786932802293,
+  "rows": [
+    {
+      "episode": "dev-01",
+      "split": "development",
+      "cup_mass_kg": 0.11596177196877486,
+      "cup_static_friction": 0.8039485662359471,
+      "dynamic_static_ratio": 0.7032144232223249,
+      "gripper_static_friction": 0.789737479242547,
+      "table_static_friction": 0.7432649366416793,
+      "runtime_parameters_match": true,
+      "task_pass": false,
+      "placement_error_mm": 43.34103704015617,
+      "final_tilt_deg": 77.46010367974084,
+      "wall_s": 85.88198086398188
+    },
+    {
+      "episode": "dev-02",
+      "split": "development",
+      "cup_mass_kg": 0.10350731414818742,
+      "cup_static_friction": 0.894005395136357,
+      "dynamic_static_ratio": 0.8225887348874433,
+      "gripper_static_friction": 0.6395036449398454,
+      "table_static_friction": 0.41753268318083153,
+      "runtime_parameters_match": true,
+      "task_pass": true,
+      "placement_error_mm": 8.289506836410718,
+      "final_tilt_deg": 0.3380621234161804,
+      "wall_s": 79.16505118395435
+    },
+    {
+      "episode": "heldout-01",
+      "split": "heldout",
+      "cup_mass_kg": 0.07434186621788072,
+      "cup_static_friction": 0.6569298613048289,
+      "dynamic_static_ratio": 0.8990335496918163,
+      "gripper_static_friction": 0.9158979960853023,
+      "table_static_friction": 0.7224718112593275,
+      "runtime_parameters_match": true,
+      "task_pass": true,
+      "placement_error_mm": 13.325382478182863,
+      "final_tilt_deg": 0.3380626431135876,
+      "wall_s": 77.08582097600447
+    },
+    {
+      "episode": "heldout-02",
+      "split": "heldout",
+      "cup_mass_kg": 0.11167506720154036,
+      "cup_static_friction": 0.6681246238236387,
+      "dynamic_static_ratio": 0.7383404893399255,
+      "gripper_static_friction": 0.8546458299585518,
+      "table_static_friction": 0.5774284139093014,
+      "runtime_parameters_match": true,
+      "task_pass": true,
+      "placement_error_mm": 10.13295310859748,
+      "final_tilt_deg": 0.33806612685319454,
+      "wall_s": 78.06553140794858
+    }
+  ],
+  "manifest_sha256": "6a940bf040f95d392f03488906bf5ecbc5a71483e8155f9e4f25594871653d43",
+  "source_run": "/home/nvidia/algotithm/simready_infra_pr/runs/cup_robustness_20261114/physx_v1",
+  "policy_training_performed": false,
+  "real_world_validated": false,
+  "recheck_note": "Re-read all USD and trajectories with unchanged task audit; classify complete task failure (Isaac shell exit 1) separately from incomplete execution. Original report and per-episode receipts retained. No new physics rollout or threshold changes.",
+  "artifact_hashes": {
+    "report.json": "732853c237bd50137bccc3c9888445e4b10ca90fea16d1ca1ec141bc03721123",
+    "manifest.json": "6a940bf040f95d392f03488906bf5ecbc5a71483e8155f9e4f25594871653d43",
+    "report_rechecked.json": "abad90d35b8397ab3c24cf06e7eff9018191144a005870abc8d2197d4fee4079",
+    "dev-01/episode.json": "3c4141ec3d68d0c7b4239cc7d0e977f8be2d57fec8aeb3662340f7daabf082fc",
+    "dev-01/parameter_audit.json": "8c6063576ba0d4e2829ffdefd78f34426b1fa9b6be145b04a5297b72758076b8",
+    "dev-01/task_audit.json": "4bf94dd945321e4df9b3e01cdf69fe92110e92bacd6ea6c6d73298cd2f8f2946",
+    "dev-02/episode.json": "3dcbc8812791fca6ac65a05fe0c39b90987fc7254b81050fb47ea1dd2ada5884",
+    "dev-02/parameter_audit.json": "2e33e6627058a1cd6e6a4b7d90e1e9a9505dc474293671dcb112229eb22887a8",
+    "dev-02/task_audit.json": "27418914a3b7d1e9bdc747475fc528e01d0f292213da0fcd22a61610e60543e2",
+    "heldout-02/episode.json": "749055c687ba3d210ec9331616a71338b7e23bab07095ab917c139c7226c55da",
+    "heldout-02/parameter_audit.json": "56f15b12ee7e26ea7e88e1059de42a26d8a24aa31e9fb07934ea98eee56fcfa7",
+    "heldout-02/task_audit.json": "54f509cad9955b78298a9c975e10416e55d72d13d8da48a23a8de822d2bfb1d2",
+    "heldout-01/episode.json": "31382b86a4be4bce1988957f35f45d9c74ec1d2a3ad918249d9a9e885a7fc649",
+    "heldout-01/parameter_audit.json": "4739a36912951c02d949772ae18e486d6407810bdfba1dd5ed88dda5adbc13e1",
+    "heldout-01/task_audit.json": "c5f773d2db3e4ce43e1148ea39f5c9e9b68c3cb76faa6cf938858c7f8fc91ed7",
+    "heldout-01/assets/randomization.json": "41f1e2c34cd3cd20db7fd2a7bda2bab892e8899b30be2e612ddad212c98cb8fd",
+    "heldout-01/artifacts/physics/result.json": "8623e696ff5db22c7f679f249acb8893f82eb6f199be9cac9c20cce15dcd8502",
+    "heldout-01/artifacts/physics/rollout.npz": "67d97eea69bc6a9acfd4cae6dce476f13ecb20aef0d7a990ddcf9e9321c9937b",
+    "heldout-02/assets/randomization.json": "a8efa6dfcbb35d39f238db0b45f2cf9e5c046881335cfff0f54d60644e3fa205",
+    "heldout-02/artifacts/physics/result.json": "bb58c6e347a1a3de6faebac48d0c5783683a41752add02a91729e65c17c67478",
+    "heldout-02/artifacts/physics/rollout.npz": "2bc70f0e05488c6e36f7322024d199eb2d4dc8999faa4763d4f7b3a8ee90bb2b",
+    "dev-02/assets/randomization.json": "b90b55e5c16306723a4a3d3e6081821deee850ff21b64ce0b55f500a27b71112",
+    "dev-02/artifacts/physics/result.json": "d2c7b4284ade49f2060e67ce27482b8d1945994725d3be0c11b867c773efbeab",
+    "dev-02/artifacts/physics/rollout.npz": "bbed425d3edc146fd11f78bcde9a8f6fd2b2b627e39dfdac128fd3bd2aafb308",
+    "dev-01/assets/randomization.json": "4721041f642fbbc9520b1d168213a3c7b31e6d184c6197fdb3760531df1e346c",
+    "dev-01/artifacts/physics/result.json": "7b8bf04622847f7528df24f5ab3cd71809589a13a036d69d5bfff63eb71e9fb9",
+    "dev-01/artifacts/physics/rollout.npz": "18163fc8b7ce42ad288aeb11fc194d6c881784b55b0a646900e6b1773114a80d"
+  }
+}

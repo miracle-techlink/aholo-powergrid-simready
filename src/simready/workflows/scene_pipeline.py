@@ -12,11 +12,17 @@ import uuid
 from pathlib import Path
 
 from simready.core.artifacts import digest, read_json, write_json
+from simready.core.validation import number
 from simready.execution.isaac_container import remote_command, validate_paths
 from simready.execution.isaac_launcher import (
     default_repository,
     launch_worker,
     worker_environment,
+)
+from simready.execution.processes import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+    run_process,
 )
 from simready.simulation.asset_bundle import verify_bundle
 from simready.workflows.scene_delivery import (
@@ -62,7 +68,19 @@ def covered_stages(scene, export=False):
     )
 
 
+def execution_budgets(args):
+    budgets = {
+        "worker_timeout_s": getattr(args, "worker_timeout", 7200),
+        "bundle_timeout_s": getattr(args, "bundle_timeout", 1200),
+    }
+    for name, value in budgets.items():
+        if number(value, name) <= 0:
+            raise ValueError(f"{name} must be positive")
+    return budgets
+
+
 def remote_plan(args):
+    budgets = execution_budgets(args)
     if not args.ssh_host or not args.repo:
         raise ValueError("SSH requires --ssh-host and --repo for the remote checkout")
     repo = Path(args.repo)
@@ -93,6 +111,10 @@ def remote_plan(args):
         args.image,
         "--gpu",
         args.gpu,
+        "--worker-timeout",
+        str(budgets["worker_timeout_s"]),
+        "--bundle-timeout",
+        str(budgets["bundle_timeout_s"]),
     ]
     if args.bundle_spec:
         command += ["--bundle-spec", str(remote_path(args.bundle_spec))]
@@ -115,12 +137,14 @@ def remote_plan(args):
         "covered_stages": covered_stages(args.scene, bool(args.bundle_spec)),
         "output": str(output),
         "argv": remote_command(args.ssh_host, command),
+        **budgets,
         "validation": "Remote bundle, environment and outputs are checked on execution; no local path resolution or transfer",
     }
 
 
 def prepare_plan(args):
     """Read-only planning: no export, process, GPU, network or output creation."""
+    budgets = execution_budgets(args)
     if args.backend == "ssh":
         return remote_plan(args), None
     repo = Path(args.repo or default_repository()).expanduser().resolve()
@@ -210,6 +234,7 @@ def prepare_plan(args):
         "gpu": args.gpu if args.backend == "docker" else None,
         "worker_argv": worker,
         "config": config,
+        **budgets,
         "validation": {
             "bundle": "export_pending" if bundle_spec else "verified",
             "environment": "checked_before_observations",
@@ -277,17 +302,17 @@ def run_pipeline(args):
                 f"[bundle_export] RUNNING; log: {output / 'bundle-export.log'}",
                 flush=True,
             )
-            with (output / "bundle-export.log").open("x") as log:
-                code = subprocess.run(
-                    command,
-                    env=worker_environment(plan["repo"], output),
-                    stdout=log,
-                    stderr=subprocess.STDOUT,
-                    check=False,
-                ).returncode
+            code = run_process(
+                command,
+                cwd=plan["repo"],
+                env=worker_environment(plan["repo"], output),
+                timeout=plan["bundle_timeout_s"],
+                stdout=output / "bundle-export.log",
+                stderr=output / "bundle-export.stderr.log",
+            ).returncode
             if code:
                 raise RuntimeError(
-                    "Bundle export failed; inspect bundle-export.log. --bundle-python must provide OpenUSD/pxr."
+                    "Bundle export failed; inspect bundle-export.log and bundle-export.stderr.log. --bundle-python must provide OpenUSD/pxr."
                 )
             print(
                 f"[bundle_export] COMPLETE ({time.monotonic() - export_started:.1f}s)",
@@ -311,6 +336,7 @@ def run_pipeline(args):
             python=args.python,
             image=args.image,
             gpu=args.gpu,
+            timeout_s=plan["worker_timeout_s"],
         )
         worker_state = (
             read_json(execution / "pipeline-status.json")
@@ -320,6 +346,16 @@ def run_pipeline(args):
         if code or not worker_state or worker_state.get("status") != "COMPLETE":
             if worker_state:
                 state["stage"] = worker_state.get("stage", "launch")
+                if worker_state.get("status") in {
+                    "TIMEOUT",
+                    "CANCELLED",
+                    "INTERRUPTED",
+                }:
+                    state.update(
+                        status=worker_state["status"],
+                        error=worker_state.get("error", "Worker stopped"),
+                    )
+                    return state, 2
             reason = (
                 worker_state.get("error", "Worker did not complete")
                 if worker_state
@@ -327,9 +363,19 @@ def run_pipeline(args):
             )
             raise RuntimeError(f"{reason} (exit {code}); inspect {execution}")
         state["stage"] = "delivery_verification"
-        evidence = verify_scene_delivery(execution / "delivery", config)
+        if digest(assets / "bundle.json") != state["bundle_sha256"]:
+            raise ValueError("Asset bundle changed during execution")
+        if read_json(execution / "scene.json") != config:
+            raise ValueError("Worker scene configuration changed during execution")
+        evidence = verify_scene_delivery(execution / "delivery", config, assets=assets)
         state.update(status="COMPLETE", stage="summary", **evidence)
         return state, 0
+    except (ProcessTimeoutError, ProcessCancelledError) as error:
+        state.update(
+            status="TIMEOUT" if isinstance(error, ProcessTimeoutError) else "CANCELLED",
+            error=str(error),
+        )
+        return state, 2
     except Exception as error:
         state.update(status="FAILED", error=str(error))
         return state, 2
@@ -378,6 +424,18 @@ def main(argv=None):
     )
     parser.add_argument("--image", default="simready-isaac:6.1.0")
     parser.add_argument("--gpu", default="0")
+    parser.add_argument(
+        "--worker-timeout",
+        type=float,
+        default=7200,
+        help="Total Isaac worker execution limit in seconds (cleanup grace is separate)",
+    )
+    parser.add_argument(
+        "--bundle-timeout",
+        type=float,
+        default=1200,
+        help="CPU bundle export execution limit in seconds",
+    )
     parser.add_argument(
         "--ssh-host",
         help="Remote SSH alias; inputs and checkout must already exist there",

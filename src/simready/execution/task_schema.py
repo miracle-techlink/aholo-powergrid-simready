@@ -4,6 +4,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 from simready.core.validation import number
+from simready.execution.task_environment import validate_environment
 
 
 def relative_output(value):
@@ -21,6 +22,8 @@ def relative_output(value):
 
 
 def validate(plan, inventory, base):
+    if plan.get("environment_values_redacted"):
+        raise ValueError("Redacted plan receipts cannot execute; use the original plan")
     if plan.get("schema_version") != 1 or inventory.get("schema_version") != 1:
         raise ValueError("Expected schema_version=1")
     number(inventory["cpu_slots"], "cpu_slots", 1)
@@ -98,23 +101,7 @@ def validate(plan, inventory, base):
             raise ValueError("cache must be boolean")
         number(t["timeout_s"], "timeout_s", 0.001)
         number(t.get("queue_timeout_s", 300), "queue_timeout_s", 0.001)
-        env = t.get("env", {})
-        if any(
-            not isinstance(k, str) or not isinstance(v, str) for k, v in env.items()
-        ):
-            raise ValueError("env values must be strings")
-        if any(
-            k in env
-            for k in (
-                "CUDA_VISIBLE_DEVICES",
-                "SIMREADY_GPU_UUID",
-                "SIMREADY_OUT",
-                "SIMREADY_SEED",
-            )
-        ):
-            raise ValueError(
-                "Task cannot override scheduler device/output/seed bindings"
-            )
+        validate_environment(t)
     complete = set()
     while len(complete) < len(ids):
         ready = {

@@ -4,6 +4,27 @@
 
 各代码部分的内部组件、调用、状态与扩展方式见[软件架构与代码模块构造](software-architecture.md)。它与本页的方法边界说明配套，详细内容同时编入技术白皮书。
 
+## 当前规范入口与分层
+
+`simready run --pipeline` 加载版本化配置，复用 `video_pipeline` 的阶段执行；旧 `--video`、`--scene` 保持兼容。实际数据流、完整配置和 baseline 示例见[规范 pipeline](pipeline.md)，迁移路径见[迁移表](migration.md)。本轮验证见[验收记录](audits/2026-11-14-modular-pipeline.md)。以下 v0.7 图表保留历史方法语义，资产实现路径以当前迁移表为准。
+
+```mermaid
+flowchart TD
+    W[workflows：计划 / 阶段回执 / 局部升级] --> I[ingestion：观测 / 重建适配]
+    W --> A[assets：外观 / 关联 / 物性 / USD 编译]
+    W --> S[simulation：引擎 / 控制 / 测量]
+    W --> E[evaluation：独立读回 / 评分]
+    W --> X[execution：进程 / GPU 租约 / 取消]
+    I --> A
+    S --> A
+    A --> F[core / geometry：证据合同 / 坐标数学]
+    E --> F
+```
+
+此图展示主要职责及调用关系，完整允许依赖以架构合同为准。assets 禁止反向依赖 simulation、evaluation、workflows；evaluation 不依赖资产 writer。修复决策、插件和经验库仍由 agents、repair、experience 各自持有。没有新增第二套调度器。
+
+重建适配器支持 artifact、Aholo、显式 command，当前交付路由只接受可解码 Gaussian PLY；完整 mesh 后端还需新增 converter 与验收。阶段身份绑定实际输入、配置、环境及实现，升级只复用身份和产物都未变的阶段；独立质量验收不因导出成功自动通过。
+
 ## v0.7：新视频的可执行路径
 
 ![新视频输入、配置、场景构建与分级验收](report/figures/new_video_pipeline.svg)
@@ -92,7 +113,8 @@ v0.6 的 [独立验证清单](report/one-command-validation.json) 记录变电�
 |---|---|---|
 | `core` / `geometry` | 严格 JSON、哈希、基础合同、显式坐标数学 | 不推断真实尺度，不调业务 worker |
 | `ingestion` | 视频登记、抽帧、供应商 receipt 与下载 | 不构造完整交互资产 |
-| `simulation` | 资产包、场景、机器人控制、物理审计、渲染 | 不选择修复策略 |
+| `assets` | 外观表示、对象关联、物性声明、USD 编译 | 不运行机器人控制，不判定自身交付通过 |
+| `simulation` | 既有 bundle 导出、引擎、机器人控制、测量、渲染 | 不选择修复策略；通用资产 writer 已移入 assets |
 | `execution` | DAG、进程、资源租约、缓存、容器/SSH | 不知道缺陷含义，不是跨节点调度平台 |
 | `evaluation` | 冻结协议、观测、评分、独立验证 | 不读取 Agent 自报通过作为结果 |
 | `repair` | 缺陷到插件映射、参数和执行计划 | 不运行任意模型生成代码 |

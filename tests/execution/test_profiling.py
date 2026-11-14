@@ -92,3 +92,26 @@ def test_missing_provider_usage_stays_unknown(tmp_path):
     )
     assert result["status"] == "SUCCESS"
     assert result["usage"] is None and "usage_error" in result
+
+
+@pytest.mark.parametrize(
+    "error,status", [(KeyboardInterrupt, "INTERRUPTED"), (ValueError, "FAILED")]
+)
+def test_aborted_profile_never_leaves_a_running_receipt(
+    tmp_path, monkeypatch, error, status
+):
+    def fail(*args, **kwargs):
+        raise error("test aborted process")
+
+    monkeypatch.setattr("simready.execution.profiling.run_process", fail)
+    with pytest.raises(error):
+        profile_command(
+            [sys.executable, "-c", "pass"],
+            name="interrupted",
+            directory=tmp_path / "profile",
+            cwd=tmp_path,
+            timeout_s=5,
+        )
+    report = read_json(tmp_path / "profile/profile.json")
+    assert report["status"] == status
+    assert report["wall_seconds"] >= 0
