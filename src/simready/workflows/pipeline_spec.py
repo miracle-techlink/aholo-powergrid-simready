@@ -182,7 +182,7 @@ def load_pipeline(path: Path, output: Path, **flags):
         backend=backend,
         python=python,
         repo=Path(execution["repo"]).expanduser() if execution.get("repo") else None,
-        image=execution.get("image", "simready-isaac:6.1.0"),
+        image=execution.get("image", "simready-isaac-core:6.1.0"),
         gpu=execution.get("gpu", "0"),
         prepare_only=delivery.get("mode", "prepare") == "prepare",
         accept_eula=flags.get("accept_eula", False),

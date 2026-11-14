@@ -276,6 +276,7 @@ def test_ssh_local_timeout_records_remote_unknown(tmp_path, monkeypatch):
     with pytest.raises(ProcessTimeoutError):
         main(
             [
+                "--doctor",
                 "--backend",
                 "ssh",
                 "--ssh-host",
@@ -309,6 +310,7 @@ def test_ssh_dryrun_propagates_deadlines_without_local_output(tmp_path, capsys):
     assert (
         main(
             [
+                "--doctor",
                 "--backend",
                 "ssh",
                 "--ssh-host",

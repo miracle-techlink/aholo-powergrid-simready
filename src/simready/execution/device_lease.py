@@ -39,11 +39,26 @@ def discover_inventory():
         devices = []
         for line in (root / "stdout").read_text().splitlines():
             index, uuid, memory = (value.strip() for value in line.split(","))
+            known_capacity = memory not in {"[N/A]", "N/A"}
+            try:
+                # Unified-memory devices may expose identity without dedicated
+                # VRAM capacity. Zero permits the exclusive launcher lease but
+                # conservatively rejects any positive memory reservation.
+                capacity = (
+                    number(float(memory), "GPU memory.total", 0) / 1024
+                    if known_capacity
+                    else 0.0
+                )
+            except ValueError as error:
+                raise RuntimeError(
+                    "Invalid GPU memory.total; provide a reviewed device inventory"
+                ) from error
             devices.append(
                 dict(
                     index=int(index),
                     uuid=uuid,
-                    vram_gb=float(memory) / 1024,
+                    vram_gb=capacity,
+                    vram_capacity_known=known_capacity,
                     capabilities=["cuda", "rtx"],
                 )
             )

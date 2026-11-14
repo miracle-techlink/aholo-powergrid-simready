@@ -4,7 +4,8 @@
   "source_directory": "src/simready",
   "dynamic_import_routers": {
     "cli.py": "Top-level COMMANDS allowlist; only dispatches domains",
-    "simulation/cli.py": "WORKERS allowlist; only dispatches simulation workers"
+    "simulation/cli.py": "WORKERS allowlist; only dispatches simulation workers",
+    "workflows/cli.py": "Registered core workflow commands only"
   },
   "forbidden_runtime_roots": [
     "legacy",
@@ -44,20 +45,6 @@
         "assets"
       ]
     },
-    "agents": {
-      "responsibility": "Select a registered repair proposal through a decision provider",
-      "allowed_dependencies": [
-        "core",
-        "execution"
-      ]
-    },
-    "repair": {
-      "responsibility": "Repair capabilities, executable plugins and task-plan construction",
-      "allowed_dependencies": [
-        "core",
-        "geometry"
-      ]
-    },
     "evaluation": {
       "responsibility": "Observe, score and independently verify scene candidates",
       "allowed_dependencies": [
@@ -65,29 +52,19 @@
         "execution"
       ]
     },
-    "experience": {
-      "responsibility": "Persist verified episodes and govern reusable skill recipes",
-      "allowed_dependencies": [
-        "core",
-        "evaluation"
-      ]
-    },
     "workflows": {
-      "responsibility": "Coordinate the bounded observe–repair–verify–remember loop",
+      "responsibility": "Coordinate video reconstruction, asset compilation, validation and baseline comparison",
       "allowed_dependencies": [
         "core",
-        "agents",
-        "repair",
         "execution",
         "evaluation",
-        "experience",
         "ingestion",
         "simulation",
         "assets"
       ]
     },
     "simulation": {
-      "responsibility": "Simulation lifecycle, robot control, measured observations and native simulation workers",
+      "responsibility": "Generic Isaac Sim environment, calibrated observation, physical probes and survey rendering",
       "allowed_dependencies": [
         "core",
         "geometry",
@@ -104,14 +81,10 @@
     }
   },
   "public_functions": [
-    "simready.workflows.repair_loop.run_repair_workflow",
-    "simready.workflows.performance_loop.run_performance_workflow",
     "simready.execution.task_graph.run_task_graph",
     "simready.evaluation.scoring.evaluate_candidate",
     "simready.evaluation.verification.verify_candidate",
-    "simready.repair.planning.plan_repairs",
     "simready.ingestion.video_frames.extract_frames",
-    "simready.agents.provider_factory.create_decision_provider",
     "simready.ingestion.grounded_segmentation.grounded_segment_image",
     "simready.ingestion.semantic_segmentation.segment_image",
     "simready.assets.association.semantic_projection.build_semantic_spec",

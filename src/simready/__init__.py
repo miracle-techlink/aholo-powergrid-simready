@@ -1,3 +1,3 @@
-"""SimReady pipeline: explicit domains for scene preparation, repair and evaluation."""
+"""Core video-to-USD pipeline and isolated Isaac Sim deployment."""
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"

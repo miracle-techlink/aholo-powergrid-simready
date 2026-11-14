@@ -302,3 +302,50 @@ def test_mig_alias_requires_parent_uuid_and_contends_with_physical_device(
     assert recovered is not None
     assert recovered.environment["CUDA_VISIBLE_DEVICES"] == "MIG-fixture"
     recovered.close()
+
+
+@pytest.mark.parametrize(
+    "memory,capacity,known",
+    [("32768", 32, True), ("[N/A]", 0, False), ("N/A", 0, False)],
+)
+def test_discovery_preserves_uuid_when_memory_capacity_is_unknown(
+    tmp_path, monkeypatch, memory, capacity, known
+):
+    from types import SimpleNamespace
+
+    from simready.execution.device_lease import discover_inventory
+
+    def query(*args, **kwargs):
+        kwargs["stdout"].write_text(f"0, GPU-unified-memory, {memory}\n")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr("simready.execution.device_lease.run_process", query)
+    inventory = discover_inventory()
+    device = inventory["gpus"][0]
+    assert device["uuid"] == "GPU-unified-memory"
+    assert device["vram_gb"] == capacity and device["vram_capacity_known"] is known
+    pool = ResourcePool(inventory, tmp_path / "locks", None)
+    if not known:
+        assert pool.acquire(dict(kind="cuda", ram_gb=0.1, vram_gb=1)) is None
+    lease = pool.acquire(dict(kind="cuda", ram_gb=0.1, vram_gb=0))
+    assert lease is not None
+    other = ResourcePool(inventory, tmp_path / "locks", None)
+    try:
+        assert other.acquire(dict(kind="cuda", ram_gb=0.1, vram_gb=0)) is None
+    finally:
+        lease.close()
+
+
+@pytest.mark.parametrize("memory", ["nan", "inf", "-1", "invalid"])
+def test_discovery_rejects_corrupt_capacity(monkeypatch, memory):
+    from types import SimpleNamespace
+
+    from simready.execution.device_lease import discover_inventory
+
+    def query(*args, **kwargs):
+        kwargs["stdout"].write_text(f"0, GPU-fixture, {memory}\n")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr("simready.execution.device_lease.run_process", query)
+    with pytest.raises(RuntimeError, match="Invalid GPU memory"):
+        discover_inventory()

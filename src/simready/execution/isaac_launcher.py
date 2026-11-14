@@ -1,4 +1,4 @@
-"""Launch a packaged scene workflow locally, in Docker, or on an SSH server."""
+"""Launch an explicit Isaac worker locally, in Docker, or on an SSH server."""
 
 import argparse
 import json
@@ -324,7 +324,7 @@ def launch_worker(
     output,
     backend="docker",
     python=None,
-    image="simready-isaac:6.1.0",
+    image="simready-isaac-core:6.1.0",
     gpu="0",
     timeout_s=7200,
     cleanup_timeout_s=15,
@@ -398,14 +398,9 @@ def main(argv=None):
         help="Parent output directory; workflow writes delivery/",
     )
     parser.add_argument(
-        "--config",
-        default="examples/scenes/substation.json",
-        help="Path relative to repository",
-    )
-    parser.add_argument(
         "--python", default=sys.executable, help="Isaac Python for local mode"
     )
-    parser.add_argument("--image", default="simready-isaac:6.1.0")
+    parser.add_argument("--image", default="simready-isaac-core:6.1.0")
     parser.add_argument("--gpu", default="0")
     parser.add_argument(
         "--resource-kind", choices=["cpu", "cuda", "rtx"], default="rtx"
@@ -442,11 +437,12 @@ def main(argv=None):
         action="store_true",
         help="Confirm acceptance of NVIDIA Isaac Sim EULA",
     )
-    parser.add_argument("--doctor", action="store_true")
-    parser.add_argument(
-        "--require-lab",
-        action="store_true",
-        help="Require the physics worker dependencies in doctor mode",
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--doctor", action="store_true")
+    mode.add_argument(
+        "--worker",
+        nargs=argparse.REMAINDER,
+        help="Explicit Python argv, placed last; e.g. -m simready.simulation.physical_probe ...",
     )
     parser.add_argument(
         "--launch-smoke",
@@ -455,6 +451,10 @@ def main(argv=None):
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
+    if args.worker is not None and not args.worker:
+        parser.error("--worker requires nonempty Python argv")
+    if args.launch_smoke and not args.doctor:
+        parser.error("--launch-smoke requires --doctor")
     try:
         _validate_timeouts(args.timeout_s, args.cleanup_timeout_s)
     except ValueError as error:
@@ -465,8 +465,6 @@ def main(argv=None):
         validate_paths,
     )
 
-    if Path(args.config).is_absolute() or ".." in Path(args.config).parts:
-        parser.error("--config must stay inside the repository")
     if args.backend == "ssh":
         if not args.ssh_host:
             parser.error("SSH mode requires --ssh-host")
@@ -483,8 +481,6 @@ def main(argv=None):
             str(args.assets),
             "--out",
             str(args.out),
-            "--config",
-            args.config,
             "--image",
             args.image,
             "--gpu",
@@ -500,9 +496,11 @@ def main(argv=None):
         ]
         if args.device_inventory:
             command += ["--device-inventory", str(args.device_inventory)]
-        for flag in ("accept_eula", "doctor", "launch_smoke", "require_lab"):
+        for flag in ("accept_eula", "doctor", "launch_smoke"):
             if getattr(args, flag):
                 command.append("--" + flag.replace("_", "-"))
+        if args.worker is not None:
+            command += ["--worker", *args.worker]
         command = remote_command(args.ssh_host, command)
     else:
         if not args.dry_run and not args.accept_eula:
@@ -529,22 +527,8 @@ def main(argv=None):
         worker = (
             ["-m", "simready.simulation.environment_check"]
             if args.doctor
-            else [
-                "-m",
-                "simready.workflows.scene_execution",
-                "--config",
-                str(
-                    Path("/workspace" if args.backend == "docker" else args.repo)
-                    / args.config
-                ),
-                "--assets",
-                "/assets" if args.backend == "docker" else str(args.assets),
-                "--out",
-                "/output" if args.backend == "docker" else str(args.out),
-            ]
+            else args.worker
         )
-        if args.doctor and args.require_lab:
-            worker += ["--require-lab"]
         if args.doctor and args.launch_smoke:
             worker += ["--launch"]
         if args.backend == "docker":

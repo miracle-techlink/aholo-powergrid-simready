@@ -36,10 +36,9 @@ jobs:
       - name: Lint and architecture
         run: |
           ruff check src/simready tests examples scripts deploy
-          ruff check legacy --select E9,F63,F7,F82
-          ruff format --check src/simready tests examples scripts legacy deploy
+          ruff format --check src/simready tests examples scripts deploy
           python scripts/check_architecture.py
-          python -m compileall -q src/simready examples scripts legacy deploy
+          python -m compileall -q src/simready examples scripts deploy
       - name: Validate workflow syntax and expressions
         env:
           ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
@@ -119,6 +118,7 @@ jobs:
         run: |
           wheel_python="$RUNNER_TEMP/wheel-env/bin/python"
           "$wheel_python" -I -c 'import pathlib, simready, sys; assert pathlib.Path(simready.__file__).is_relative_to(sys.prefix)'
+          "$wheel_python" -I -c 'import importlib.util; assert all(importlib.util.find_spec("simready." + name) is None for name in ("agents", "repair", "experience"))'
           for domain in run simulation workflows evaluation; do
             "$wheel_python" -I -m simready "$domain" --help
           done

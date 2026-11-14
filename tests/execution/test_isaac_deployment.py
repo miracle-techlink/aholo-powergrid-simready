@@ -101,6 +101,9 @@ def test_launcher_rejects_overlap_before_creating_directories(
             "--out",
             str(output),
             "--accept-eula",
+            "--worker",
+            "-c",
+            "pass",
         ],
     )
     with pytest.raises(SystemExit) as error:
@@ -128,6 +131,9 @@ def test_launcher_preserves_existing_delivery_before_start(tmp_path, monkeypatch
             "--out",
             str(output),
             "--accept-eula",
+            "--worker",
+            "-c",
+            "pass",
         ],
     )
     with pytest.raises(SystemExit) as error:
@@ -232,3 +238,74 @@ def test_cache_seed_rejects_symlink_destination(tmp_path):
     (target / ".isaac-cache").symlink_to(unrelated, target_is_directory=True)
     with pytest.raises(ValueError, match="symlinks"):
         seed_runtime_cache(source, target)
+
+
+def test_explicit_worker_runs_locally_without_a_scene_preset(tmp_path):
+    repo, assets, output = (tmp_path / name for name in ("repo", "assets", "out"))
+    repo.mkdir()
+    assets.mkdir()
+    payload = "literal spaces; $(not-a-command)"
+    code = main(
+        [
+            "--backend",
+            "local",
+            "--python",
+            sys.executable,
+            "--repo",
+            str(repo),
+            "--assets",
+            str(assets),
+            "--out",
+            str(output),
+            "--resource-kind",
+            "cpu",
+            "--accept-eula",
+            "--worker",
+            "-c",
+            "import json,sys; print(json.dumps(sys.argv[1:]))",
+            payload,
+        ]
+    )
+    assert code == 0
+    report = json.loads((output / "launch.json").read_text())
+    assert report["status"] == "COMPLETE"
+    assert json.loads((output / "launch.stdout.log").read_text()) == [payload]
+
+
+def test_remote_worker_argv_round_trips_without_preset(tmp_path, capsys):
+    payload = "path with spaces; $(not-a-command)"
+    code = main(
+        [
+            "--backend",
+            "ssh",
+            "--ssh-host",
+            "rtx-host",
+            "--repo",
+            "/srv/source",
+            "--assets",
+            "/srv/assets",
+            "--out",
+            "/srv/output",
+            "--dry-run",
+            "--worker",
+            "-m",
+            "simready.simulation.physical_probe",
+            "--out",
+            payload,
+        ]
+    )
+    assert code == 0
+    ssh = shlex.split(capsys.readouterr().out)
+    remote = shlex.split(ssh[-1])
+    assert remote[remote.index("--worker") + 1 :] == [
+        "-m",
+        "simready.simulation.physical_probe",
+        "--out",
+        payload,
+    ]
+
+
+def test_empty_worker_is_rejected_before_output_creation(tmp_path):
+    with pytest.raises(SystemExit) as error:
+        main(["--assets", str(tmp_path), "--out", str(tmp_path / "out"), "--worker"])
+    assert error.value.code == 2 and not (tmp_path / "out").exists()

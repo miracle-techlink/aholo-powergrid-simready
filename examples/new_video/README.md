@@ -1,10 +1,10 @@
 # 新视频入口：视频到场景与巡览
 
-`simready run --video` 构建新场景；`simready run --scene` 复现已经验收过的机器人示例。这两种模式共用CLI和部署工具，但交付的证据不同。
+`simready run --video` 构建新场景；规范化配置、后端替换和局部升级使用 `simready run --pipeline`，见[Pipeline](../../docs/pipeline.md)。
 
 ## 首次运行
 
-先安装本仓库、宿主 ffmpeg，并按[部署说明](../../docs/deployment.md)准备 `simready-isaac:6.1.0` 镜像与 NVIDIA RTX 环境：
+先安装本仓库、宿主 ffmpeg，并按[部署说明](../../docs/deployment.md)准备 `simready-isaac-core:6.1.0` 镜像与 NVIDIA RTX 环境：
 
 ```bash
 python -m pip install -e '.[ingest,aholo]'
@@ -101,7 +101,7 @@ runs/new-scene/
     └── delivery.json           # 文件哈希和worker阶段时间
 ```
 
-`COMPLETE`表示所选流水线已执行完毕。`SCENE_EXPORTED`表示CPU导出和结构检查通过；`SCENE_SURVEY_READY`另包含巡览与编码核验。二者均保持`task_validated=false`，不等于全场重建保真度、真实物理参数或机器人任务通过。现有Lite3+Z1任务仍由`simready run --scene substation`执行独立任务审计。
+`COMPLETE`表示所选流水线已执行完毕。`SCENE_EXPORTED`表示CPU导出和结构检查通过；`SCENE_SURVEY_READY`另包含巡览与编码核验。二者均保持`task_validated=false`，不等于全场重建保真度、真实物理参数或机器人任务通过。专用机器人任务保留在 `aloho-hackson` 分支。
 
 ## 服务器执行
 
