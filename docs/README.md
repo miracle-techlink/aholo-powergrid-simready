@@ -6,6 +6,8 @@
 
 阅读路径：[模块与依赖](#模块与依赖) → [规范流水线](#规范流水线) → [接入重建 baseline](#接入重建-baseline)／[接入 benchmark](#接入-benchmark) → [测试与合并](#测试与合并)。方法综述和历史实验见完整分支的 [tech report](https://github.com/miracle-techlink/video-to-simready/blob/e15d71b77d40aae9867ac00b67adeb4a4af38e01/docs/report/technical-report.md)。
 
+继续开发的任务、顺序和验收标准见[下一步 infra 开发交接](#下一步-infra-开发交接)。
+
 当前完整主链支持 Gaussian PLY、保守碰撞代理、显式 box/button 资产及其参数读回。新算法可复用接入接口，但本仓库不因此宣称已复现 AnySplat、VGGT 或其它论文；任意视频的遮挡几何补全、真实物性辨识和完整机器人任务验收仍需专项开发。
 
 ## 设计原则
@@ -325,3 +327,122 @@ python -m build
 execution 统一持有物理 GPU UUID 租约，嵌套本地 worker 经受控凭据借用；取消沿所属进程组与继承管道传播。容器未确认停止就保留设备隔离，使用 `simready execution recover-device --help` 查看核查恢复入口，不手动删锁。CPU／CUDA／RTX 资源分别声明；CUDA 可见性不等于 Vulkan 隔离，未知显存不虚报容量。
 
 任务是可信代码，worker 进程分离不提供安全沙箱。环境变量显式声明，secrets 或未跟踪的旧环境关闭缓存；密钥不写入配置／argv。多机调度尚未实现，SSH 使用预备环境且断线不保证远端已取消。GPU 改动必须另存输入、实际镜像 ID、日志和验收结果，CPU CI 不代替这项检查。
+
+## 下一步 infra 开发交接
+
+本节可直接交给 Claude 或其他开发者执行。**这是下一轮开发计划，下面标为“拟新增”的接口和模块目前尚不存在。** 核对基线为 2026-11-14 的 main `e63f77b`（v0.10.0）；本指南通过 [PR #20](https://github.com/miracle-techlink/video-to-simready/pull/20) 更新。开工时核对最新 main 和该 PR 状态，在工作分支开发并保留已有改动；按最新代码调整路径，不重置他人的工作区。
+
+### 本轮目标与范围
+
+交付一条可复现的评测执行链：
+
+```text
+冻结数据与相机、模型配置、渲染配置、评分协议
+  → 重建／导入 → USD 编译 → 固定视角观测
+  → 自动构建 candidate → 独立评分 → 多成员／多场景汇总
+```
+
+用户应能提交配置后获得逐视图指标、缺失／失败记录和来源证据，无需手工生成 candidate。同一结果可核验后恢复；修改相机只重跑渲染及评分，修改评分阈值只重跑候选绑定／评分；上游模型结果保持可复用。
+
+本轮负责合同、编排、执行、证据与测试。第一条实际渲染路径为现有 Gaussian USD＋Isaac；先用合成夹具和来源绑定的真实重建产物验证。新增模型推理通过现有 command 接口另行适配，不把模型训练或下载大型数据集设为 CPU 开发前提。任意 mesh 转换、物体补全、完整 NeRF2Physics 视觉链、机器人策略、Agent 修复和跨节点调度列为后续工作，不纳入本轮完成声明。
+
+### 开始前必须理解的现状
+
+| 现状／代码入口 | 下一步如何使用 |
+|---|---|
+| [providers.py](../src/simready/ingestion/reconstruction/providers.py) 已有 command/artifact/Aholo | 复用后端执行与 bundle，保留导入／新推断／缓存的区别 |
+| [stage_ledger.py](../src/simready/workflows/contracts/stage_ledger.py) 的 `stage_identity`、`StageLedger` | 为渲染与评分分别保存身份和回执，调用方继续负责运行锁与 attempt 目录 |
+| [baseline_matrix.py](../src/simready/workflows/pipelines/baseline_matrix.py) 的 `plan_matrix`、`execute_matrix` | 当前串行执行成员，candidate 必须在规划时存在；需增加“运行后生成候选”的路径，保留已有外部 candidate 路径 |
+| [depth_observation.py](../src/simready/simulation/depth_observation.py) | 已有单视图相机转换、RGB-D 捕获和输入哈希；优先封装复用，不能直接把巡览截图当作参考相机渲染 |
+| [verification.py](../src/simready/evaluation/verification.py) 的 `verify_candidate` | 使用新进程重算，带超时和 protocol 身份；不要从编排器直接填成绩 |
+| [execution/tasks](../src/simready/execution/tasks) 与 [execution/workers](../src/simready/execution/workers) | 复用任务图、GPU 租约、容器和清理；不再增加第二套 scheduler／锁目录／重试器 |
+| [module_boundaries.json](../configs/architecture/module_boundaries.json) | 保持 evaluation 不依赖 assets writer／simulation／workflows；新增代码按现有层次归属 |
+
+当前评分器只有部分 collector，`reconstruction`／`simready` profile 的所有必需 track 尚未贯通。首轮明确报告“外观／观测评测”的范围；可复用 `observer_calibration` 开发协议验证链路，真实模型比较另附来源与数据划分证据。不得仅改 profile、删除检查或自报 success 就声明完整 simready 通过。
+
+### 分五个可独立审查的 PR 实现
+
+#### PR 1：冻结 benchmark 输入合同
+
+交付 benchmark manifest 的版本化 schema、纯校验器及正反例。schema 先覆盖本地文件，不接任意下载器。需要固定的数据分为：
+
+| 合同 | 必须表达的内容 |
+|---|---|
+| dataset | dataset ID／版本／来源与许可；scene、capture、frame 身份；fit／development／sealed 划分；图像与可选深度的文件哈希 |
+| view set | 唯一 view ID、相机证据、分辨率、内外参、坐标与单位、畸变和预处理；所有模型共享同一组目标视图 |
+| render request | scene／reconstruction 身份、view set、渲染器代码与环境、图像设置、光照策略、随机种子及预算 |
+| evaluation request | 冻结的 protocol、candidate 来源模式、评分器版本和期限；阈值与渲染配置分别保存 |
+
+公共文件引用与最小 schema 可放拟新增 `core/benchmark_contract.py`；pipeline 配置的解析与计划仍在 workflows。只有需要跨领域共享的数据合同进入 core，模型逻辑和数据集专用解析留在 ingestion。不要把每种数据集变成顶层领域。
+
+验收：未知字段、重复 ID、缺失文件、非有限值、路径逃逸、哈希错配、fit/评测重叠均提前拒绝。相机估计、纹理拟合也计入 fit 访问。持有完整原视频的进程没有自动获得数据隔离；没有受限输入与实际访问证据时，只能报告“声明划分”。若要支持仅含 fit 帧的训练输入，显式记录其与原始 capture 的映射，不得替换视频哈希冒充同一文件。
+
+#### PR 2：固定相机批量观测 worker
+
+拟新增 `simulation/benchmark_observation.py` 作为批量入口，复用现有相机与 RGB-D 捕获实现；只有实际复用需要时抽取内部函数，避免复制一套相机变换。worker 只接受冻结 render request，输出逐视图 RGB、可选深度、实际渲染设置和 receipt。编排层通过现有 Isaac launcher 执行，模型／Kit 仍在隔离 worker 中加载。
+
+必须解决现有 worker 的几个具体限制：
+
+- 当前只接受无畸变、零 skew、`opencv_c2w` 且 `fx=fy` 的相机。先明确拒绝不支持的输入；需去畸变或重采样时，把新相机和图像预处理一起冻结并验证，不得静默拉伸。
+- 当前标定文件绑定某个 PLY 和 `source_to_world`。共享 benchmark 相机应独立于成员，再结合每个成员固定的坐标变换生成派生标定及证据；不能通过修改哈希伪装成同一标定。
+- 当前无光源时自动补光。benchmark 要显式冻结光照／背景／曝光政策并记录实际值，禁止根据参考图为每个候选单独调参。
+- 当前捕获要求 RGB 和有效深度同时成功，且会拒绝近乎均匀图像。新合同应区分 RGB-only 与 RGB-D，使用明确的质量检查策略，不把合法空白背景默认为失败，也不能用静默重试隐藏渲染错误。
+- 当前输出含“repaired scene”来源文案。通用入口须按真实输入记录原始／修复状态；渲染成功不证明场景已修复。
+- `metersPerUnit=1` 只建立数值单位关系，不证明真实尺度。渲染深度须标明 camera-z 与有效像素规则，不冒充实测深度；米制误差需要独立参考及尺度证据。
+
+验收：至少两组不同相机的真实 Kit 捕获与像素投影对照；记录输入 USD／引用层、PLY、相机、渲染设置、代码、环境和实际镜像 ID。输入保持只读，使用 session layer。渲染崩溃、超时、取消不会发布完整成功回执；中间失败保留，不用旧图补齐缺失视图。
+
+#### PR 3：candidate 组装与独立评分阶段
+
+拟新增 `workflows/stages/benchmark_evaluation.py` 负责阶段组合，`evaluation` 负责独立证据读取和评分。candidate builder 从已经核查的 render receipt 构建视图引用，并绑定实际模型产物、相机与 protocol。worker 的 `COMPLETE` 标志不足以通过：必须核对预期 view ID、输出哈希、分辨率、来源绑定及配置身份。
+
+阶段至少分为“原始观测渲染”和“候选绑定／评分”。渲染身份只依赖真实影响像素的输入和设置，不包含无关评分阈值；评分身份包括 protocol、原始观测和评分代码。使用现有 StageLedger，失败写新 attempt，不覆盖旧成功记录。输出搬入运行目录后使用有效的相对引用，不能依赖已清理的临时目录。
+
+验收：缓存命中也要重新核查文件；相机改变重跑渲染与评分，阈值改变只重算评分，PLY／坐标改变使对应下游失效。篡改任一图像、receipt、protocol 或评分实现不能复用旧成绩。开发集输出可定位缺陷；sealed 不把原始观测或细节反馈交回修复流程。`release_authorized=false` 保持不变；本轮没有部署可信渲染／数据／发布服务。
+
+区分“评分进程正常结束但候选 FAIL/INCOMPLETE”和“worker 崩溃／超时／取消／输入 INVALID”；前者也有有效 scorecard，不能被包装成执行成功即质量通过。任何复用行为都记录实际模式和成本，未知 GPU 时间、费用、token 保持空值。
+
+#### PR 4：矩阵自动评测与多场景汇总
+
+在现有 baseline matrix 上增加自动 render/evaluate 选项；沿用显式注册分支，保留手工 candidate 模式。以下均为拟新增语义，具体字段名在 PR 1 确定后写入版本化 schema：
+
+- 外部候选模式：规划时冻结 candidate 及其依赖，延续当前行为。
+- 自动候选模式：规划时冻结 renderer、视图和评分合同；执行后按预期身份核对新产物，再冻结 candidate。不得为了读取未来文件而放宽现有输入哈希校验。
+- 重建中间产物模式：`--until reconstruction` 保持原含义，不触发隐式渲染或宣称质量已测。
+
+先完成单场景多成员；再用薄的 suite 编排逐场景复用矩阵实现。若需要新增入口，可放 `workflows/pipelines/benchmark_suite.py`，不要把另一份模型执行／评分逻辑复制进去。第一版顺序执行即可，之后再用已有 task graph 增加受预算限制的并发。
+
+汇总保留每个 scene×member 的执行状态、评分状态、产物引用、失败原因、耗时、执行模式和缺失指标；分母固定为计划中的全部样本。先按场景统计，再明确跨场景聚合方式，避免帧数多的场景主导结果；失败率与有效样本上的质量分别报告，缺失质量不能填零或悄悄丢弃。不给不同 protocol／数据划分的成员做统一排名，不自动晋升后端。
+
+验收：两场景×两成员，其中一个成员在一个场景注入失败，结果仍保留四行。中途取消后停止下游，恢复只复用身份和证据均有效的阶段。沿用现有取消传播与物理 GPU 租约；检查容器实际退出后才释放租约，未确认清理的设备保持隔离。
+
+#### PR 5：安装包、CI 与实际回归
+
+CPU CI 增加合同、fake worker 故障注入、candidate 构造和独立评分测试；fake worker 明确标为合成，仅验证执行语义。将最小示例合并进现有 `examples/reconstruction`，测试夹具放 `tests/fixtures`，不增加散落的运行脚本或多份说明文档。
+
+扩展现有 package smoke：在仓库外安装 wheel 后，运行新增 CPU 示例与恢复；确认运行模块没有从 examples/tests 导入。保留当前 Python 3.10/3.12、静态检查和严格 `merge-gate`。真实 GPU 验证单独执行并保存证据；没有 GPU 时可以交付 CPU 部分，但将 GPU 项标为未验证，不能把 fake worker 结果计作实际渲染通过。
+
+GPU 回归至少包含一次固定两视图捕获和一次取消／超时清理；记录准确源码 commit、镜像 ID、设备能力、日志、输出哈希与独立检查。CI/CD 本轮仍交付可核验安装包，不自动上线 GPU 服务。若涉及 GPUFree Starbucks 部署，先读工作区 AGENTS 指定的 deployment guard；原 12-keyframe 诊断预览不能报告为修复结果。
+
+### 必须覆盖的验收矩阵
+
+| 场景 | 预期结果 |
+|---|---|
+| 合成模型／两视图／全部文件正确 | CPU 接口链通过，报告仍标合成；不产生真实算法准确率结论 |
+| 缺一个视图／多出未声明视图／重复 ID | 缺失不通过；未声明或重复输入被拒绝 |
+| 复制另一成员的渲染或替换一张图 | 来源／哈希／成员绑定不匹配时拒绝；不宣称能识别主动伪造的完整来源链 |
+| 渲染中途被取消／超时 | 所属进程和容器停止，下游不运行，清理证据或设备隔离记录保留 |
+| 候选图像质量低 | 独立评分 FAIL，执行状态与质量状态分别记录 |
+| 不变输入恢复／只改阈值／只改相机 | 分别复用全部成功阶段／仅重新评分／重新渲染与评分 |
+| 指标缺失／无标定阈值 | INCOMPLETE 或明确未测，不默认为 PASS |
+| fit/heldout 重叠／sealed 数据 | 重叠拒绝；sealed 细节不输出给模型或修复方 |
+| 一场景失败／安装 wheel 后运行 | 失败保留在完整汇总；仓库外仍可执行 |
+| 真实模型输出＋真实参考评测 | 提供实际数据来源、相机／尺度证据和失败记录；缺输入时该项保持未完成 |
+
+每个 PR 运行对应领域测试及架构检查；提交前执行[完整检查](#测试与合并)。重点回归文件是 [test_baseline_matrix.py](../tests/workflows/test_baseline_matrix.py)、[test_stage_ledger.py](../tests/workflows/test_stage_ledger.py)、[test_candidate_scoring.py](../tests/evaluation/test_candidate_scoring.py)、[test_depth_observation.py](../tests/simulation/test_depth_observation.py)、[test_nested_execution.py](../tests/execution/test_nested_execution.py)、[test_device_leases.py](../tests/execution/test_device_leases.py) 和 [test_isaac_lifecycle.py](../tests/execution/test_isaac_lifecycle.py)。增加能证明故障处理和指标正确性的测试，不用只复制实现逻辑的测试凑覆盖率。
+
+### 给 Claude 的执行要求与最终交付
+
+先阅读本指南和当前配置／测试，再按 PR 1→5 实施。先提交最小合同与测试，再补真实 worker；每一步完成后给出实际结果。不要重做已经完成的模块拆分、嵌套取消或 GPU 租约；不要将 `aloho-hackson` 整支合回 main。发现现有实现不满足上述合同，记录具体原因并在对应层修复。
+
+交付必须包含：可运行代码、最小配置与命令、正反例测试、受影响模块说明、逐项验收记录、证据目录及 PR 链接。总结分别列出“已实现且实测”“仅 CPU／合成验证”“未实现／缺外部输入”，不把文档、接口或配置占位算作模型与 benchmark 已接入。没有实际模型、数据、镜像或 GPU 时，先完成不依赖它们的 infra，并明确剩余验证条件；不得伪造真实运行结论。
