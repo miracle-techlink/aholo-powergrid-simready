@@ -1,6 +1,7 @@
 """Owned foreground processes; never kill unrelated jobs or invoke a shell."""
 
 import os
+import selectors
 import signal
 import subprocess
 import time
@@ -76,6 +77,7 @@ def run_process(
             ) as (child_env, child_fds),
             Path(stdout).open("wb") as out,
             Path(stderr).open("wb") as err,
+            selectors.DefaultSelector() as writer,
         ):
             process = subprocess.Popen(
                 argv,
@@ -89,7 +91,19 @@ def run_process(
             )
             scope.spawned()
             try:
-                payload = input_text.encode() if input_text is not None else None
+                # Retrying communicate(None) after a short timeout stops feeding
+                # buffered input on Python 3.10/3.12. Own the pipe offset instead;
+                # nonblocking writes keep cancellation responsive under backpressure.
+                payload = memoryview(
+                    input_text.encode() if input_text is not None else b""
+                )
+                offset = 0
+                if process.stdin is not None:
+                    os.set_blocking(process.stdin.fileno(), False)
+                    if payload:
+                        writer.register(process.stdin, selectors.EVENT_WRITE)
+                    else:
+                        process.stdin.close()
                 while True:
                     if parent_cancelled(inherited) or (
                         cancel_event is not None and cancel_event.is_set()
@@ -98,17 +112,33 @@ def run_process(
                     remaining = timeout - (time.monotonic() - start)
                     if remaining <= 0:
                         raise ProcessTimeoutError(timeout, time.monotonic() - start)
+                    interval = (
+                        remaining
+                        if cancel_event is None and inherited is None
+                        else min(remaining, 0.1)
+                    )
+                    if writer.get_map():
+                        if writer.select(interval):
+                            try:
+                                offset += os.write(
+                                    process.stdin.fileno(),
+                                    payload[offset : offset + 65536],
+                                )
+                            except BlockingIOError:
+                                continue
+                            except BrokenPipeError:
+                                writer.unregister(process.stdin)
+                                process.stdin.close()
+                            else:
+                                if offset == len(payload):
+                                    writer.unregister(process.stdin)
+                                    process.stdin.close()
+                        continue
                     try:
-                        process.communicate(
-                            payload,
-                            timeout=remaining
-                            if cancel_event is None and inherited is None
-                            else min(remaining, 0.1),
-                        )
+                        process.wait(timeout=interval)
                         break
                     except subprocess.TimeoutExpired:
-                        # communicate retains partially sent input when retried.
-                        payload = None
+                        pass
                 if parent_cancelled(inherited) or (
                     cancel_event is not None and cancel_event.is_set()
                 ):
@@ -116,6 +146,8 @@ def run_process(
                 return ProcessResult(process.returncode, time.monotonic() - start)
             finally:
                 try:
+                    if process.stdin is not None:
+                        process.stdin.close()
                     scope.request_stop(process, cancellation_grace_s)
                 finally:
                     try:

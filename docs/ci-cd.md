@@ -58,3 +58,5 @@ GitHub 规则行为依据：[受保护分支](https://docs.github.com/en/reposit
 ## 本轮发现与修复
 
 原 PR #14 在云端 Ruff 导入排序失败，本机却通过：仓库根目录被隐式视作源码根，已有 build 目录改变了 `from build` 的分类。现在仅将 src 作为探测根，明确声明 simready / tests / examples / scripts / legacy，已在干净导出与本机含构包产物的目录分别验证。没有放宽 Ruff 检查或修改算法代码。
+
+双版本测试随后发现 Python 3.10 / 3.12 下大 stdin 的兼容问题：`communicate` 超时后以 None 重试，不再继续注册 stdin 写事件，最终等待超时。进程监督现使用非阻塞管道和显式写入偏移，同时保持取消／期限检查；新增 UTF-8、空输入、提前关闭和背压期间取消／超时回归。此次失败使 merge-gate 失败、main-artifacts 跳过，保留了实际门槛拒绝证据，没有用延长超时或跳过测试替代修复。
