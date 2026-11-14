@@ -20,7 +20,7 @@ def test_repository_obeys_declared_architecture():
     [
         (
             "core/artifacts.py",
-            "from simready.workflows import run_repair_workflow",
+            "from simready.workflows import video_pipeline",
             "forbidden dependency core -> workflows",
         ),
         (
@@ -29,7 +29,7 @@ def test_repository_obeys_declared_architecture():
             "forbidden dependency evaluation -> repair",
         ),
         (
-            "agents/contracts.py",
+            "ingestion/video_frames.py",
             "from legacy.gaussian_repair import render",
             "forbidden runtime import legacy",
         ),
@@ -97,8 +97,8 @@ def test_checker_rejects_cycles_in_declared_rules():
 def test_checker_rejects_missing_public_contract(tmp_path):
     source = tmp_path / "simready"
     shutil.copytree(SOURCE, source, ignore=shutil.ignore_patterns("__pycache__"))
-    path = source / "workflows/repair_loop.py"
-    path.write_text(path.read_text().replace("config: JsonObject", "config", 1))
+    path = source / "workflows/semantic_assets.py"
+    path.write_text(path.read_text().replace("ply: str | Path", "ply", 1))
     assert any(
         "public signature" in error for error in check_architecture(source, RULES)
     )

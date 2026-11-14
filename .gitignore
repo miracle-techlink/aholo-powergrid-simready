@@ -41,14 +41,5 @@ build/
 .infra-cache/
 .infra-locks/
 
-# Only retained evidence rasters belong in the source tree.
-!docs/report/figures/*.jpg
-!docs/report/figures/new_video_survey_frame.png
-!docs/report/figures/starbucks_semantic_overlay.png
-!docs/report/figures/substation_semantic_overlay.png
-docs/report/*.aux
-docs/report/*.out
-docs/report/*.toc
-docs/report/*.log
-docs/report/main.pdf
-docs/report/main.tex
+# Local generated report artifacts from full-branch checkouts.
+/docs/report/

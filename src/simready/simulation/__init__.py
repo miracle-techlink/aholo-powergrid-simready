@@ -1,1 +1,1 @@
-"""Scene-specific simulation adapters; optional dependencies load in workers."""
+"""Generic Isaac Sim scene workers; optional dependencies load in workers."""

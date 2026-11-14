@@ -636,7 +636,7 @@ def main(argv=None):
         "--python", default=os.environ.get("ISAAC_PYTHON", sys.executable)
     )
     parser.add_argument("--repo", type=Path)
-    parser.add_argument("--image", default="simready-isaac:6.1.0")
+    parser.add_argument("--image", default="simready-isaac-core:6.1.0")
     parser.add_argument("--gpu", default="0")
     parser.add_argument(
         "--prepare-only",

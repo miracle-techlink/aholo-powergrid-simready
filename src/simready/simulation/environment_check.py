@@ -12,17 +12,14 @@ import shutil
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--launch", action="store_true")
-    parser.add_argument("--require-lab", action="store_true")
     args = parser.parse_args()
     versions = {}
-    for package in ("isaacsim", "isaaclab", "torch", "numpy", "onnxruntime"):
+    for package in ("isaacsim", "numpy", "scipy", "Pillow", "opencv-python-headless"):
         try:
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
             versions[package] = None
-    required = ["isaacsim", "numpy", "PIL", "pxr"]
-    if args.require_lab:
-        required += ["isaaclab", "isaaclab_physx", "onnxruntime", "cv2", "scipy"]
+    required = ["isaacsim", "numpy", "PIL", "pxr", "cv2", "scipy"]
     missing = [name for name in required if not importlib.util.find_spec(name)]
     ffmpeg = bool(shutil.which("ffmpeg"))
     passed = not missing and ffmpeg

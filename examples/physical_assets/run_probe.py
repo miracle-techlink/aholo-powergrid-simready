@@ -15,7 +15,7 @@ def main() -> int:
     parser.add_argument(
         "--python", help="Isaac Python executable for the local backend"
     )
-    parser.add_argument("--image", default="simready-isaac:6.1.0")
+    parser.add_argument("--image", default="simready-isaac-core:6.1.0")
     parser.add_argument("--gpu", default="0")
     parser.add_argument("--accept-eula", action="store_true")
     args = parser.parse_args()

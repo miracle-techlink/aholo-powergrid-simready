@@ -11,7 +11,7 @@ from pathlib import Path
 from simready.core.validation import number
 from simready.execution.processes import ProcessCancelledError, run_process
 
-DEFAULT_IMAGE = "simready-isaac:6.1.0"
+DEFAULT_IMAGE = "simready-isaac-core:6.1.0"
 OWNERSHIP_LABEL = "org.simready.launch"
 
 

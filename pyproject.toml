@@ -5,29 +5,24 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "simready-pipeline"
 dynamic = ["version"]
-description = "Video-to-interactive simulation: portable Isaac workers, bounded agent repair and evidence-bound evaluation"
+description = "Core video-to-USD pipeline with independent validation and isolated Isaac Sim workers"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 dependencies = []
 
 [project.optional-dependencies]
-report = ["matplotlib>=3.8"]
-simulation = ["numpy>=1.24", "scipy>=1.10", "Pillow>=9.1", "opencv-python-headless>=4.8", "onnxruntime>=1.18"]
+simulation = ["numpy>=1.24", "scipy>=1.10", "Pillow>=9.1", "opencv-python-headless>=4.8"]
 aholo = ["requests>=2.31"]
 benchmark = ["numpy>=1.24", "scipy>=1.10", "Pillow>=9.1"]
 ingest = ["numpy>=1.24", "Pillow>=9.1"]
-physical-assets = ["numpy>=1.24", "scipy>=1.10", "Pillow>=9.1", "usd-core>=25.11"]
+physical-assets = ["numpy>=1.24", "scipy>=1.10", "Pillow>=9.1", "usd-core>=26.8"]
 segmentation = ["torch>=2.6", "transformers>=4.51,<5", "safetensors>=0.4.3", "numpy>=1.24", "Pillow>=9.1", "scipy>=1.10"]
 test = ["pytest>=7", "numpy>=1.24", "scipy>=1.10", "Pillow>=9.1", "scikit-image>=0.20", "opencv-python-headless>=4.8", "requests>=2.31"]
 dev = ["build>=1", "ruff==0.17.4"]
 
 [project.scripts]
 simready = "simready.cli:main"
-simready-infra = "simready.compat_cli:infra_main"
-simready-benchmark = "simready.compat_cli:benchmark_main"
-simready-pipeline = "simready.compat_cli:pipeline_main"
-simready-ingest = "simready.compat_cli:ingest_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -49,8 +44,4 @@ src = ["src"]
 select = ["E4", "E7", "E9", "F", "I", "N", "B", "UP"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["simready", "tests", "examples", "scripts", "legacy"]
-
-[tool.ruff.lint.per-file-ignores]
-"src/simready/simulation/button.py" = ["N815"]
-"src/simready/simulation/panel_controls.py" = ["N803"]
+known-first-party = ["simready", "tests", "examples", "scripts"]

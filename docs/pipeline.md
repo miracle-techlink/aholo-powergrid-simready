@@ -1,6 +1,6 @@
 # 规范化 pipeline 与重建 baseline 接入
 
-规范入口为 `simready run --pipeline pipeline.json --out runs/<新运行>`。它与旧 `--video` 入口委托同一个视频工作流和唯一阶段回执实现；进程、容器与 GPU 继续使用 execution 域。已有 `--scene`、独立语义、修复和杯任务入口保持兼容。
+规范入口为 `simready run --pipeline pipeline.json --out runs/<新运行>`。它与旧 `--video` 入口委托同一个视频工作流和唯一阶段回执实现；进程、容器与 GPU 继续使用 execution 域。独立语义与 baseline 比较继续共用这些合同。
 
 ## 当前实际分层
 
@@ -20,7 +20,7 @@ flowchart LR
 
 观测抽帧与重建都是视频的消费者；当前重建后端可以消费完整视频或自己声明的冻结帧，不能把观察阶段的 heldout 标记误当作后端已隔离训练访问。新的联合方法可通过重建 bundle 描述所用帧、坐标与证据；尚未提供任意多输出 DAG 插件 API。
 
-模块责任和依赖统一见[架构](architecture.md)，旧入口的兼容关系见[迁移表](migration.md)。阶段合同不等于算法已实现：当前主链支持 Gaussian PLY，完整 mesh／关节与其他仿真 runner 仍需逐项接入。
+模块责任和依赖统一见[架构](architecture.md)，旧入口的兼容关系见[迁移表](migration.md)。阶段合同不等于算法已实现：当前主链支持 Gaussian PLY，完整 mesh／关节仍需逐项接入。
 
 ## 最小配置与操作
 

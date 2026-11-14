@@ -1,25 +1,19 @@
 # Video to SimReady
 
-**从真实场景视频，到可交互、可验证的机器人仿真环境。**
+核心 video → reconstruction → USD pipeline，以及隔离的 Isaac Sim 容器部署。
 
-[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](pyproject.toml) [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+[![CI](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/miracle-techlink/video-to-simready/actions/workflows/test.yml) · [文档](docs/README.md) · [Pipeline](docs/pipeline.md) · [容器部署](docs/deployment.md)
 
-[文档导航](docs/README.md) · [Pipeline 配置](docs/pipeline.md) · [模块架构](docs/architecture.md) · [能力与待办](docs/release-status.md) · [部署](docs/deployment.md)
-
-系统把视频观测、三维重建、资产编译、仿真和独立验收分层，保存输入身份、参数来源、阶段回执和失败证据。当前通用入口生成 Gaussian PLY 对应的 USD 场景候选；完整资产、视觉保真度和机器人任务分别验收。
-
-## 演示
-
-| 变电站 · Lite3 + Z1 | 星巴克 · G2 |
+| 分支 | 内容 |
 |---|---|
-| [![变电站任务画面](docs/report/figures/substation_navigation.jpg)](examples/scenes/README.md) | [![星巴克展示画面](docs/report/figures/starbucks.jpg)](examples/starbucks_simready/README.md) |
-| 物理按压、独立任务审计与轨迹回放 | 已准备场景中的编排巡览 |
+| `main` | 核心流水线、baseline 接入、资产与物性、独立验收、执行设施、Isaac Sim 部署及必要测试 |
+| [`aloho-hackson`](https://github.com/miracle-techlink/video-to-simready/tree/aloho-hackson) | 分离前的完整版本：Aholo 黑客松、专用机器人任务、Agent 修复／经验、研究代码、视频物料与历史报告 |
 
-[双桌搬杯](examples/starbucks_grasp/README.md)另有固定基座抓取、放置与接触验收。以上案例依赖专用资产与机器人配置；通用新视频入口尚未自动达到同等交付质量。[结果与限制](docs/release-status.md)分别记录。
+main 保留 `artifact`、`command`、`aholo` 重建后端。Aholo 云端模型由服务方提供，本仓库实现客户端与下游处理；其他算法通过冻结输入、环境身份和统一 bundle 接入。
 
-## 快速开始：CPU 场景与恢复
+## CPU 快速开始
 
-需要 Python 3.10+ 和系统 FFmpeg；该示例不需要 GPU、模型账号或私有资产。
+需要 Python 3.10+ 与系统 FFmpeg；无需 GPU、账号或私有数据。
 
 ```bash
 git clone https://github.com/miracle-techlink/video-to-simready.git
@@ -32,41 +26,20 @@ simready run --pipeline /tmp/simready-inputs/pipeline.json --out /tmp/simready-r
 simready run --pipeline /tmp/simready-inputs/pipeline.json --out /tmp/simready-run --resume
 ```
 
-示例使用合成视频和高斯，验证 USD 导出、参数读回和恢复合同。运行摘要为 `/tmp/simready-run/summary.json`。新输入使用新目录；配置检查、阶段停止和局部升级见 [Pipeline 指南](docs/pipeline.md)。
+此示例使用合成输入，验证 USD 导出、独立参数读回和恢复。真实视频与重建复用见[视频示例](examples/new_video/README.md)，多算法对比见[baseline 矩阵](examples/baselines/README.md)。
 
-## 真实视频与重建后端
-
-规范配置支持 `artifact`（导入已有结果）、`aholo`（云任务）和 `command`（外部算法）。新增 baseline 通过统一 bundle 接入，可用 [baseline 矩阵](examples/baselines/README.md)冻结输入并比较；示例跑通不代表真实模型精度已评测。
-
-**历史案例的上游三维重建使用群核科技 Aholo API；本项目负责重建结果到仿真资产、机器人交互和独立验收。** Aholo 的模型训练由服务方提供，本仓库开源客户端和下游工程。
-
-- [Aholo 平台与 Key](https://labs.aholo3d.cn/) · [官方接口文档](https://labs.aholo.ai/api-docs/intro)
-- [本项目客户端](src/simready/ingestion/aholo_client.py) · [提交与恢复](src/simready/ingestion/aholo_reconstruction.py)
-- [真实视频用法](examples/new_video/README.md) · [本地算法适配示例](examples/reconstruction_backends/README.md)
-
-新云提交须显式选择 `--submit-reconstruction`；Isaac/RTX 运行另需匹配环境、资产和许可证确认，见[部署指南](docs/deployment.md)。旧 `--video`、`--scene` 入口保持兼容。
-
-## 示例与扩展
-
-| 目标 | 入口 |
-|---|---|
-| 已有变电站／星巴克场景 | [场景准备与启动](examples/scenes/README.md) |
-| 多类语义、逐物体物性 | [物性流程](docs/physical-assets.md) · [CPU 语义夹具](examples/semantic_assets/README.md) |
-| 物性估计与搬杯评测 | [NeRF2Physics 接线](docs/nerf2physics.md) · [鲁棒性评测](docs/cup-robustness.md) |
-| Agent 修复与经验复用 | [运行手册](docs/runtime.md)；合成演示：`python -m examples.repair_workflow.run_learning_demo --out runs/repair-demo` |
-| 新机器人 | [设备端口与适配](examples/robots/README.md) |
-| 独立验收 | [评测协议](docs/evaluation.md) |
-
-物性参数区分先验、推断与测量；当前语义代理不等于完整封闭网格。修复插件和机器人任务按配置组合，未对任意新视频默认全自动执行。
-
-## 开发与交付
+## Isaac Sim worker
 
 ```bash
-python -m pip install -e '.[test,dev,physical-assets]'
-python scripts/check_architecture.py
-python -m pytest -q
+docker build -t simready-isaac-core:6.1.0 -f deploy/isaac/Dockerfile deploy/isaac
+python scripts/launch_isaac.py --assets examples/pipeline --out runs/isaac-check \
+  --doctor --launch-smoke --accept-eula
 ```
 
-[CI/CD](docs/ci-cd.md)要求静态检查、Python 3.10/3.12 完整测试和隔离 wheel 验证全部通过后合并；main 复验后交付带校验和的安装包。GPU 与真实模型结果单独保存。新增功能按[开发规范](docs/development.md)和[模块边界](docs/architecture.md)接入。
+执行前准备 Docker、NVIDIA Container Toolkit、适用的 NVIDIA 许可与 GPU 环境。源码与输入只读挂载；镜像不包含场景、模型权重或密钥。完整步骤、镜像身份及 GPU 验收见[部署指南](docs/deployment.md)。
 
-历史实验、白皮书和已退役工具见[历史索引](docs/history.md)。问题可在 [Issues](https://github.com/miracle-techlink/video-to-simready/issues) 提交。
+## 开发边界
+
+八个领域的依赖由[架构合同](docs/architecture.md)与 CI 约束。配置、阶段恢复和局部升级见 [Pipeline](docs/pipeline.md)；新增模型保留独立 worker 环境。公开示例用于合同验证，完整几何、真实物性与模型精度仍需各自评测。
+
+v0.9 移出了专用场景与 Agent 命令，迁移到完整分支或核心入口见[迁移说明](docs/migration.md)。PR 必须通过双 Python 回归、隔离 wheel 流水线和合并门槛；main 交付绑定提交身份的安装包。

@@ -1,6 +1,0 @@
-{
-  "scene": "substation",
-  "source_video": "source/substation.mp4",
-  "mission_config": "prepared/mission.json",
-  "provenance": "Source-conditioned cabinet completion, estimated scale and physical presets; user-provided Lite3 and Z1 assets"
-}

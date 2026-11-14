@@ -9,12 +9,12 @@ from simready.simulation import environment_check
 
 
 @pytest.mark.parametrize(
-    "missing", ["ffmpeg", "isaacsim", "numpy", "PIL", "pxr", "scipy"]
+    "missing", ["ffmpeg", "isaacsim", "numpy", "PIL", "pxr", "scipy", "cv2"]
 )
 def test_required_dependencies_affect_passed_without_starting_kit(
     monkeypatch, capsys, missing
 ):
-    monkeypatch.setattr(sys, "argv", ["doctor", "--require-lab"])
+    monkeypatch.setattr(sys, "argv", ["doctor"])
     monkeypatch.setattr(
         environment_check.importlib.util,
         "find_spec",

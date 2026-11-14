@@ -19,4 +19,4 @@
 
 通用 bundle 包含算法身份、训练/留出帧声明、坐标/尺度状态、所有产物哈希和冻结依赖。声明帧集需要 evidence，重复和交叉帧会被拒绝；尺度 verified 需要度量单位和 evidence，但仍标注为操作者证据声明，不宣称独立认证。没有帧声明时不能据此报告 heldout 质量。输入依赖必须保留；重定位整个包前须一起迁移并重新冻结依赖。
 
-仓库 `legacy/warehouse_experiments/train_3dgs.py` 使用 Isaac 已知相机位姿与随机初始化训练 gsplat；目前没有找到完成的 VGGT→gsplat 流程。本目录没有声称运行 VGGT，也没有下载或替换其权重。该组合应先作为显式外部 command 实现并提供真实运行证据，或导入其已冻结产物。
+完整分支中的 `legacy/warehouse_experiments/train_3dgs.py` 使用 Isaac 已知相机位姿与随机初始化训练 gsplat；目前没有找到完成的 VGGT→gsplat 流程。本目录没有声称运行 VGGT，也没有下载或替换其权重。该组合应先作为显式外部 command 实现并提供真实运行证据，或导入其已冻结产物。

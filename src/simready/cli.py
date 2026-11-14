@@ -7,24 +7,18 @@ from collections.abc import Sequence
 COMMANDS = {
     "run": (
         "simready.workflows.pipeline_entry",
-        "Build a scene from video or reproduce a reviewed scene",
+        "Video reconstruction, USD compilation and independent scene validation",
     ),
     "simulation": (
         "simready.simulation.cli",
-        "Scene bundles, Isaac workers and contact audits",
+        "Isaac Sim environment, scene survey and physical probes",
     ),
     "ingestion": ("simready.ingestion.cli", "Extract and filter video observations"),
-    "workflows": ("simready.workflows.cli", "Run an observe–repair–verify workflow"),
-    "agents": ("simready.agents.cli", "Inspect decision-provider availability"),
-    "repair": ("simready.repair.cli", "Plan repairs from an adapter catalog"),
+    "workflows": ("simready.workflows.cli", "Baseline comparisons and semantic assets"),
     "execution": ("simready.execution.cli", "Execute a resource-bounded task graph"),
     "evaluation": (
         "simready.evaluation.cli",
         "Evaluate a candidate under a frozen protocol",
-    ),
-    "experience": (
-        "simready.experience.cli",
-        "Inspect, promote or retire verified skills",
     ),
 }
 

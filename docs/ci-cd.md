@@ -19,7 +19,7 @@ flowchart LR
 
 | 检查名 | 验证内容 |
 |---|---|
-| static-checks | Ruff、历史代码严重错误、格式、11 领域依赖、编译、actionlint 工作流语法与表达式 |
+| static-checks | Ruff、格式、8 领域依赖、编译、actionlint 工作流语法与表达式 |
 | cpu-tests (3.10 / 3.12) | 完整 pytest；显式安装 FFmpeg 和 USD，保留 JUnit 和依赖清单；一个版本失败不取消另一个版本 |
 | package-smoke | 构建和 twine 元数据检查；隔离 venv 安装 wheel，从仓库外以 `-I` 运行 CLI、合成 CPU pipeline 和恢复，检查独立物性读回和全阶段复用 |
 | merge-gate | 始终汇总 static / test / package；仅三个依赖均 success 时通过。失败、跳过、取消、缺失或畸形结果均拒绝 |
@@ -55,8 +55,4 @@ gh api repos/miracle-techlink/video-to-simready/branches/main/protection
 
 GitHub 规则行为依据：[受保护分支](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)、[merge queue 事件](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue)。
 
-## 本轮发现与修复
-
-原 PR #14 在云端 Ruff 导入排序失败，本机却通过：仓库根目录被隐式视作源码根，已有 build 目录改变了 `from build` 的分类。现在仅将 src 作为探测根，明确声明 simready / tests / examples / scripts / legacy，已在干净导出与本机含构包产物的目录分别验证。没有放宽 Ruff 检查或修改算法代码。
-
-双版本测试随后发现 Python 3.10 / 3.12 下大 stdin 的兼容问题：`communicate` 超时后以 None 重试，不再继续注册 stdin 写事件，最终等待超时。进程监督现使用非阻塞管道和显式写入偏移，同时保持取消／期限检查；新增 UTF-8、空输入、提前关闭和背压期间取消／超时回归。此次失败使 merge-gate 失败、main-artifacts 跳过，保留了实际门槛拒绝证据，没有用延长超时或跳过测试替代修复。
+`aloho-hackson` 保存完整版本；核心 PR 以 main 为基线。不得将完整分支整支回合并到 main，以免重新引入已分离的功能。

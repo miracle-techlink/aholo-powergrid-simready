@@ -56,15 +56,13 @@ simready simulation depth-observation \
 
 `REVIEW_REQUIRED` 会保留候选，但退出码为 2；图像类别歧义、深度不足、代理重叠或地面重复碰撞不能自动交付。USD 审计 `PASS` 只表示所声明的参数确实写入。
 
-## 3. 只测试两个现有场景的图像分割
+## 3. 使用自己的场景图像
 
-以下画面在仓库中公开可用，无需原始视频或模型资产包：
+提供具有使用权限的场景图像；模型权重由对应 worker 环境准备：
 
 ```bash
-simready ingestion ground --image docs/report/figures/substation_navigation.jpg \
-  --output-dir runs/substation-masks
-simready ingestion ground --image docs/report/figures/starbucks.jpg \
-  --output-dir runs/starbucks-masks
+simready ingestion ground --image /data/scene/image.png \
+  --output-dir runs/scene-masks
 ```
 
 这是 2D 模型示例；图片本身没有提供可直接套用的三维标定。默认类别是 `cabinet,door,table,chair,floor,robot`，可用 `--categories` 指定其他英语类别。机器人区域参与遮挡排除，不套用家具物性。

@@ -6,11 +6,7 @@ import sys
 
 WORKERS = {
     "doctor": "environment_check",
-    "cafe-video": "cafe_video",
-    "mission": "substation_mission",
-    "mission-audit": "mission_audit",
-    "mission-video": "mission_video",
-    "export-bundle": "asset_bundle",
+    "survey": "scene_video",
     "physical-probe": "physical_probe",
     "depth-observation": "depth_observation",
     "prepare-scene": "scene_preparation",

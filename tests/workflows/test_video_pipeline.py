@@ -75,9 +75,9 @@ def test_invalid_worker_budget_is_rejected_before_execution(tmp_path, value):
     assert not output.exists()
 
 
-def test_scene_and_video_inputs_are_exclusive():
+def test_pipeline_and_video_inputs_are_exclusive():
     with pytest.raises(SystemExit) as error:
-        main(["run", "--video", "input.mp4", "--scene", "substation"])
+        main(["run", "--video", "input.mp4", "--pipeline", "pipeline.json"])
     assert error.value.code == 2
 
 
@@ -190,11 +190,11 @@ def test_failed_execution_gets_new_attempt_directory(tmp_path):
     assert (first / "result.json").read_text() == "preserve"
 
 
-def test_prepared_scene_help_still_routes(capsys):
+def test_prepared_scene_mode_is_not_part_of_core_main(capsys):
     with pytest.raises(SystemExit) as error:
-        main(["run", "--scene", "substation", "--help"])
-    assert error.value.code == 0
-    assert "--bundle-spec" in capsys.readouterr().out
+        main(["run", "--scene", "substation"])
+    assert error.value.code == 2
+    assert "--scene" not in capsys.readouterr().out
 
 
 @pytest.fixture

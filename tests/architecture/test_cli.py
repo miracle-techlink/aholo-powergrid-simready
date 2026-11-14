@@ -1,24 +1,22 @@
 import json
-import os
 import subprocess
 import sys
 
 import pytest
 
-from examples.repair_workflow.run_learning_demo import prepare
+from examples.pipeline.create_fixture import create_fixture
 from tests.paths import REPOSITORY_ROOT
 
 
 @pytest.mark.parametrize(
     "domain",
     [
+        "run",
+        "simulation",
         "ingestion",
         "workflows",
-        "agents",
-        "repair",
         "execution",
         "evaluation",
-        "experience",
     ],
 )
 def test_domain_help_without_optional_models_or_numeric_dependencies(domain, tmp_path):
@@ -43,29 +41,29 @@ main([sys.argv[1],'--help'])
     assert "usage:" in result.stdout
 
 
-@pytest.mark.parametrize(
-    "command",
-    ["simready-infra", "simready-benchmark", "simready-pipeline", "simready-ingest"],
-)
-def test_legacy_console_help_still_delegates(command, tmp_path):
-    executable = os.path.join(os.path.dirname(sys.executable), command)
+@pytest.mark.parametrize("command", ["agents", "repair", "experience"])
+def test_full_branch_commands_are_not_available_on_core_main(command, tmp_path):
     result = subprocess.run(
-        [executable, "--help"], cwd=tmp_path, capture_output=True, text=True, timeout=10
+        [sys.executable, "-m", "simready", command, "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=10,
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 2 and "invalid choice" in result.stderr
 
 
-def test_canonical_workflow_cli_from_an_unrelated_directory(tmp_path):
-    _, base = prepare(tmp_path / "inputs", 0)
+def test_canonical_pipeline_cli_from_an_unrelated_directory(tmp_path):
+    pytest.importorskip("pxr")
+    path = create_fixture(tmp_path / "inputs")
     result = subprocess.run(
         [
             sys.executable,
             "-m",
             "simready",
-            "workflows",
             "run",
-            "--config",
-            str(base / "workflow.json"),
+            "--pipeline",
+            str(path),
             "--out",
             str(tmp_path / "run"),
         ],
@@ -75,10 +73,10 @@ def test_canonical_workflow_cli_from_an_unrelated_directory(tmp_path):
         timeout=30,
     )
     assert result.returncode == 0, result.stderr + result.stdout
-    report = json.loads(result.stdout)
-    assert (
-        report["status"] == "DEVELOPMENT_PASS" and report["release_authorized"] is False
-    )
+    report = json.loads((tmp_path / "run/summary.json").read_text())
+    assert report["status"] == "COMPLETE"
+    assert report["physical_asset_validation"] == "PASS"
+    assert report["task_validated"] is False
 
 
 def test_single_package_is_imported_from_src_layout():
