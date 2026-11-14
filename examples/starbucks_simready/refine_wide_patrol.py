@@ -117,6 +117,21 @@ def main():
                 region[bound] = (np.asarray(region[bound]) + delta).tolist()
     paint = g.material("WideEstimatedWall", [0.39, 0.27, 0.19], 0.82)
     base = g.material("WideWindowBase", [0.105, 0.10, 0.085], 0.65)
+    # The two observed corridor wall segments have different depths. Connect
+    # their estimated thickness instead of leaving a bright background slit.
+    _, corners = surface_grid(0, [0, 0, 1.32], [[-2.96, -2.41], [-0.85, 2.45]], 4, 4)
+    g.mesh("Walls/AisleReturn", corners, [[3, 2, 1, 0]], paint)
+    g.box(
+        "Boundaries/SouthCornerJoin",
+        [-1.63, -2.98, 0.7],
+        [0.14, 0.14, 3.3],
+        paint,
+        0.004,
+    )
+    record["wide_patrol"]["estimated_wall_joins"] = [
+        "Walls/AisleReturn",
+        "Boundaries/SouthCornerJoin",
+    ]
     # Foreground tables projected onto the uncertain bottom of the window plane
     # are not window observations. Keep the photographed upper part and author
     # an explicitly estimated dark base. This is geometry, not an image filter.
