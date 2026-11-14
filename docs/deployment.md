@@ -1,6 +1,6 @@
 # Isaac Sim 容器部署
 
-宿主运行视频／重建编排；容器运行 USD 构造、独立检查、RGB-D、巡览和 PhysX 探针。模型推断保持独立环境，云端凭据不进入镜像或 worker 输入。
+CPU 编译依赖支持高斯 schema 的 OpenUSD 26.8+（`physical-assets` extra）；宿主运行视频／重建编排；容器运行 USD 构造、独立检查、RGB-D、巡览和 PhysX 探针。模型推断保持独立环境，云端凭据不进入镜像或 worker 输入。
 
 ## 构建与检查
 
