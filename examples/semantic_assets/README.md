@@ -1,6 +1,6 @@
 # 从分割到逐物体物性的入口
 
-完整方法、字段和验收边界见[多类资产与物性管线](../../docs/physical-assets.md)。默认模型为 Grounding DINO + SAM；SegFormer 是可选研究基线。
+分层和验收边界见[工程指南](../../docs/README.md#规范流水线)。默认模型为 Grounding DINO + SAM；SegFormer 是可选研究基线。
 
 ## 1. 无需模型、GPU或私有数据的贯通示例
 
@@ -31,7 +31,7 @@ simready workflows semantic-assets \
 
 `calibration.json` 必须对应同一张图、同一份 PLY 和同一坐标变换。已有 `simready run --video` 巡览现会输出 `calibration/frame_000000.json` 等逐帧相机文件。修复后场景宜通过 `depth_observation` 同时采集 RGB 和 z-depth，防止沿用原始高斯深度造成错位。真实视频帧的相机参数必须先配准，不能套用渲染相机。
 
-在已按[部署指南](../../docs/deployment.md)配置的 Isaac Python 环境内，RGB-D 采集命令为：
+在已按[容器与运行说明](../../docs/README.md#容器与运行)配置的 Isaac Python 环境内，RGB-D 采集命令为：
 
 ```bash
 simready simulation depth-observation \

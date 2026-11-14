@@ -21,7 +21,7 @@ simready evaluation physical-assets \
 
 ## 2. Isaac：摩擦与质量的合成响应
 
-先按[部署指南](../../docs/deployment.md)准备 Isaac 镜像，再运行：
+先按[容器与运行说明](../../docs/README.md#容器与运行)准备 Isaac 镜像，再运行：
 
 ```bash
 python examples/physical_assets/run_probe.py \
