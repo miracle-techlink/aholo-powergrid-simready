@@ -11,6 +11,8 @@ import os
 import time
 from pathlib import Path
 
+import numpy as np
+
 os.environ.setdefault("PYTORCH_JIT", "0")
 os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
 
@@ -92,7 +94,12 @@ def main():
     ap.add_argument(
         "--stream-capture",
         action="store_true",
-        help="Continuous capture with verified one-frame readback latency compensation",
+        help="Legacy BasicWriter capture with one-frame compensation; prefer synchronous capture for delivery",
+    )
+    ap.add_argument(
+        "--synchronous-capture",
+        action="store_true",
+        help="Copy each completed RGB annotation before advancing the next pose",
     )
     ap.add_argument("--quality", default="high", choices=["high", "gen"])
     ap.add_argument(
@@ -119,7 +126,7 @@ def main():
     ap.add_argument("--encode-threads", type=int, default=2)
     ap.add_argument("--sun-intensity", type=float, default=1800.0)
     ap.add_argument("--dome-intensity", type=float, default=200.0)
-    ap.add_argument("--camera-focal-length", type=float, default=20.0)
+    ap.add_argument("--camera-focal-length", type=float, default=18.0)
     ap.add_argument("--res", nargs=2, type=int, default=[1280, 720])
     ap.add_argument("--subframes", type=int, default=32)
     ap.add_argument("--out", type=Path, required=True)
@@ -128,6 +135,8 @@ def main():
         "--color-layer", type=Path, help="Optional SH correction override USD"
     )
     args = ap.parse_args()
+    if args.synchronous_capture and (args.stream_capture or not args.tour):
+        ap.error("--synchronous-capture requires --tour and excludes --stream-capture")
     if args.survey:
         ap.error("Use separate runs with explicit --scene for each reconstruction")
     if args.tour and not args.robot:
@@ -152,8 +161,6 @@ def main():
         ):
             ap.error("Replay timing does not match requested fps")
     if fixed_camera:
-        import numpy as np
-
         fixed_pose = np.asarray(fixed_camera["camera_to_world_cv"], dtype=float)
         fixed_k = np.asarray(fixed_camera["K"], dtype=float)
         if (
@@ -218,7 +225,7 @@ def main():
     em.set_extension_enabled_immediate("omni.replicator.core", True)
     import omni.replicator.core as rep
 
-    if args.stream_capture:
+    if args.stream_capture or args.synchronous_capture:
         from omni.kit.viewport.window import get_viewport_window_instances
 
         for window in get_viewport_window_instances(None):
@@ -264,12 +271,18 @@ def main():
     dome.CreateIntensityAttr(args.dome_intensity)
     print("TOUR_SETUP render_product", args.res, flush=True)
     rp = rep.create.render_product(str(cam.GetPath()), tuple(args.res))
-    writer = rep.WriterRegistry.get("BasicWriter")
+    writer = None
     capture_dir = args.out / ("raw_frames" if args.stream_capture else "frames")
     if any(capture_dir.glob("rgb_*.png")):
         raise FileExistsError(f"Refusing to overwrite captured frames in {capture_dir}")
-    writer.initialize(output_dir=str(capture_dir), rgb=True)
-    writer.attach([rp])
+    if args.synchronous_capture:
+        rgb_annotation = rep.AnnotatorRegistry.get_annotator("rgb")
+        rgb_annotation.attach([rp])
+        capture_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        writer = rep.WriterRegistry.get("BasicWriter")
+        writer.initialize(output_dir=str(capture_dir), rgb=True)
+        writer.attach([rp])
     manifest = []
     warmup_count = 0
     for quality in ["high", "gen"] if args.survey else [args.quality]:
@@ -302,7 +315,7 @@ def main():
                 args.out / "robot_uv_repairs.json",
                 repair_robot_uv_interpolation(stage, "/World/TourRig/G2"),
             )
-            cam.CreateFocalLengthAttr(18.0)
+            cam.CreateFocalLengthAttr(args.camera_focal_length)
             cam.CreateHorizontalApertureAttr(36.0)
             cam.CreateVerticalApertureAttr(20.25)
             if fixed_camera:
@@ -438,7 +451,7 @@ def main():
                     target = (fixed_pose[:3, 3] + fixed_pose[:3, 2]).tolist()
                 else:
                     look(eye, target)
-                if args.stream_capture and not manifest:
+                if (args.stream_capture or args.synchronous_capture) and not manifest:
                     # Asset loading is asynchronous: step() may return without
                     # producing RGB while USD/Hydra is still initializing.
                     # Keep the first exact pose fixed until real captures exist.
@@ -466,6 +479,17 @@ def main():
                             wait_for_render=True,
                         )
                         rep.orchestrator.wait_until_complete()
+                        if args.synchronous_capture:
+                            rgb = np.asarray(rgb_annotation.get_data()).copy()
+                            if (
+                                rgb.ndim == 3
+                                and rgb.shape[:2] == tuple(args.res[::-1])
+                                and float(rgb[..., :3].std()) > 1
+                            ):
+                                valid_warm_captures += 1
+                            else:
+                                app.update()
+                            continue
                         warm_files = sorted(capture_dir.glob("rgb_*.png"))
                         if len(warm_files) > previous_count:
                             with Image.open(warm_files[-1]) as im:
@@ -481,7 +505,11 @@ def main():
                         else:
                             app.update()
                         previous_count = len(warm_files)
-                    warmup_count = len(warm_files)
+                    warmup_count = (
+                        valid_warm_captures
+                        if args.synchronous_capture
+                        else len(warm_files)
+                    )
                     atomic_json(
                         args.out / "capture_warmup.json",
                         dict(
@@ -511,6 +539,15 @@ def main():
                     wait_for_render=True,
                 )
                 rep.orchestrator.wait_until_complete()
+                if args.synchronous_capture:
+                    rgb = np.asarray(rgb_annotation.get_data()).copy()
+                    if rgb.ndim != 3 or rgb.shape[:2] != tuple(args.res[::-1]):
+                        raise RuntimeError(
+                            "RGB annotation dimensions do not match the render product"
+                        )
+                    Image.fromarray(rgb[..., :3]).save(
+                        capture_dir / f"rgb_{len(manifest):04d}.png"
+                    )
                 if args.stream_capture:
                     actual_count = len(list(capture_dir.glob("rgb_*.png")))
                     expected_count = warmup_count + len(manifest) + 1
@@ -566,7 +603,23 @@ def main():
             wait_for_render=True,
         )
         rep.orchestrator.wait_until_complete()
-    writer.detach()
+    if writer is not None:
+        writer.detach()
+    if args.synchronous_capture:
+        rgb_annotation.detach([rp])
+        atomic_json(
+            args.out / "capture_mapping.json",
+            dict(
+                mode="synchronous_annotation_host_copy",
+                latency_frames=0,
+                delivered_frames=len(manifest),
+                discarded_warmup_frames=warmup_count,
+                mapping=[
+                    dict(frame=i, control_frame=row["frame"], raw=f"rgb_{i:04d}.png")
+                    for i, row in enumerate(manifest)
+                ],
+            ),
+        )
     atomic_json(
         args.out / "render_settings.json",
         dict(
@@ -578,6 +631,7 @@ def main():
             authored_lighting=dict(
                 sun_intensity=args.sun_intensity, dome_intensity=args.dome_intensity
             ),
+            camera_focal_length_mm=cam.GetFocalLengthAttr().Get(),
             effective={
                 key: settings.get(key)
                 for key in set(overrides)

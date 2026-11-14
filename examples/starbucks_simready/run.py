@@ -24,6 +24,19 @@ def main():
     ap.add_argument("--render-subframes", type=int, choices=range(1, 33), default=6)
     ap.add_argument("--patrol-x-range", nargs=2, type=float)
     ap.add_argument("--follow-camera", action="store_true")
+    ap.add_argument(
+        "--synchronous-capture", action=argparse.BooleanOptionalAction, default=True
+    )
+    ap.add_argument(
+        "--camera-focal-length",
+        type=float,
+        help="Patrol lens in mm; defaults to the historical 18 mm camera",
+    )
+    ap.add_argument(
+        "--dome-intensity",
+        type=float,
+        help="Explicit patrol lighting, independent of camera mode",
+    )
     ap.add_argument("--physics-hz", type=int, choices=[240, 480], default=480)
     ap.add_argument(
         "--runtime-seed",
@@ -31,6 +44,11 @@ def main():
         help="Optional completed worker directory from which to copy shader caches",
     )
     args = ap.parse_args()
+    if any(
+        value is not None and (not 0 < value < float("inf"))
+        for value in [args.camera_focal_length, args.dome_intensity]
+    ):
+        ap.error("Camera focal length and dome intensity must be finite and positive")
     repo = Path(__file__).resolve().parents[2]
     args.assets = args.assets.resolve()
     args.out = args.out.resolve()
@@ -227,7 +245,9 @@ def main():
                         "simready.simulation.cafe_video",
                         [
                             "--tour",
-                            "--stream-capture",
+                            "--synchronous-capture"
+                            if args.synchronous_capture
+                            else "--stream-capture",
                             "--scene",
                             "/assets/scene/scene.usda",
                             "--robot",
@@ -242,15 +262,17 @@ def main():
                             "--out",
                             "/output/video",
                             "--encode",
-                            *(
-                                [
-                                    "--camera-focal-length",
-                                    "16",
-                                    "--dome-intensity",
-                                    "650",
-                                ]
-                                if args.follow_camera
-                                else []
+                            "--camera-focal-length",
+                            str(
+                                args.camera_focal_length
+                                if args.camera_focal_length is not None
+                                else (16 if args.follow_camera else 18)
+                            ),
+                            "--dome-intensity",
+                            str(
+                                args.dome_intensity
+                                if args.dome_intensity is not None
+                                else (650 if args.follow_camera else 200)
                             ),
                         ],
                     ),

@@ -697,6 +697,11 @@ def main():
         stage.OverridePrim("/Cafe/Completion/Visual/" + name).CreateAttribute(
             "visibility", Sdf.ValueTypeNames.Token
         ).Set("invisible")
+    case_table_leveling = []
+    if record.get("wide_patrol"):
+        from refine_wide_patrol import level_case_tables
+
+        case_table_leveling = level_case_tables(stage, record, t @ c)
     # New detailed furniture collision is static and shares the visible geometry.
     from simready.workflows.appearance_collision import author_replacement_collision
 
@@ -761,6 +766,34 @@ def main():
         task_support_overrides=support_overrides,
         scope="source-conditioned visible geometry and texture replacement; candidate pending appearance/physics gates",
     )
+    if record.get("wide_patrol"):
+        # Independent probes also exercise the newly revealed floor; these
+        # sites sit away from the far table, not on unobserved obstacles.
+        far_sites = np.array([[-5.4, -4.8], [-4.2, -4.8], [-5.4, -3.4], [-4.2, -3.4]])
+        far_sites = np.c_[far_sites, np.c_[far_sites, np.ones(4)] @ record["floor"]]
+        contract["additional_support_sites_old"] = transform(far_sites, c)[
+            :, :2
+        ].tolist()
+        for name in ["WideSupportWest", "WideSupportSouth"]:
+            physical["assets"].append(
+                {
+                    "id": name,
+                    "category": "floor",
+                    "collision_prim": "/Cafe/Appearance/Floor/" + name,
+                    "geometry_source": "extension of fitted floor; unmeasured",
+                    "physics": {
+                        "body_type": "static",
+                        "contact": {
+                            "static_friction": 0.65,
+                            "dynamic_friction": 0.5,
+                            "restitution": 0,
+                        },
+                        "parameter_source": "engineering preset",
+                        "real_world_validated": False,
+                    },
+                }
+            )
+        write_json(d / "physical_assets.json", physical)
     write_json(d / "scene_contract.json", contract)
     write_json(
         d / "appearance_repair.json",
@@ -777,6 +810,7 @@ def main():
             "new_physics_validation_required": True,
             "source_fidelity_verified": False,
             "residual_gaussian_background_visible": not args.editable_patrol_background,
+            "case_table_leveling": case_table_leveling,
         },
     )
     print(

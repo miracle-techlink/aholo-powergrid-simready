@@ -17,7 +17,8 @@ python examples/starbucks_simready/run.py --case grasp \
 # 检查静态承托与巡逻净空，再渲染完整 30 秒。
 python examples/starbucks_simready/run.py --case tour \
   --assets /path/to/patrol_simready --out runs/cafe-patrol \
-  --patrol-x-range 2.2 3.5 --follow-camera --render --render-subframes 6
+  --camera-focal-length 18 --dome-intensity 650 --synchronous-capture \
+  --render --render-subframes 6
 ```
 
 默认输出为 1920×1080、30 fps。搬杯为 22.5 秒，巡逻为 30 秒。省略 `--render` 只运行验证；失败时停止，不录制未通过版本。需要本地 `simready-isaac:6.1.0` Docker 镜像；部署方式见 [Isaac 部署](../../docs/deployment.md)。模型环境需安装项目及已缓存的 Grounding DINO/SAM 权重。
@@ -47,7 +48,9 @@ python examples/starbucks_simready/repair_appearance.py \
   --editable-patrol-background --out runs/cafe-visible-patrol
 ```
 
-`--patrol-x-range` 明确调整巡逻范围，保留 30 秒时序与转向。新家具会使旧长路线失败；本例使用检查通过的 1.3 米通道，不能声称仍完成原先 4.8 米全长路线。`--follow-camera` 改为高位跟随并轻微侧向环绕。场景、路线、摄像机和机器人姿态均保存，可复现。
+2026-11-14 的远端巡逻修订恢复原约 **4.8 米纵向跨度**、原固定相机和转向目标。桌面点云局部对齐后重新生成家具碰撞；中心线搜索同时考虑端点的全部转身角度，通道横向修正最多 0.33 米，最后仍逐帧检查 900 帧。旧版 1.3 米近景录像保留为历史产物。`--patrol-x-range` 和 `--follow-camera` 仍可显式选择短路线或高位跟随，默认入口保留原相机。远端版本需要下述新资产，不能将旧资产直接换成未经检查的长路线。
+
+`--camera-focal-length 18` 对应历史录像实际的 18 mm 镜头；已修复渲染器内部写死焦距、覆盖命令行参数的问题。`--dome-intensity` 与镜头模式独立。入口默认启用 `--synchronous-capture`，在推进下一姿态前拷贝当前 RGB，避免异步写图的横向撕裂。完整视频仍逐帧渲染；历史写图模式仅通过 `--no-synchronous-capture` 显式选择。
 
 ```bash
 python examples/starbucks_simready/prepare.py --case grasp \
@@ -65,6 +68,45 @@ python examples/starbucks_simready/prepare.py --case tour \
 ```
 
 输入已经包含视频重建、配准相机和机器人。此例不重新调用云重建，不是任意新视频的全自动建模入口。`scene_rsi_v3` 需包含 `integration/full_alignment.json`、`full_sfm/images/` 和 `full_sfm/reconstruction/sparse/0/trajectory.json`。五张分割帧及墙面区域属于当前星巴克案例配置；复用其他场景需要替换这些配置。
+
+## 恢复远端巡逻视角
+
+这一步复用已修复近景资产，补回此前被估计西侧封闭墙挡住的远端。输入仍是当前咖啡店的两份重建和配准相机，不是任意场景的自动建模。
+
+```bash
+python examples/starbucks_simready/prepare_wide_patrol.py \
+  --reference /path/to/completed_visible_patrol/scene \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --sfm-root /path/to/scene_rsi_v3 --out runs/wide-reference
+
+python examples/starbucks_simready/align_wide_patrol.py \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --case-assets /path/to/structurally_repaired_patrol \
+  --sfm-alignment /path/to/scene_rsi_v3/integration/full_alignment.json \
+  --reference-to-case /path/to/reference_to_aholo.json \
+  --out runs/wide-local-alignment.json
+
+python examples/starbucks_simready/refine_wide_patrol.py \
+  --reference runs/wide-reference --alignment runs/wide-local-alignment.json \
+  --out runs/wide-reference-aligned
+
+python examples/starbucks_simready/repair_appearance.py \
+  --assets /path/to/structurally_repaired_patrol \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --sfm-root /path/to/scene_rsi_v3 \
+  --reuse-reference runs/wide-reference-aligned \
+  --reference-to-case /path/to/reference_to_aholo.json \
+  --editable-patrol-background --out runs/cafe-wide-assets
+
+python examples/starbucks_simready/run.py --case tour \
+  --assets runs/cafe-wide-assets --out runs/cafe-wide-delivery \
+  --camera-focal-length 18 --dome-intensity 650 --synchronous-capture \
+  --render --render-subframes 6
+```
+
+长桌高度由来源点云拟合；随后使用重力方向校平桌面、将桌腿落到地面。原拟合斜率会令独立支撑球持续滚动，因此不保留这一重建倾斜。胶囊形轮廓、水平先验、桌腿和凳子布置仍是估计。局部对齐只修正两份重建之间的桌组位置，不代表真实尺度标定。远端窗面保留原片投影；误投到窗面下部的前景桌椅不用于渲染，该区域改为明确记录的深色估计基座。观测不足的通道墙面使用估计材质，不将残缺贴图当成高清实测墙面。
+
+碰撞必须从**结构基础资产**重新生成，不可复用旧可见家具版本的占用图；新增远端地面也加入实际碰撞和落体采样。最终文件中的 `appearance_reference.json` 保留平面拟合点数、局部对齐偏移、原片索引及估计区域说明。
 
 ## 原理与模块
 

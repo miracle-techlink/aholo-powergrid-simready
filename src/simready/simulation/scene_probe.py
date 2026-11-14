@@ -76,6 +76,19 @@ def main():
                     }
                 )
         manifest = json.loads((args.assets / "scene/physical_assets.json").read_text())
+        contract = json.loads((args.assets / "scene/scene_contract.json").read_text())
+        for i, xy in enumerate(contract.get("additional_support_sites_old", [])):
+            if len(xy) != 2 or not np.isfinite(xy).all():
+                raise ValueError("Invalid additional floor probe site")
+            old = np.r_[xy, np.r_[xy, 1] @ floor]
+            point = old @ t[:3, :3].T + t[:3, 3]
+            targets.append(
+                {
+                    "id": f"additional_floor_{i:03d}",
+                    "surface": "floor",
+                    "point": point.tolist(),
+                }
+            )
         for asset in manifest["assets"]:
             if asset["category"] == "table":
                 targets.append(

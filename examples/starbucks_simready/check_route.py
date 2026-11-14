@@ -145,6 +145,36 @@ def main():
             .reshape(len(xs), len(ys), 2)
             .any(axis=2)
         )
+        # The original clip turns at both longitudinal endpoints. A corridor
+        # clear at yaw 0/180 can still clip a stool during that rotation. Check
+        # every authored turn angle before selecting the endpoint lane.
+        for endpoint in [0, len(xs) - 1]:
+            x = xs[endpoint]
+            turn_yaws = sorted(
+                {r["yaw"] for r in original if abs(r["robot_position"][0] - x) < 1e-8}
+            )
+            if not turn_yaws:
+                continue
+            turn_rows = []
+            for y in ys:
+                old = np.array([x, y, np.array([x, y, 1]) @ data["floor"] + 0.01])
+                pos = old @ transform[:3, :3].T + transform[:3, 3]
+                for yaw in turn_yaws:
+                    turn_rows.append(
+                        {
+                            "frame": len(turn_rows),
+                            "robot_position": pos.tolist(),
+                            "yaw": yaw,
+                        }
+                    )
+            turn_metrics = inspect_route(
+                turn_rows, centers, float(data["resolution"]), np.zeros(3), profile
+            )
+            blocked[endpoint] |= (
+                np.asarray([m["overlapping_obstacle_cells"] > 0 for m in turn_metrics])
+                .reshape(len(ys), len(turn_yaws))
+                .any(axis=1)
+            )
         cost = np.full(blocked.shape, np.inf)
         back = np.full(blocked.shape, -1, dtype=int)
         cost[0, ~blocked[0]] = (ys[~blocked[0]] + 1.6) ** 2
@@ -182,7 +212,7 @@ def main():
             maximum = max(m["overlapping_obstacle_cells"] for m in metrics)
             trials.append(
                 {
-                    "method": "aisle centerline dynamic programming + shape-preserving interpolation",
+                    "method": "aisle centerline dynamic programming with all endpoint turn angles + shape-preserving interpolation",
                     "max_overlap": maximum,
                     "blocked_frames": sum(
                         m["overlapping_obstacle_cells"] > 0 for m in metrics
