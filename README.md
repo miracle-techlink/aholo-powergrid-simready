@@ -26,7 +26,7 @@ simready run --pipeline /tmp/simready-inputs/pipeline.json --out /tmp/simready-r
 simready run --pipeline /tmp/simready-inputs/pipeline.json --out /tmp/simready-run --resume
 ```
 
-此示例使用合成输入，验证 USD 导出、独立参数读回和恢复。真实视频与重建复用见[视频示例](examples/new_video/README.md)，多算法对比见[baseline 矩阵](examples/baselines/README.md)。
+此示例使用合成输入，验证 USD 导出、独立参数读回和恢复。真实视频与重建复用见[视频示例](examples/pipeline/README.md#真实视频)，多算法对比见[baseline 矩阵](examples/reconstruction/README.md#比较后端)。
 
 ## Isaac Sim worker
 

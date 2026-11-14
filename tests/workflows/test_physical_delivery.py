@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from examples.semantic_assets.create_fixture import create_fixture
+from examples.assets.semantic_fixture import create_fixture
 from simready.core.artifacts import digest, read_json, write_json
 from simready.evaluation.physical_receipt import verify_physical_receipt
 from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError

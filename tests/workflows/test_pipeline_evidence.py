@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from examples.semantic_assets.create_fixture import create_fixture as semantic_fixture
+from examples.assets.semantic_fixture import create_fixture as semantic_fixture
 from simready.assets.appearance.gaussian_asset import read_ply
 from simready.core.artifacts import digest, read_json, write_json
 from simready.core.evidence import reference

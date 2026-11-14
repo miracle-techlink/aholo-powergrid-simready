@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from examples.semantic_assets.create_fixture import create_fixture
+from examples.assets.semantic_fixture import create_fixture
 from simready.core.artifacts import digest, read_json, write_json
 from simready.simulation.depth_projection import backproject_depth
 from simready.simulation.semantic_projection import (

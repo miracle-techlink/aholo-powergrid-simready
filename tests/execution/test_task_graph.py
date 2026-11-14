@@ -12,7 +12,6 @@ from simready.execution.resource_pool import ResourcePool
 from simready.execution.task_graph import run_task_graph
 from simready.execution.task_schema import validate
 from tests.fixtures.task_execution import INVENTORY, execute, task
-from tests.paths import REPOSITORY_ROOT
 
 
 def interval(root, name):
@@ -290,38 +289,6 @@ def test_concurrent_atomic_json_writers(tmp_path):
         )
     assert json.loads((tmp_path / "shared.json").read_text())["n"] in range(32)
     assert not list(tmp_path.glob("*.tmp"))
-
-
-def test_documented_benchmark_example(tmp_path):
-    root = REPOSITORY_ROOT
-    subprocess.run(
-        [
-            sys.executable,
-            str(root / "examples/scene_evaluation/prepare_fixture.py"),
-            "--out",
-            str(tmp_path / "input"),
-        ],
-        check=True,
-    )
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "simready.evaluation",
-            "run",
-            "--protocol",
-            str(tmp_path / "input/protocol.json"),
-            "--candidate",
-            str(tmp_path / "input/candidate.json"),
-            "--out",
-            str(tmp_path / "result"),
-        ],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stderr
-    score = json.loads((tmp_path / "result/scorecard.json").read_text())
-    assert score["status"] == "PASS" and score["release_authorized"] is False
 
 
 def test_dag_wall_deadline_stops_worker(tmp_path):

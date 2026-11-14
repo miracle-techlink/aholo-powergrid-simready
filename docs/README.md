@@ -50,9 +50,9 @@ flowchart LR
 
 重建支持 `artifact` 导入、`command` 隔离算法和 `aholo` 云任务；新云提交须显式 `--submit-reconstruction`。统一 bundle 记录算法、文件、坐标尺度、所用数据及执行方式。**当前 USD 主链支持 Gaussian PLY**；mesh 等新表示需要真实转换器和独立验收，不能只登记名称。
 
-可选 `decomposition.provider=semantic_projection` 消费已有 mask、标定和来源关联；完整分割命令在[语义示例](../examples/semantic_assets/README.md)。目前产出可见表面的盒体代理，完整遮挡几何仍待实现。
+可选 `decomposition.provider=semantic_projection` 消费已有 mask、标定和来源关联；完整分割命令在[语义示例](../examples/assets/README.md#语义关联)。目前产出可见表面的盒体代理，完整遮挡几何仍待实现。
 
-可选 `physics.provider=nerf2physics` 消费 request，`provider=candidate` 导入已有候选，详见 [NeRF2Physics 示例](../examples/nerf2physics/README.md)。当前是缓存特征回归／预测重放，不含新视觉模型推断。采用质量须匹配明确 box 对象、kg 单位及尺度证据；与显式质量冲突则拒绝，不自动改变运动类型或接触参数。独立 USD 读回只证明写入正确，真实物性仍需测量对照。
+可选 `physics.provider=nerf2physics` 消费 request，`provider=candidate` 导入已有候选，详见 [NeRF2Physics 示例](../examples/assets/README.md#nerf2physics)。当前是缓存特征回归／预测重放，不含新视觉模型推断。采用质量须匹配明确 box 对象、kg 单位及尺度证据；与显式质量冲突则拒绝，不自动改变运动类型或接触参数。独立 USD 读回只证明写入正确，真实物性仍需测量对照。
 
 | 操作 | 含义 |
 |---|---|
@@ -67,14 +67,14 @@ flowchart LR
 
 | 要增加什么 | 从哪里接入 | 必须一起验证 |
 |---|---|---|
-| 重建 baseline | [command 适配示例](../examples/reconstruction_backends/README.md) → reconstruction bundle | 输入／权重／环境身份、格式与尺度、失败及恢复 |
+| 重建 baseline | [command 适配示例](../examples/reconstruction/README.md) → reconstruction bundle | 输入／权重／环境身份、格式与尺度、失败及恢复 |
 | 语义、物性或新资产表示 | ingestion 产候选，assets 关联／编译 | 对象绑定、单位、来源、真实转换，evaluation 独立读回 |
 | Isaac 功能 | simulation worker，复用 execution launcher | 有限期限、嵌套取消、GPU 生命周期及原始输出 |
 | 指标或质量门槛 | evaluation 与 [冻结协议](../configs/evaluation/suite.v1.json) | 正负例、缺失证据、数据划分、阈值版本与独立评分 |
 
 开发顺序：先定义输入输出与失败条件 → 添加最小可复现实例 → 实现所属模块 → 补独立验证 → 比较升级前后结果。改 schema、单位或阈值要显式版本化；不要为了让新算法通过而放宽旧门槛。
 
-用 [baseline 矩阵](../examples/baselines/README.md)冻结同一数据和预算，分别记录导入、缓存及新推断；失败／未执行保留在分母。观察帧标记 heldout 不代表算法已隔离完整视频访问，训练访问与渲染对应仍需核查；没有真实参考时质量记为 `NOT_EVALUATED`，不按导出成功率排名。现有合成示例不代表已复现其他论文。
+用 [baseline 矩阵](../examples/reconstruction/README.md#比较后端)冻结同一数据和预算，分别记录导入、缓存及新推断；失败／未执行保留在分母。观察帧标记 heldout 不代表算法已隔离完整视频访问，训练访问与渲染对应仍需核查；没有真实参考时质量记为 `NOT_EVALUATED`，不按导出成功率排名。现有合成示例不代表已复现其他论文。
 
 ## 测试与合并
 
@@ -104,7 +104,7 @@ python -m build
 
 构建与启动检查见根目录 [Isaac 快速开始](../README.md#isaac-sim-worker)。[Dockerfile](../deploy/isaac/Dockerfile)固定 Isaac Sim 6.1.0，额外使用 `usd-exchange==3.0.1` 提供高斯 schema；宿主 CPU 编译需 OpenUSD 26.8+。CPU 编译和 Kit 在独立进程运行，镜像不包含模型权重、场景或密钥。
 
-规范配置使用 `execution.backend=docker`、不可变 `execution.image`、环境清单及 `delivery.mode=prepare/survey`；Docker／渲染须接受许可 `--accept-eula`。源码和输入只读挂载，输出独立。自定义启动用 `scripts/launch_isaac.py --worker <Python argv…>`，worker 参数放最后；容器路径为 `/workspace`、`/assets`、`/output`。完整视频命令见[新视频示例](../examples/new_video/README.md)，动力学检查见[物性示例](../examples/physical_assets/README.md)。
+规范配置使用 `execution.backend=docker`、不可变 `execution.image`、环境清单及 `delivery.mode=prepare/survey`；Docker／渲染须接受许可 `--accept-eula`。源码和输入只读挂载，输出独立。自定义启动用 `scripts/launch_isaac.py --worker <Python argv…>`，worker 参数放最后；容器路径为 `/workspace`、`/assets`、`/output`。完整视频命令见[新视频示例](../examples/pipeline/README.md#真实视频)，动力学检查见[物性示例](../examples/assets/README.md#显式物性)。
 
 execution 统一持有物理 GPU UUID 租约，嵌套本地 worker 经受控凭据借用；取消沿所属进程组与继承管道传播。容器未确认停止就保留设备隔离，使用 `simready execution recover-device --help` 查看核查恢复入口，不手动删锁。CPU／CUDA／RTX 资源分别声明；CUDA 可见性不等于 Vulkan 隔离，未知显存不虚报容量。
 

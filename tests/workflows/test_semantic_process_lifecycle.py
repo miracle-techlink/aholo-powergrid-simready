@@ -6,7 +6,7 @@ from threading import Event, Timer
 
 import pytest
 
-from examples.semantic_assets.create_fixture import create_fixture
+from examples.assets.semantic_fixture import create_fixture
 from simready.core.artifacts import read_json
 from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
 from simready.workflows import semantic_assets

@@ -102,9 +102,7 @@ def test_changed_stage_artifact_blocks_reuse_without_overwriting_receipt(configu
 def command_provider(path, secret=None):
     from simready.core.evidence import reference
 
-    script = (
-        Path(__file__).parents[2] / "examples/reconstruction_backends/cpu_fixture.py"
-    )
+    script = Path(__file__).parents[2] / "examples/reconstruction/cpu_fixture.py"
     runtime = path.parent / "command-environment.json"
     write_json(runtime, {"purpose": "synthetic CPU contract"})
     return {
