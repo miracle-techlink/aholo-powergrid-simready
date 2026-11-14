@@ -7,7 +7,7 @@ import pytest
 from simready.core.artifacts import object_digest, write_json
 from simready.execution.task_environment import RESERVED, freeze_environment
 from simready.execution.task_schema import validate
-from tests.execution.test_task_graph import INVENTORY, execute, task
+from tests.fixtures.task_execution import INVENTORY, execute, task
 
 SETTING = "SIMREADY_TEST_SETTING"
 UNDECLARED = "SIMREADY_TEST_UNDECLARED"

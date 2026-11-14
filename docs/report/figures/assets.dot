@@ -1,6 +1,0 @@
-digraph G {graph [fontname="Noto Sans CJK SC",bgcolor="white",pad="0.25",nodesep="0.25",ranksep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#ecf4fa",color="#537b94",fontname="Noto Sans CJK SC",fontsize=12,margin="0.18,0.12"]; edge [color="#537b94",arrowsize=0.7];rankdir=TB; source[label="原片观测 / 坐标变换 / 实例 ID",fillcolor="#e4f3e9"]; visual[label="可见层
-高斯 · 柜体 · 门板 · 纹理/PBR"]; collision[label="物理层
-地面/柜体代理 · 控件刚体"]; interaction[label="交互层
-关节 · 行程 · 力阈值 · 状态"]; evidence[label="证据层
-observed / estimated / unknown
-来源帧 · 参数出处 · 哈希",fillcolor="#fff1df"]; source->visual;source->collision;source->interaction;visual->evidence;collision->evidence;interaction->evidence;}

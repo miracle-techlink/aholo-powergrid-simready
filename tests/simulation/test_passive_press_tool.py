@@ -1,36 +1,61 @@
-import json
-import os
-from pathlib import Path
+"""Spring-tool USD and collision envelopes without historical scene downloads."""
 
 import numpy as np
 import pytest
 
 pytest.importorskip("pxr")
-from pxr import Usd, UsdPhysics  # noqa: E402
+from pxr import Gf, Usd, UsdGeom, UsdPhysics  # noqa: E402
 
 from simready.simulation.arm_planner import ArmScenePlanner
 from simready.simulation.kinematics import Chain
 from simready.simulation.press_tool import build_spring_plunger
 
-if not os.environ.get("SIMREADY_BRIDGE_TEST_ASSETS"):
-    pytest.skip(
-        "Set SIMREADY_BRIDGE_TEST_ASSETS for the historical USD fixture",
-        allow_module_level=True,
-    )
-ROOT = Path(os.environ["SIMREADY_BRIDGE_TEST_ASSETS"])
+
+def articulated_fixture(tmp_path):
+    stage = Usd.Stage.CreateInMemory()
+    UsdGeom.SetStageMetersPerUnit(stage, 1)
+    UsdGeom.SetStageUpAxis(stage, "Z")
+    parent = "/World/FrankaArm/Geometry/world/link00"
+    UsdPhysics.RigidBodyAPI.Apply(UsdGeom.Xform.Define(stage, parent).GetPrim())
+    for index in range(1, 7):
+        child = parent + f"/link{index:02d}"
+        body = UsdGeom.Xform.Define(stage, child).GetPrim()
+        UsdPhysics.RigidBodyAPI.Apply(body)
+        joint = UsdPhysics.RevoluteJoint.Define(
+            stage, f"/World/FrankaArm/Physics/joint{index}"
+        )
+        joint.CreateBody0Rel().SetTargets([parent])
+        joint.CreateBody1Rel().SetTargets([child])
+        joint.CreateAxisAttr("Z")
+        joint.CreateLocalPos0Attr(Gf.Vec3f(0))
+        joint.CreateLocalPos1Attr(Gf.Vec3f(0))
+        joint.CreateLocalRot0Attr(Gf.Quatf(1))
+        joint.CreateLocalRot1Attr(Gf.Quatf(1))
+        joint.CreateLowerLimitAttr(-180)
+        joint.CreateUpperLimitAttr(180)
+        parent = child
+    flange = stage.GetPrimAtPath(parent)
+    mass = UsdPhysics.MassAPI.Apply(flange)
+    mass.CreateMassAttr(0.2)
+    mass.CreateCenterOfMassAttr(Gf.Vec3f(0))
+    mass.CreateDiagonalInertiaAttr(Gf.Vec3f(0.001, 0.002, 0.003))
+    mass.CreatePrincipalAxesAttr(Gf.Quatf(1))
+    rig_path = tmp_path / "synthetic_arm.usda"
+    stage.GetRootLayer().Export(str(rig_path))
+    return stage, parent, Chain.from_usd(rig_path)
 
 
-def test_passive_plunger_has_spring_mass_and_conservative_travel_envelope():
-    stage = Usd.Stage.Open(
-        str(ROOT / "reports/panel_stop_task_20261111/mission_v5/scene.usda")
-    )
-    stage.SetEditTarget(stage.GetSessionLayer())
-    flange = "/World/FrankaArm/Geometry/world/link00/link01/link02/link03/link04/link05/link06"
-    for name in ["TaskPressTip", "TaskPressShaft"]:
-        stage.RemovePrim(flange + "/" + name)
-    cfg = json.loads(
-        (ROOT / "configs/panel_stop_estimated_spring_tool_20261111.json").read_text()
-    )["tool"]
+def test_passive_plunger_has_spring_mass_and_conservative_travel_envelope(tmp_path):
+    stage, flange, chain = articulated_fixture(tmp_path)
+    cfg = {
+        "flange_offset_m": [0.100, 0, 0],
+        "tip_radius_m": 0.004,
+        "travel_m": 0.004,
+        "housing_mass_kg": 0.045,
+        "plunger_mass_kg": 0.012,
+        "spring_N_m": 800,
+        "damping_N_s_m": 1.2,
+    }
     old_mass = float(
         UsdPhysics.MassAPI(stage.GetPrimAtPath(flange)).GetMassAttr().Get()
     )
@@ -52,7 +77,6 @@ def test_passive_plunger_has_spring_mass_and_conservative_travel_envelope():
     assert (
         UsdPhysics.DriveAPI(joint.GetPrim(), "linear").GetStiffnessAttr().Get() == 800
     )
-    chain = Chain.from_usd(ROOT / "artifacts/runtime_v1/lite3_z1.usda")
     planner = ArmScenePlanner(
         stage,
         chain,

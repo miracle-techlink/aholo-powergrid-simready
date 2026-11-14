@@ -10,7 +10,7 @@ import pytest
 from simready.core.artifacts import read_json
 from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
 from simready.workflows import scene_pipeline
-from tests.workflows.test_scene_pipeline import arguments, make_bundle, prepared_spec
+from tests.fixtures.scene_delivery import arguments, make_bundle, prepared_spec
 
 
 @pytest.mark.parametrize("flag", ["--worker-timeout", "--bundle-timeout"])

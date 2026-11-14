@@ -1,54 +1,31 @@
-# 从场景视频到机器人交互演示：技术白皮书
+# 历史技术报告（v0.7）
 
-本版以“视频如何成为可交互、可验证的机器人演示”为主线，按技术白皮书重写。所有报告页面为 A4 竖版，架构图、方法图与测量曲线使用中文说明，保留必要公式、标准缩写和模型名称。本版补充方法之间的数据交接，并新增“软件架构与模块构造”章，覆盖十个代码领域及仓库支撑层。本版共 **45 页、19 图、24 表、16 个编号公式、10 条编号参考文献**。
+本目录保留 v0.7 的方法说明、原始实验结果与证据，不代表当前代码架构或最新验证状态。当前使用方式见[架构说明](../architecture.md)和[规范 pipeline](../pipeline.md)。
 
-- [代码架构与模块阅读索引](../software-architecture.md)
-- [在线阅读](technical-report.md) · [模块覆盖核查表](module-coverage.md)
-- [本版发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)
-- [技术报告 PDF](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf)
-- [十二张架构与方法图 PDF](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.pdf)
-- [可编辑图与生成源码 ZIP](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-architecture-figures.zip)
-- [新视频运行说明](../../examples/new_video/README.md) · [发布文案](release-notes.md)
+- [报告正文](technical-report.md) · [模块覆盖记录](module-coverage.md)
+- [已发布报告与图册](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5) · [报告 PDF](https://github.com/miracle-techlink/video-to-simready/releases/download/technical-report-2026-11-13-v5/simready-technical-report-zh.pdf)
+- [清理前完整材料与生成源码](https://github.com/miracle-techlink/video-to-simready/tree/6574907)
+- 历史证据：[v0.7 新视频](new-video-validation.json)、[v0.6 已有场景](one-command-validation.json)、[v0.5 包装](packaging-validation.json)、[早期任务](evidence.json)。
 
-## 阅读主线
+正文通过 `<!-- include: 文件名.md -->` 引用同目录分节，PDF 构建器展开它们。实验数据与真实截图保留原样；不再使用的旧图及重复 PNG 可从上述固定提交或 Release 追溯。
 
-正文先定义从视频走向可交互仿真的信息缺口，再解释观测与重建、来源约束的资产修复、物理交互、机器人感知与控制、闭环质量验收及原生演示交付。随后用专章解释真实代码构造，逐个说明内部组件、调用链、状态归属、输入输出、失败处理和扩展方式；命令与字段细节保留在附录。
-
-[视频到 Demo 的流程总览](pipeline-overview.md)提供各阶段的输入、核心处理和输出。主总图区分历史变电站任务级链路与当前通用新视频入口，明确已经贯通的部分和仍需准备的环节。
-
-## 图示与真实验证
-
-十二张矢量图包括总体方法、新视频执行链、修复闭环、机器人控制，以及输入/高斯、配准/几何、按钮接触、观测/验收、渲染/证据五张方法图，以及资产物理化、软件组成和实际调用链三张新增图。SVG 保留可编辑文字，PDF 保留矢量。其余图来自实际视频抽帧或测量曲线；原始画面没有生成式修饰。
-
-v0.7 使用历史原片与操作者声明关联的 PLY 重新构建：CPU 命令约 7.951 秒，完整恢复约 0.246 秒；Docker 的 12 帧、640×360 巡览约 231.874 秒。结构和编码检查通过，原高斯仍明显模糊、缺面，未通过视觉保真度、独立尺度或机器人任务验收。没有提交新云重建，不能据此报告完整重建 E2E。代码身份、首轮失败与成功重跑均保留在 [v0.7 验证清单](new-video-validation.json)。
-
-历史证据独立保留：[v0.6 已有场景入口](one-command-validation.json)、[v0.5 包装核验](packaging-validation.json)、[早期任务与评测](evidence.json)。旧报告可从 [v0.6 Release](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v2) 和 [首版 Release](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13) 下载。
-
-## 重建文档
-
-需要 XeLaTeX、ctex 和相应中文字体。已有图无需 GPU 或私有数据：
+安装 XeLaTeX、ctex 和中文字体后，可用现有图重建，无需 GPU 或私有数据：
 
 ```bash
 python scripts/build_technical_report.py
 ```
 
-重新生成全部十二张架构/方法图及测量曲线（需要安装 Noto Sans CJK SC 中文字体）：
+输出为 `dist/simready-technical-report-zh.pdf`，编译中间文件保存在 `dist/report-build/`；PDF 中的相对源码链接固定到清理前提交 `6574907`。
+
+如需重画矢量图，先安装 `.[report]` 和 Noto Sans CJK SC 字体，再运行：
 
 ```bash
-python -m pip install -e '.[report]'
 python scripts/build_architecture_figures.py
 python scripts/build_new_video_figure.py
 python scripts/build_method_figures.py
 python scripts/build_software_figures.py
 python scripts/build_asset_simready_figure.py
-python scripts/build_report_figures.py --plots-only
-python scripts/build_technical_report.py
+python scripts/build_report_figures.py
 ```
 
-报告输出为 `dist/simready-technical-report-zh.pdf`。第三方机器人资产、权重、原视频与 Isaac SDK 不包含在源码包中。
-
-本版补充方法、资产转换及代码构造说明，保留 v0.7 运行代码和原实验数据。[此前逐模块版](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v3)仍可下载。
-
-## 分节正文的单一来源
-
-`technical-report.md` 用显式 `<!-- include: 文件名.md -->` 引入同目录的模块正文。PDF 构建器展开这些片段，GitHub 可通过正文链接分别阅读。新增小节在 `code-parts-*.md` 中修改，不复制另一份正文；仅允许报告目录内的 Markdown，循环包含会报错。代码链接在 PDF 中指向仓库源码；源码标识与实际执行范围随实验凭据单独保存。
+默认只生成 SVG/PDF；需要 PNG 时增加 `--export-png`，图片写入 `dist/report-figures/`。真实物性响应曲线及其[测量数据](../benchmarks/multiclass-physics-20261113/physical-response.csv)继续保留，不由示意图生成器覆盖。

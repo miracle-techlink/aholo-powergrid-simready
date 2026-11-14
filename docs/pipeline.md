@@ -20,21 +20,7 @@ flowchart LR
 
 观测抽帧与重建都是视频的消费者；当前重建后端可以消费完整视频或自己声明的冻结帧，不能把观察阶段的 heldout 标记误当作后端已隔离训练访问。新的联合方法可通过重建 bundle 描述所用帧、坐标与证据；尚未提供任意多输出 DAG 插件 API。
 
-| 工程域 | 唯一职责与主要实现 |
-|---|---|
-| `core` / `geometry` | 文件证据与版本合同；坐标、深度反投影与变换校验 |
-| `ingestion` | `reconstruction_providers` 固定后端配置和产物；保留视频／分割／材料适配 |
-| `assets.appearance` | 高斯解析、表示转换与外观资产 |
-| `assets.association` | 分割与标定提升为有来源的对象代理 |
-| `assets.physics` | 参数声明、候选采用规则、刚体／材质写入 |
-| `assets.compilation` | scene spec 组合成 USD 和资产清单 |
-| `simulation` | 引擎、机器人控制、测量与渲染；杯任务已拆运行／控制／记录 |
-| `evaluation` | 独立读回、指标与特定任务验收；不依赖资产 writer |
-| `workflows` | 配置、阶段依赖、恢复／升级、baseline 矩阵和修复闭环 |
-| `execution` | 所属进程、GPU 租约、期限、取消、任务缓存 |
-| `agents` / `repair` / `experience` | 受限修复决策、插件与已验证经验；尚非新视频默认全自动闭环 |
-
-新增 assets 只依赖 core / geometry，不能依赖仿真器、工作流或验收器。旧 simulation 资产模块保留模块别名或 CLI 委派，只有一份规范实现；旧 monkeypatch 与导入仍指向同一实现。其他仿真大 runner 和通用完整 mesh／关节生成属于后续迁移，不以新建空子目录冒充功能。
+模块责任和依赖统一见[架构](architecture.md)，旧入口的兼容关系见[迁移表](migration.md)。阶段合同不等于算法已实现：当前主链支持 Gaussian PLY，完整 mesh／关节与其他仿真 runner 仍需逐项接入。
 
 ## 最小配置与操作
 

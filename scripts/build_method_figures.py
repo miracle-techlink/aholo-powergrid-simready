@@ -683,18 +683,28 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("docs/report/figures"))
     parser.add_argument("--only", choices=sorted(FIGURES))
+    parser.add_argument(
+        "--export-png",
+        action="store_true",
+        help="Also export PNGs to dist/report-figures",
+    )
     args = parser.parse_args(argv)
     args.out.mkdir(parents=True, exist_ok=True)
+    png_dir = Path(__file__).resolve().parents[1] / "dist/report-figures"
+    if args.export_png:
+        png_dir.mkdir(parents=True, exist_ok=True)
     selected = {args.only: FIGURES[args.only]} if args.only else FIGURES
     for name, builder in selected.items():
         fig = builder()
-        for extension in ["svg", "pdf", "png"]:
+        for extension in ("svg", "pdf") + (("png",) if args.export_png else ()):
             metadata = {"Creator": "SimReady 原生方法图生成器"}
             if extension == "pdf":
                 metadata.update(CreationDate=None, ModDate=None)
             elif extension == "svg":
                 metadata["Date"] = None
-            target = args.out / f"{name}.{extension}"
+            target = (
+                png_dir if extension == "png" else args.out
+            ) / f"{name}.{extension}"
             fig.savefig(target, dpi=300, metadata=metadata)
             if extension == "svg":
                 target.write_text(

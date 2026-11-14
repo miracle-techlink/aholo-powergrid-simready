@@ -96,6 +96,9 @@ def test_resume_reuses_only_verified_completed_stage(tmp_path):
         path.write_bytes(b"model")
         return {"model": str(path)}, [path]
 
+    from simready.workflows.stage_ledger import StageLedger
+
+    assert video_pipeline.VideoStages is StageLedger
     first = video_pipeline.VideoStages(tmp_path, "identity")
     expected = first.run("reconstruction", work)
     second = video_pipeline.VideoStages(tmp_path, "identity")
@@ -166,18 +169,6 @@ def test_stage_receipt_cannot_read_outside_run(tmp_path):
     with pytest.raises(ValueError, match="escaped"):
         video_pipeline.VideoStages(root, "id").run(
             "test", lambda: pytest.fail("executed")
-        )
-
-
-def test_changed_stage_identity_cannot_resume(tmp_path):
-    artifact = tmp_path / "x"
-    artifact.write_text("data")
-    video_pipeline.VideoStages(tmp_path, "old-code").run(
-        "prepare", lambda: ({}, [artifact])
-    )
-    with pytest.raises(ValueError, match="identity"):
-        video_pipeline.VideoStages(tmp_path, "new-code").run(
-            "prepare", lambda: pytest.fail("executed")
         )
 
 

@@ -11,6 +11,7 @@ import pytest
 
 from simready.core.artifacts import digest, object_digest, read_json, write_json
 from simready.workflows import scene_delivery, scene_execution, scene_pipeline
+from tests.fixtures.scene_delivery import arguments, make_bundle, prepared_spec
 
 
 @pytest.mark.parametrize("status", ["TIMEOUT", "CANCELLED", "INTERRUPTED"])
@@ -31,38 +32,6 @@ def test_inner_worker_terminal_state_reaches_scene_summary(
     assert scene_pipeline.main(arguments(assets, output)) == 2
     receipt = read_json(output / "summary.json")
     assert receipt["status"] == status and receipt["stage"] == "render"
-
-
-def make_bundle(root, scene="starbucks"):
-    root.mkdir(parents=True)
-    filenames = (
-        ["input.mp4", "scene.usda", "robot.usda"]
-        if scene == "starbucks"
-        else ["input.mp4", "mission.json"]
-    )
-    for name in filenames:
-        (root / name).write_bytes(name.encode())
-    bundle = {
-        "schema_version": 1,
-        "scene": scene,
-        "source_video": "input.mp4",
-        "source_video_sha256": digest(root / "input.mp4"),
-        "files": [
-            {
-                "path": name,
-                "bytes": (root / name).stat().st_size,
-                "sha256": digest(root / name),
-            }
-            for name in filenames
-        ],
-    }
-    bundle.update(
-        {"scene_usd": "scene.usda", "robot_usd": "robot.usda"}
-        if scene == "starbucks"
-        else {"mission_config": "mission.json"}
-    )
-    write_json(root / "bundle.json", bundle)
-    return root
 
 
 def complete_receipts(execution, assets):
@@ -141,20 +110,6 @@ def complete_receipts(execution, assets):
         execution / "pipeline-status.json",
         {"status": "COMPLETE", "stage": "delivery_verification"},
     )
-
-
-def arguments(assets, output, scene="starbucks", backend="local"):
-    return [
-        "--scene",
-        scene,
-        "--backend",
-        backend,
-        "--assets",
-        str(assets),
-        "--out",
-        str(output),
-        "--accept-eula",
-    ]
 
 
 def test_dry_run_is_offline_read_only_and_preserves_venv_path(
@@ -567,23 +522,6 @@ def test_docker_command_keeps_input_readonly_and_spaces_literal(tmp_path, monkey
     monkeypatch.setattr(isaac_container, "execute_container", execute)
     assert scene_pipeline.main(arguments(assets, output, backend="docker")) == 0
     assert read_json(output / "execution/launch.json")["status"] == "COMPLETE"
-
-
-def prepared_spec(tmp_path):
-    source = tmp_path / "prepared"
-    source.mkdir()
-    (source / "video.mp4").write_bytes(b"video fixture")
-    (source / "scene.usda").write_text('#usda 1.0\ndef Xform "World" {}\n')
-    write_json(
-        source / "spec.json",
-        {
-            "scene": "starbucks",
-            "source_video": "video.mp4",
-            "scene_usd": "scene.usda",
-            "robot_usd": "scene.usda",
-        },
-    )
-    return source / "spec.json"
 
 
 def test_bundle_spec_dry_run_does_not_export_or_create_output(

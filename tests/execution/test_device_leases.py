@@ -12,8 +12,8 @@ from simready.execution.processes import run_process
 from simready.execution.resource_pool import ResourcePool
 from simready.execution.task_graph import run_task_graph
 from simready.execution.worker_groups import run_worker_group
-from tests.execution.test_isaac_lifecycle import fake_docker as fake_docker
-from tests.execution.test_task_graph import task
+from tests.fixtures.docker_cli import fake_docker as fake_docker
+from tests.fixtures.task_execution import task
 
 
 def paths(tmp_path):

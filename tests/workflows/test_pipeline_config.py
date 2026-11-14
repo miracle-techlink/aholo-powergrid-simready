@@ -1,28 +1,14 @@
 """Real CPU configuration, stage stopping, upgrade invalidation and old evidence."""
 
-import shutil
 from pathlib import Path
 
 import pytest
 
-from examples.pipeline.create_fixture import create_fixture
 from simready.cli import main
 from simready.core.artifacts import digest, read_json, write_json
 from simready.workflows import video_pipeline
 from simready.workflows.pipeline_spec import load_pipeline
-
-
-@pytest.fixture
-def configured(tmp_path, monkeypatch):
-    pytest.importorskip("pxr")
-    if not shutil.which("ffmpeg"):
-        pytest.skip("ffmpeg required for real observation extraction")
-    path = create_fixture(tmp_path / "inputs")
-    # Individual contract tests can coexist with other agents' source edits.
-    monkeypatch.setattr(
-        video_pipeline, "implementation_identity", lambda: "test-engine"
-    )
-    return path, tmp_path / "run"
+from tests.fixtures.pipeline import configured as configured
 
 
 def command(path, output, *flags):

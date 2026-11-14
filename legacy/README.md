@@ -1,16 +1,15 @@
-# 历史实验源码
+# 历史算法与活动工具
 
-此目录保留可追溯的实验实现。当前 `simready` 运行时禁止导入这里的模块；这些脚本尚未全部具备可复用 worker 合同，也不随运行时 wheel 安装。
+`simready` 运行时不导入本目录；保留源码随 sdist 提供，不进入 wheel。
 
-| 目录 | 用途 | 迁移方向 |
-|---|---|---|
-| `video_ingestion` | 历史抽帧、清晰度筛选、哈希去重 | 新任务使用 `simready ingestion extract` |
-| `aholo_reconstruction` | 原视频提交 Aholo、任务轮询与下载 | 新任务使用 `ingestion.reconstruction_stage` 与可恢复的 `aholo_reconstruction`；保留旧脚本作历史追溯 |
-| `gaussian_repair` | 高斯缺陷检测、候选修复、渲染与迭代 | 将算法接入 `repair` 注册表，使用统一 `evaluation` 验收 |
-| `scene_evaluation` | 参考准备、视角渲染、局部审计、历史场景评测 | 逐个迁移观测适配器，历史指标不混入新协议成绩 |
-| `warehouse_experiments` | gsplat 训练/渲染、点云处理、USD / Isaac 实验 | 明确资产、坐标、设备和模型版本后封装 worker |
-| `hackathon_submission` | 黑客松提交工具与报告模板 | 仅在对应活动环境中使用 |
+| 目录 | 保留用途 |
+|---|---|
+| `gaussian_repair` | 高斯模型读写、缺陷检测和局部修复算法，有 CPU 数值回归 |
+| `scene_evaluation` | 历史指标、候选比较、成本账本和配准算法；成绩不能混入新评测协议 |
+| `warehouse_experiments` | gsplat 训练、点云转换和 Isaac 研究脚本；尚未接入规范 pipeline |
+| `aholo_reconstruction` | 旧提交入口的薄转发；新任务用 `simready ingestion aholo` |
+| `hackathon_submission` | 当前黑客松的浏览器提交工具，仅用于对应活动 |
 
-旧目录名与新路径的映射见 [迁移指南](../docs/migration.md)。历史 Markdown 内的原实验路径可能指向外部机器或不在仓库中的资产，不作为当前快速开始命令。
+旧渲染、修复执行循环、场景专用测量脚本和失效抽帧入口已从活动源码移除，完整源码保留在[固定历史提交](https://github.com/miracle-techlink/video-to-simready/tree/6574907ded8aa8dac34de90d988303aede07d8b3/legacy)。不在仓库内复制另一套归档代码。抽帧改用 `simready ingestion extract`；当前工作流见[规范 pipeline](../docs/pipeline.md)。
 
-这些实验可能依赖未随仓库提供的视频、模型、CUDA、gsplat、Isaac、API 凭据或本地工作目录。此次重构仅迁移名称并更新代码引用，没有重新训练或运行 Isaac。正式接入需要显式输入/输出、不可变版本、资源需求、无副作用的重试策略、独立验收和对应运行证据。
+研究脚本可能依赖外部资产、模型、CUDA、gsplat、Isaac 或凭据。保留源码和 CPU 检查不代表已重新运行训练或 GPU 任务。

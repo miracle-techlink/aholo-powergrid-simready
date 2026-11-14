@@ -219,16 +219,26 @@ def main():
         type=Path,
         default=Path(__file__).resolve().parents[1] / "docs/report/figures",
     )
+    parser.add_argument(
+        "--export-png",
+        action="store_true",
+        help="Also export PNGs to dist/report-figures",
+    )
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    png_dir = Path(__file__).resolve().parents[1] / "dist/report-figures"
+    if args.export_png:
+        png_dir.mkdir(parents=True, exist_ok=True)
     fig = build()
-    for ext in ("pdf", "svg", "png"):
+    for ext in ("pdf", "svg") + (("png",) if args.export_png else ()):
         metadata = {"Creator": "SimReady asset method figure"}
         if ext == "pdf":
             metadata.update(CreationDate=None, ModDate=None)
         if ext == "svg":
             metadata["Date"] = None
-        path = args.out / f"asset_simready_pipeline.{ext}"
+        path = (
+            png_dir if ext == "png" else args.out
+        ) / f"asset_simready_pipeline.{ext}"
         fig.savefig(path, dpi=240, metadata=metadata)
         if ext == "svg":
             path.write_text(
