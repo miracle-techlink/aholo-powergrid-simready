@@ -24,7 +24,7 @@ from simready.workflows.video_pipeline import VideoStages
 @pytest.fixture
 def request_file(tmp_path):
     factory = runpy.run_path(
-        str(Path(__file__).parents[2] / "examples/nerf2physics/create_fixture.py")
+        str(Path(__file__).parents[2] / "examples/assets/nerf2physics_fixture.py")
     )
     path = factory["create_request"](tmp_path / "source")
     request = read_json(path)

@@ -14,7 +14,7 @@ from tests.paths import REPOSITORY_ROOT
 @pytest.fixture
 def prepared(tmp_path):
     prepare = runpy.run_path(
-        str(REPOSITORY_ROOT / "examples/baselines/prepare_fixture.py")
+        str(REPOSITORY_ROOT / "examples/reconstruction/prepare_fixture.py")
     )["prepare"]
     path = prepare(tmp_path / "inputs")
     return path, tmp_path / "run"

@@ -20,7 +20,7 @@ def inputs(tmp_path):
     video = tmp_path / "video.mp4"
     video.write_bytes(b"synthetic interface input, not decodable video")
     implementation = (
-        Path(__file__).parents[2] / "examples/reconstruction_backends/cpu_fixture.py"
+        Path(__file__).parents[2] / "examples/reconstruction/cpu_fixture.py"
     )
     runtime = tmp_path / "runtime.json"
     write_json(runtime, {"purpose": "synthetic_cpu_fixture", "model": None})

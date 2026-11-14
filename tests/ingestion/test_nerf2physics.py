@@ -13,7 +13,7 @@ from tests.paths import REPOSITORY_ROOT
 @pytest.fixture
 def request_path(tmp_path):
     create = runpy.run_path(
-        str(REPOSITORY_ROOT / "examples/nerf2physics/create_fixture.py")
+        str(REPOSITORY_ROOT / "examples/assets/nerf2physics_fixture.py")
     )["create_request"]
     return create(tmp_path / "inputs")
 

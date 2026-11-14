@@ -3,7 +3,7 @@
 from simready.execution.task_graph import run_task_graph
 from tests.paths import REPOSITORY_ROOT
 
-WORKER = REPOSITORY_ROOT / "examples/task_execution/synthetic_task.py"
+WORKER = REPOSITORY_ROOT / "tests/fixtures/synthetic_task.py"
 
 
 INVENTORY = {

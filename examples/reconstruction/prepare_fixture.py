@@ -29,9 +29,7 @@ def prepare(output):
         ],
         check=True,
     )
-    implementation = (
-        Path(__file__).resolve().parents[1] / "reconstruction_backends/cpu_fixture.py"
-    )
+    implementation = Path(__file__).with_name("cpu_fixture.py").resolve()
     runtime = output / "runtime.json"
     write_json(
         runtime,
@@ -75,6 +73,7 @@ def prepare(output):
         "environment": {"inherit": [], "secrets": []},
         "resources": {"kind": "cpu"},
     }
+    write_json(output / "provider.json", command)
     members = []
     for name, provider in (
         ("synthetic_cpu", command),
