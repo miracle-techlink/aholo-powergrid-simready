@@ -27,6 +27,8 @@ main 维护视频到 USD 的核心 pipeline、独立验收和 Isaac Sim 容器�
 
 架构检查拒绝越界依赖、环及未声明的动态导入。运行时代码不导入 tests 或 examples；evaluation 不导入资产 writer；模型和 SDK 在选定 worker 内加载，`--help` 不启动它们。
 
+`tests/` 与实现同版本维护；`scripts/` 只保留架构检查、CI 门禁检查和 Isaac 启动入口；`.github/workflows/` 配置自动执行这些检查。三者留在 main，便于 PR 审查及复现；测试与脚本不进入安装用 wheel，源码包保留它们。
+
 ## 规范流水线
 
 入口：`simready run --pipeline pipeline.json --out runs/<新运行>`。与 `--video` 共用视频工作流及阶段回执。配置解析见 [pipeline_config.py](../src/simready/workflows/pipeline_config.py)，可运行输入见 [CPU 示例](../examples/pipeline/README.md)。
