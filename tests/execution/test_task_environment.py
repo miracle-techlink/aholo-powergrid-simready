@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from simready.core.artifacts import object_digest, write_json
-from simready.execution.task_environment import RESERVED, freeze_environment
-from simready.execution.task_schema import validate
+from simready.execution.tasks.environment import RESERVED, freeze_environment
+from simready.execution.tasks.schema import validate
 from tests.fixtures.task_execution import INVENTORY, execute, task
 
 SETTING = "SIMREADY_TEST_SETTING"
@@ -97,7 +97,7 @@ def test_literal_overrides_determine_effective_identity_and_receipts_are_redacte
 def test_graph_freezes_environment_before_any_dispatch_including_dependent_tasks(
     tmp_path, monkeypatch, legacy
 ):
-    from simready.execution import task_graph
+    from simready.execution.tasks import graph as task_graph
 
     first = environment_task()
     second = copy.deepcopy(first)

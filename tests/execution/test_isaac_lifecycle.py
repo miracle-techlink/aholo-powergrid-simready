@@ -12,8 +12,15 @@ from threading import Event, Thread
 
 import pytest
 
-from simready.execution.isaac_launcher import launch_worker, main, seed_runtime_cache
-from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
+from simready.execution.processes.local import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+)
+from simready.execution.workers.isaac_launcher import (
+    launch_worker,
+    main,
+    seed_runtime_cache,
+)
 from tests.fixtures.docker_cli import fake_docker as fake_docker
 
 
@@ -225,7 +232,7 @@ def test_precancel_does_not_start_worker_or_cleanup(launch_paths, fake_docker, b
 def test_interrupt_cleanup_failure_preserves_original_error(
     launch_paths, fake_docker, monkeypatch
 ):
-    from simready.execution import isaac_container
+    from simready.execution.workers import isaac_container
 
     process = isaac_container.run_process
 
@@ -263,7 +270,7 @@ def test_worker_name_and_label_do_not_replace_docker_ownership(
 
 
 def test_ssh_local_timeout_records_remote_unknown(tmp_path, monkeypatch):
-    from simready.execution import isaac_container
+    from simready.execution.workers import isaac_container
 
     remote_argv = []
 
@@ -383,7 +390,7 @@ def test_cache_overlap_rejected_without_partial_copy(tmp_path, relation):
 
 
 def test_cache_copy_failure_does_not_publish_first_tree(tmp_path, monkeypatch):
-    from simready.execution import isaac_launcher
+    from simready.execution.workers import isaac_launcher
 
     source, output = tmp_path / "source", tmp_path / "output"
     for root in (source / ".isaac-cache", source / ".isaac-home/.cache"):
@@ -407,7 +414,7 @@ def test_cache_copy_failure_does_not_publish_first_tree(tmp_path, monkeypatch):
 
 
 def test_cache_cleanup_failure_preserves_copy_interrupt(tmp_path, monkeypatch):
-    from simready.execution import isaac_launcher
+    from simready.execution.workers import isaac_launcher
 
     source, output = tmp_path / "source", tmp_path / "output"
     (source / ".isaac-cache").mkdir(parents=True)
@@ -427,7 +434,7 @@ def test_cache_cleanup_failure_preserves_copy_interrupt(tmp_path, monkeypatch):
 
 
 def test_cache_cleanup_error_is_reported_when_copy_succeeded(tmp_path, monkeypatch):
-    from simready.execution import isaac_launcher
+    from simready.execution.workers import isaac_launcher
 
     source, output = tmp_path / "source", tmp_path / "output"
     (source / ".isaac-cache").mkdir(parents=True)

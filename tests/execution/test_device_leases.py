@@ -5,13 +5,13 @@ import sys
 
 import pytest
 
-from simready.execution.device_lease import device_lease
-from simready.execution.device_recovery import recover_device
-from simready.execution.isaac_launcher import launch_worker
-from simready.execution.processes import run_process
-from simready.execution.resource_pool import ResourcePool
-from simready.execution.task_graph import run_task_graph
-from simready.execution.worker_groups import run_worker_group
+from simready.execution.processes.local import run_process
+from simready.execution.resources.resource_pool import ResourcePool
+from simready.execution.tasks.graph import run_task_graph
+from simready.execution.workers.device_lease import device_lease
+from simready.execution.workers.device_recovery import recover_device
+from simready.execution.workers.isaac_launcher import launch_worker
+from simready.execution.workers.worker_groups import run_worker_group
 from tests.fixtures.docker_cli import fake_docker as fake_docker
 from tests.fixtures.task_execution import task
 
@@ -73,14 +73,14 @@ def test_dag_lease_delegates_through_plain_wrapper_into_nested_launcher(
     locations = paths(tmp_path)
     child = tmp_path / "child.py"
     child.write_text(
-        "import os\nfrom pathlib import Path\nfrom simready.execution.isaac_launcher import launch_worker\n"
+        "import os\nfrom pathlib import Path\nfrom simready.execution.workers.isaac_launcher import launch_worker\n"
         "out=Path(os.environ['SIMREADY_OUT'])\n"
-        f"launch_worker(['-c',\"from simready.execution.worker_groups import gpu_worker_lease; import os; assert os.environ['SIMREADY_GPU_UUID']=='GPU-fixture-0';\\nwith gpu_worker_lease(): pass\"],repo={str(locations['repo'])!r},assets={str(locations['assets'])!r},output=out/'nested',backend='local',resource_kind='cuda')\n"
+        f"launch_worker(['-c',\"from simready.execution.workers.worker_groups import gpu_worker_lease; import os; assert os.environ['SIMREADY_GPU_UUID']=='GPU-fixture-0';\\nwith gpu_worker_lease(): pass\"],repo={str(locations['repo'])!r},assets={str(locations['assets'])!r},output=out/'nested',backend='local',resource_kind='cuda')\n"
         "(out/'artifact.json').write_text('ok')\n"
     )
     wrapper = tmp_path / "wrapper.py"
     wrapper.write_text(
-        "import os,sys\nfrom pathlib import Path\nfrom simready.execution.processes import run_process\n"
+        "import os,sys\nfrom pathlib import Path\nfrom simready.execution.processes.local import run_process\n"
         "root=Path(os.environ['SIMREADY_OUT'])\n"
         f"result=run_process([sys.executable,{str(child)!r}],cwd=root,timeout=5,stdout=root/'child.stdout',stderr=root/'child.stderr',env={{'SIMREADY_OUT':str(root)}})\n"
         "raise SystemExit(result.returncode)\n"
@@ -119,7 +119,7 @@ def test_cpu_launcher_never_discovers_devices_and_gpu_discovery_failure_is_termi
         raise RuntimeError("GPU discovery failed")
 
     monkeypatch.setattr(
-        "simready.execution.device_lease.discover_inventory", unavailable
+        "simready.execution.workers.device_lease.discover_inventory", unavailable
     )
     assert (
         launch_worker(
@@ -146,7 +146,7 @@ def test_nested_quarantine_is_visible_to_owner_and_blocks_later_acquisition(
         device_inventory=device_inventory,
         lock_dir=tmp_path / "locks",
     ) as lease:
-        code = "from simready.execution.device_lease import device_lease\nwith device_lease(resource_kind='cuda') as borrowed: borrowed.quarantine({'fixture':'unknown child'})"
+        code = "from simready.execution.workers.device_lease import device_lease\nwith device_lease(resource_kind='cuda') as borrowed: borrowed.quarantine({'fixture':'unknown child'})"
         result = run_process(
             [sys.executable, "-c", code],
             cwd=tmp_path,
@@ -245,7 +245,9 @@ def test_cpu_docker_launch_omits_gpu_and_never_discovers_devices(
     def forbidden():
         raise AssertionError("CPU launch must not discover GPU devices")
 
-    monkeypatch.setattr("simready.execution.device_lease.discover_inventory", forbidden)
+    monkeypatch.setattr(
+        "simready.execution.workers.device_lease.discover_inventory", forbidden
+    )
     monkeypatch.setenv("FAKE_DOCKER_MODE", "success")
     assert (
         launch_worker(
@@ -313,13 +315,13 @@ def test_discovery_preserves_uuid_when_memory_capacity_is_unknown(
 ):
     from types import SimpleNamespace
 
-    from simready.execution.device_lease import discover_inventory
+    from simready.execution.workers.device_lease import discover_inventory
 
     def query(*args, **kwargs):
         kwargs["stdout"].write_text(f"0, GPU-unified-memory, {memory}\n")
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr("simready.execution.device_lease.run_process", query)
+    monkeypatch.setattr("simready.execution.workers.device_lease.run_process", query)
     inventory = discover_inventory()
     device = inventory["gpus"][0]
     assert device["uuid"] == "GPU-unified-memory"
@@ -340,12 +342,12 @@ def test_discovery_preserves_uuid_when_memory_capacity_is_unknown(
 def test_discovery_rejects_corrupt_capacity(monkeypatch, memory):
     from types import SimpleNamespace
 
-    from simready.execution.device_lease import discover_inventory
+    from simready.execution.workers.device_lease import discover_inventory
 
     def query(*args, **kwargs):
         kwargs["stdout"].write_text(f"0, GPU-fixture, {memory}\n")
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr("simready.execution.device_lease.run_process", query)
+    monkeypatch.setattr("simready.execution.workers.device_lease.run_process", query)
     with pytest.raises(RuntimeError, match="Invalid GPU memory"):
         discover_inventory()

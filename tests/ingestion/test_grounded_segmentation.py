@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from simready.ingestion.grounded_segmentation import (
+from simready.ingestion.segmentation.grounded import (
     _query_mapping,
     grounded_segment_image,
     resolve_mask_overlap,

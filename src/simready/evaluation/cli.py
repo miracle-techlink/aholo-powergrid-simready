@@ -12,7 +12,7 @@ from simready.core.artifacts import digest
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv and argv[0] == "physical-assets":
-        from simready.evaluation.physical_assets import main as physical_main
+        from simready.evaluation.inspection.physical_assets import main as physical_main
 
         return physical_main(argv[1:])
     parser = argparse.ArgumentParser(description=__doc__)

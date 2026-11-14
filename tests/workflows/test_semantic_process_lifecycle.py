@@ -8,8 +8,11 @@ import pytest
 
 from examples.assets.semantic_fixture import create_fixture
 from simready.core.artifacts import read_json
-from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
-from simready.workflows import semantic_assets
+from simready.execution.processes.local import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+)
+from simready.workflows.pipelines import semantic_assets
 
 
 @pytest.mark.parametrize("stage", ["projection", "authoring"])

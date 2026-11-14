@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from simready.core.artifacts import read_json
-from simready.execution.task_graph import run_task_graph
+from simready.execution.tasks.graph import run_task_graph
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     recovery.add_argument("--timeout-s", default=15, type=float)
     args = parser.parse_args(argv)
     if args.command == "recover-device":
-        from simready.execution.device_recovery import recover_device
+        from simready.execution.workers.device_recovery import recover_device
 
         result = recover_device(
             args.gpu_uuid,

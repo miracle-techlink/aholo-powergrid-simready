@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from scripts.launch_isaac import main
-from simready.execution.isaac_container import (
+from simready.execution.workers.isaac_container import (
     container_command,
     remote_command,
     validate_paths,
@@ -169,7 +169,7 @@ def test_failed_retry_creates_new_receipt_without_overwriting_success(
         ],
     )
     monkeypatch.setattr(
-        "simready.execution.isaac_container.execute_container",
+        "simready.execution.workers.isaac_container.execute_container",
         lambda command, **kwargs: 2,
     )
     assert main() == 2
@@ -187,7 +187,7 @@ def test_failed_retry_creates_new_receipt_without_overwriting_success(
 def test_launch_errors_are_distinguished_from_interruptions(
     tmp_path, monkeypatch, error_type, status
 ):
-    from simready.execution.isaac_launcher import launch_worker
+    from simready.execution.workers.isaac_launcher import launch_worker
 
     repo, assets, output = (tmp_path / name for name in ("repo", "assets", "out"))
     repo.mkdir()
@@ -196,7 +196,7 @@ def test_launch_errors_are_distinguished_from_interruptions(
     def fail(*args, **kwargs):
         raise error_type("fixture launch failure")
 
-    monkeypatch.setattr("simready.execution.isaac_launcher.run_process", fail)
+    monkeypatch.setattr("simready.execution.workers.isaac_launcher.run_process", fail)
     with pytest.raises(error_type):
         launch_worker(
             ["-c", "pass"],
@@ -213,7 +213,7 @@ def test_launch_errors_are_distinguished_from_interruptions(
 
 
 def test_cache_seed_is_private_and_does_not_copy_runtime_config(tmp_path):
-    from simready.execution.isaac_launcher import seed_runtime_cache
+    from simready.execution.workers.isaac_launcher import seed_runtime_cache
 
     source, target = tmp_path / "completed", tmp_path / "new"
     cache = source / ".isaac-cache"
@@ -227,7 +227,7 @@ def test_cache_seed_is_private_and_does_not_copy_runtime_config(tmp_path):
 
 
 def test_cache_seed_rejects_symlink_destination(tmp_path):
-    from simready.execution.isaac_launcher import seed_runtime_cache
+    from simready.execution.workers.isaac_launcher import seed_runtime_cache
 
     source, target, unrelated = (
         tmp_path / x for x in ("source", "target", "unrelated")

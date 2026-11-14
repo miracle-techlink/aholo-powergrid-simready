@@ -54,7 +54,7 @@ simready simulation depth-observation --scene /data/scene/repaired.usda \
   --camera-calibration /data/scene/calibration.json --out runs/observation
 ```
 
-使用返回的新图像及标定重新分割；真实视频相机须先配准，不能套用渲染相机。第三方 mask 可按[导入格式](../../src/simready/ingestion/semantic_segmentation.py)提供，并明确标记导入。
+使用返回的新图像及标定重新分割；真实视频相机须先配准，不能套用渲染相机。第三方 mask 可按[导入格式](../../src/simready/ingestion/segmentation/semantic.py)提供，并明确标记导入。
 
 输出保留 segmentation、projection、scene、physical_audit.json 和 workflow.json。`REVIEW_REQUIRED` 保留候选并返回 2；`--priors-file` 替换类别先验时只自动采用静态接触参数，动态质量、惯量及尺度须明确声明。遮挡几何、关节和任务另行验收。
 

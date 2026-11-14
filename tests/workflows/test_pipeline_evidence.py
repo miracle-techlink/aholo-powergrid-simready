@@ -14,10 +14,10 @@ from examples.assets.semantic_fixture import create_fixture as semantic_fixture
 from simready.assets.appearance.gaussian_asset import read_ply
 from simready.core.artifacts import digest, read_json, write_json
 from simready.core.evidence import reference
-from simready.workflows import video_pipeline
-from simready.workflows.pipeline_spec import load_pipeline
-from simready.workflows.semantic_stage import verify_decomposition
-from simready.workflows.stage_ledger import artifact_record
+from simready.workflows.contracts.stage_ledger import artifact_record
+from simready.workflows.pipelines import video_pipeline
+from simready.workflows.planning.pipeline_spec import load_pipeline
+from simready.workflows.stages.semantic_stage import verify_decomposition
 from tests.fixtures.pipeline import configured as configured
 
 
@@ -221,9 +221,9 @@ def test_alternate_worker_checkout_changes_only_delivery_identity(configured):
     config, output = configured
     repo = config.parent.parent / "worker-repo"
     package = repo / "src/simready"
-    (package / "workflows").mkdir(parents=True)
+    (package / "workflows/stages").mkdir(parents=True)
     (package / "cli.py").write_text("# Alternate worker source checkout\n")
-    worker = package / "workflows/video_execution.py"
+    worker = package / "workflows/stages/video_execution.py"
     worker.write_text("# Worker implementation version 1\n")
     value = read_json(config)
     value["execution"]["repo"] = str(repo)
@@ -233,7 +233,7 @@ def test_alternate_worker_checkout_changes_only_delivery_identity(configured):
     second = video_pipeline.make_plan(load_pipeline(config, output))
     assert first["identity"] != second["identity"]
     assert second["pipeline"]["worker_source"]["files"][
-        "workflows/video_execution.py"
+        "workflows/stages/video_execution.py"
     ] == digest(worker)
     for stage in first["stages"]:
         assert (

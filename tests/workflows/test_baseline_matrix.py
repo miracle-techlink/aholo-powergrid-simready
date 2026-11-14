@@ -6,8 +6,8 @@ import pytest
 
 from simready.core.artifacts import digest, read_json, write_json
 from simready.core.evidence import reference
-from simready.execution.processes import ProcessCancelledError
-from simready.workflows import baseline_matrix as matrix
+from simready.execution.processes.local import ProcessCancelledError
+from simready.workflows.pipelines import baseline_matrix as matrix
 from tests.paths import REPOSITORY_ROOT
 
 

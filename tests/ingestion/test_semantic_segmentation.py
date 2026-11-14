@@ -7,7 +7,7 @@ import pytest
 from PIL import Image
 
 from simready.core.artifacts import digest
-from simready.ingestion.semantic_segmentation import (
+from simready.ingestion.segmentation.semantic import (
     IGNORE_LABEL,
     canonical_category,
     extract_semantic_regions,

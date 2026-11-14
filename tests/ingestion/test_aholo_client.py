@@ -1,6 +1,6 @@
 """Exercise upload transport boundaries without sending data to the service."""
 
-from simready.ingestion.aholo_client import Client
+from simready.ingestion.reconstruction.aholo_client import Client
 
 
 def test_upload_token_does_not_forward_api_authorization(tmp_path, monkeypatch):

@@ -8,7 +8,7 @@ from PIL import Image
 
 from simready.core.artifacts import digest, object_digest, write_json
 from simready.geometry.cameras import look_at_c2w
-from simready.ingestion.semantic_segmentation import import_segmentation
+from simready.ingestion.segmentation.semantic import import_segmentation
 
 
 def create_fixture(output: Path) -> dict[str, Path]:

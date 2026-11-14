@@ -5,7 +5,7 @@ import shutil
 import pytest
 
 from examples.pipeline.create_fixture import create_fixture
-from simready.workflows import video_pipeline
+from simready.workflows.pipelines import video_pipeline
 
 
 @pytest.fixture

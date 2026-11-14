@@ -34,6 +34,31 @@
       "responsibility": "Task graphs, resource leases, processes and artifact cache",
       "allowed_dependencies": [
         "core"
+      ],
+      "layers": {
+        ".": [
+          "resources",
+          "processes",
+          "workers",
+          "tasks"
+        ],
+        "resources": [],
+        "processes": [
+          "resources"
+        ],
+        "workers": [
+          "resources",
+          "processes"
+        ],
+        "tasks": [
+          "resources",
+          "processes"
+        ]
+      },
+      "root_modules": [
+        "__init__",
+        "__main__",
+        "cli"
       ]
     },
     "ingestion": {
@@ -43,6 +68,21 @@
         "execution",
         "geometry",
         "assets"
+      ],
+      "layers": {
+        ".": [
+          "reconstruction",
+          "segmentation"
+        ],
+        "reconstruction": [],
+        "segmentation": []
+      },
+      "root_modules": [
+        "__init__",
+        "__main__",
+        "cli",
+        "nerf2physics",
+        "video_frames"
       ]
     },
     "evaluation": {
@@ -50,6 +90,23 @@
       "allowed_dependencies": [
         "core",
         "execution"
+      ],
+      "layers": {
+        ".": [
+          "inspection"
+        ],
+        "inspection": []
+      },
+      "root_modules": [
+        "__init__",
+        "__main__",
+        "asset_graph",
+        "cli",
+        "nerf2physics",
+        "observations",
+        "protocol",
+        "scoring",
+        "verification"
       ]
     },
     "workflows": {
@@ -61,6 +118,29 @@
         "ingestion",
         "simulation",
         "assets"
+      ],
+      "layers": {
+        ".": [
+          "pipelines"
+        ],
+        "contracts": [],
+        "stages": [
+          "contracts"
+        ],
+        "planning": [
+          "contracts",
+          "stages"
+        ],
+        "pipelines": [
+          "contracts",
+          "stages",
+          "planning"
+        ]
+      },
+      "root_modules": [
+        "__init__",
+        "__main__",
+        "cli"
       ]
     },
     "simulation": {
@@ -77,23 +157,44 @@
       "allowed_dependencies": [
         "core",
         "geometry"
+      ],
+      "layers": {
+        ".": [
+          "appearance",
+          "physics",
+          "association",
+          "compilation"
+        ],
+        "appearance": [],
+        "physics": [],
+        "association": [
+          "appearance",
+          "physics"
+        ],
+        "compilation": [
+          "appearance",
+          "physics"
+        ]
+      },
+      "root_modules": [
+        "__init__"
       ]
     }
   },
   "public_functions": [
-    "simready.execution.task_graph.run_task_graph",
+    "simready.execution.tasks.graph.run_task_graph",
     "simready.evaluation.scoring.evaluate_candidate",
     "simready.evaluation.verification.verify_candidate",
     "simready.ingestion.video_frames.extract_frames",
-    "simready.ingestion.grounded_segmentation.grounded_segment_image",
-    "simready.ingestion.semantic_segmentation.segment_image",
+    "simready.ingestion.segmentation.grounded.grounded_segment_image",
+    "simready.ingestion.segmentation.semantic.segment_image",
     "simready.assets.association.semantic_projection.build_semantic_spec",
     "simready.geometry.depth_projection.backproject_depth",
     "simready.assets.physics.physical_spec.normalize_physics",
     "simready.simulation.camera_calibration.rendered_camera_calibration",
-    "simready.evaluation.physical_assets.inspect_physical_assets",
-    "simready.evaluation.physical_receipt.verify_physical_receipt",
-    "simready.workflows.semantic_assets.run_semantic_assets",
+    "simready.evaluation.inspection.physical_assets.inspect_physical_assets",
+    "simready.evaluation.inspection.physical_receipt.verify_physical_receipt",
+    "simready.workflows.pipelines.semantic_assets.run_semantic_assets",
     "simready.assets.physics.physical_candidate.compile_candidate",
     "simready.assets.compilation.scene_preparation.prepare_scene"
   ]

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from simready.core.artifacts import digest, read_json
 from simready.core.types import JsonObject, PathLike
-from simready.execution.processes import run_process
+from simready.execution.processes.local import run_process
 
 
 def verify_candidate(

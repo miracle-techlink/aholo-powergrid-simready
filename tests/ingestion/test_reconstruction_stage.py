@@ -7,7 +7,7 @@ import time
 import pytest
 
 from simready.core.artifacts import digest, read_json, write_json
-from simready.ingestion import reconstruction_stage as stage
+from simready.ingestion.reconstruction import stage as stage
 
 
 @pytest.fixture
@@ -241,7 +241,7 @@ def test_supervised_worker_argv_deadline_and_completion(
         assert argv[:3] == [
             sys.executable,
             "-m",
-            "simready.ingestion.aholo_reconstruction",
+            "simready.ingestion.reconstruction.aholo_reconstruction",
         ]
         assert argv[argv.index("--video") + 1] == str(video)
         assert argv[argv.index("--out") + 1] == str(out)
