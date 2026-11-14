@@ -24,6 +24,21 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
         tree = ast.parse(path.read_text(), filename=str(path))
         parsed[module] = tree
         domain = relative.parts[0] if len(relative.parts) > 1 else None
+        importlib_names = {"importlib"}
+        dynamic_loaders = {"__import__"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                importlib_names.update(
+                    alias.asname or alias.name
+                    for alias in node.names
+                    if alias.name == "importlib"
+                )
+            elif isinstance(node, ast.ImportFrom) and node.module == "importlib":
+                dynamic_loaders.update(
+                    alias.asname or alias.name
+                    for alias in node.names
+                    if alias.name == "import_module"
+                )
         if path.stem in rules["forbidden_module_names"]:
             errors.append(f"{relative}: ambiguous module name")
         if path.name == "__main__.py" and len(path.read_text().splitlines()) > 8:
@@ -38,6 +53,36 @@ def check_architecture(source: Path, rules: dict) -> list[str]:
                 imports = [node.module or ""]
             elif isinstance(node, ast.Import):
                 imports = [a.name for a in node.names]
+            elif isinstance(node, ast.Call):
+                function = node.func
+                dynamic = (
+                    isinstance(function, ast.Name) and function.id in dynamic_loaders
+                ) or (
+                    isinstance(function, ast.Attribute)
+                    and isinstance(function.value, ast.Name)
+                    and function.value.id in importlib_names
+                    and function.attr == "import_module"
+                )
+                if dynamic:
+                    target = (
+                        node.args[0]
+                        if node.args
+                        else next(
+                            (kw.value for kw in node.keywords if kw.arg == "name"), None
+                        )
+                    )
+                    if isinstance(target, ast.Constant) and isinstance(
+                        target.value, str
+                    ):
+                        imports = [target.value]
+                        if target.value.startswith("."):
+                            errors.append(
+                                f"{relative}:{node.lineno}: use explicit absolute imports"
+                            )
+                    elif str(relative) not in rules.get("dynamic_import_routers", {}):
+                        errors.append(
+                            f"{relative}:{node.lineno}: dynamic import requires a declared CLI router"
+                        )
             for target in imports:
                 parts = target.split(".")
                 if parts[0] in rules["forbidden_runtime_roots"]:

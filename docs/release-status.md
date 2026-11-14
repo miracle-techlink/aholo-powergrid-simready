@@ -1,6 +1,16 @@
 # 封装发布与后续需求状态
 
-状态核对日期：2026-11-13。性能优化已暂停；当前新增工作范围是多类语义资产、逐物体物性与独立验证。
+状态核对日期：2026-11-14。性能优化已暂停；当前新增工作包括多类语义资产、逐物体物性与独立验证，以及固定控制器的物性随机化评测。
+
+最新模块化版本见[规范 pipeline](pipeline.md)：新增 assets 域、重建提供者合同、配置入口、不可变阶段回执与 baseline 矩阵。[本轮验收](audits/2026-11-14-modular-pipeline.md)为 1055 通过／1 跳过；真实 CPU 交付、恢复、局部升级及两种适配器矩阵通过。旧命令委托规范实现；真实模型与 GPU 验收仍按各自证据范围报告。
+
+此前[收口交付](audits/2026-11-14-remaining-delivery.md)全仓 936 通过／1 跳过，构包和真实 CPU 五阶段运行／恢复通过。已完成单机嵌套取消、物理 UUID 租约归并、搬杯运行／控制／记录拆分。NeRF2Physics 数值适配与候选导入已接入 `simready run --video`，质量经过独立 USD 读回；这是合成特征回归与工程接线验证，尚无新的真实视觉模型推断结果。
+
+[搬杯候选](cup-stability-candidate.md)已针对 HOLD 滑移增加反馈和释放确认，保留原默认控制器及独立阈值。新留出成对物料已冻结；当前 GPU 驱动、Docker 权限、外部模型数据不可用，真实动力学、daemon 清理和官方模型／数据集验收仍未完成。历史 3/4 成功率属于下面的原控制器，不是候选成绩。
+
+架构责任和剩余里程碑统一见[软件架构](software-architecture.md)。此前[720 测试批次](audits/2026-11-14-parallel-review.md)和[820 测试批次](audits/2026-11-14-infra-convergence.md)保留历史证据，最新验证单独记账。
+
+本轮补齐[搬杯鲁棒性入口](cup-robustness.md)，实际执行 4 组质量/摩擦参数，3 组通过、1 组失败；失败轨迹、独立验收与小样本置信区间均保留。这个结果不表示动作经过训练或比之前更鲁棒。新增检查还修复了地面探针反向依赖 repair 的分层问题，公共多边形判断移入 geometry。完整缺口见[剩余开发清单](plans/remaining-development-20261114.md)。
 
 中文竖版白皮书已按视频到 Demo 的技术主线重组，工程命令与字段集中到附录；运行代码和实验数据沿用 v0.7。见[白皮书发布页](https://github.com/miracle-techlink/video-to-simready/releases/tag/technical-report-2026-11-13-v5)与[流程总览](report/pipeline-overview.md)。
 

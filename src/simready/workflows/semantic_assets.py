@@ -4,28 +4,83 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import Event
 from typing import Any
 
+from simready.assets.association.semantic_projection import build_semantic_spec
+from simready.assets.compilation.scene_preparation import prepare_scene
 from simready.core.artifacts import digest, read_json, write_json
-from simready.simulation.scene_preparation import prepare_scene
-from simready.simulation.semantic_projection import build_semantic_spec
+from simready.core.evidence import ensure_unchanged, reference, resolve_ref
+from simready.core.validation import number
+from simready.evaluation.physical_receipt import verify_physical_receipt
+from simready.execution.device_lease import device_lease
+from simready.execution.processes import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+    run_process,
+)
+from simready.execution.resource_pool import DEFAULT_LOCK_DIR
 
 
-def _worker(command: list[str], log: Path, timeout_s: float) -> int:
-    with log.open("w") as stream:
-        process = subprocess.run(
-            command,
-            stdout=stream,
-            stderr=subprocess.STDOUT,
-            check=False,
-            timeout=timeout_s,
-        )
-    return process.returncode
+def _worker(
+    command: list[str],
+    log: Path,
+    timeout_s: float,
+    *,
+    gpu=None,
+    device_inventory=None,
+    lock_dir=DEFAULT_LOCK_DIR,
+    cancel_event: Event | None = None,
+) -> int:
+    if number(timeout_s, "timeout_s") <= 0:
+        raise ValueError("timeout_s must be positive")
+    if cancel_event is not None and cancel_event.is_set():
+        raise ProcessCancelledError(0.0)
+    if gpu is not None:
+        started = time.monotonic()
+        with device_lease(
+            resource_kind="cuda",
+            gpu=gpu,
+            device_inventory=device_inventory,
+            lock_dir=lock_dir,
+        ) as lease:
+            remaining = timeout_s - (time.monotonic() - started)
+            if remaining <= 0:
+                raise ProcessTimeoutError(timeout_s, time.monotonic() - started)
+            write_json(
+                log.with_suffix(".lease.json"),
+                {
+                    "resource_kind": "cuda",
+                    "gpu_uuid": lease.gpu["uuid"],
+                    "lock_directory": str(lease.pool.directory),
+                },
+            )
+            return run_process(
+                command,
+                cwd=None,
+                stdout=log,
+                stderr=log.with_suffix(".stderr.log"),
+                timeout=remaining,
+                env={**os.environ, **lease.environment},
+                pass_fds=lease.pass_fds,
+                cancel_event=cancel_event,
+            ).returncode
+    return run_process(
+        command,
+        cwd=None,
+        stdout=log,
+        stderr=log.with_suffix(".stderr.log"),
+        timeout=timeout_s,
+        cancel_event=cancel_event,
+        env={**os.environ, "CUDA_VISIBLE_DEVICES": ""},
+    ).returncode
 
 
 def run_semantic_assets(
@@ -47,6 +102,10 @@ def run_semantic_assets(
     min_score: float = 0.25,
     priors_file: str | Path | None = None,
     worker_timeout_s: float = 1200.0,
+    timeout_s: float = 3600.0,
+    cancel_event: Event | None = None,
+    device_inventory: dict | None = None,
+    lock_dir: str | Path = DEFAULT_LOCK_DIR,
 ) -> dict[str, Any]:
     """Run bounded candidate generation and record per-stage wall time.
 
@@ -54,15 +113,22 @@ def run_semantic_assets(
     explicit evidence reuse, never reported as new model inference. A separate
     interpreter reopens the authored USD and checks it against the external
     generated scene spec. This does not certify semantic or real physics accuracy.
-    Output must be fresh; failures retain logs and an unambiguous FAILED receipt.
+    Output must be fresh; failures retain logs and their terminal status. Model
+    inference, CPU projection, USD authoring and inspection run in owned process
+    groups with the remaining total budget and inherited cancellation scope.
     """
     started = time.perf_counter()
+    if number(timeout_s, "timeout_s") <= 0:
+        raise ValueError("timeout_s must be positive")
+    deadline = started + timeout_s
     if type(worker_timeout_s) not in (int, float) or not 1 <= worker_timeout_s <= 7200:
         raise ValueError("worker_timeout_s must be within 1..7200")
     if (image is None) == (segmentation_manifest is None):
         raise ValueError("Provide exactly one image or segmentation_manifest")
     if segmentation_backend not in {"segformer", "grounded"}:
         raise ValueError("segmentation_backend must be segformer or grounded")
+    if not isinstance(device, str) or not re.fullmatch(r"cpu|cuda(?::\d+)?", device):
+        raise ValueError("device must be cpu, cuda or cuda:N")
     if segmentation_backend == "grounded" and (
         model_id is not None or revision is not None
     ):
@@ -92,13 +158,21 @@ def run_semantic_assets(
         relative: digest(package / relative)
         for relative in (
             "workflows/semantic_assets.py",
-            "simulation/semantic_projection.py",
-            "simulation/depth_projection.py",
-            "simulation/category_priors.py",
-            "simulation/scene_preparation.py",
-            "simulation/physical_spec.py",
-            "simulation/physical_authoring.py",
+            "assets/association/semantic_projection.py",
+            "geometry/depth_projection.py",
+            "geometry/transforms_validation.py",
+            "assets/appearance/gaussian_asset.py",
+            "assets/physics/category_priors.py",
+            "assets/compilation/scene_preparation.py",
+            "assets/physics/physical_spec.py",
+            "assets/physics/physical_authoring.py",
             "evaluation/physical_assets.py",
+            "evaluation/physical_receipt.py",
+            "execution/processes.py",
+            "execution/process_scope.py",
+            "execution/device_lease.py",
+            "execution/gpu_capability.py",
+            "execution/resource_pool.py",
         )
     }
     result: dict[str, Any] = {
@@ -111,11 +185,46 @@ def run_semantic_assets(
         "llm_tokens": 0,
         "token_scope": "This deterministic workflow only; development agent tokens are not counted.",
         "worker_timeout_s": worker_timeout_s,
+        "timeout_s": timeout_s,
         "implementation_sha256": implementation,
     }
     stage = "segmentation"
+
+    def remaining():
+        if cancel_event is not None and cancel_event.is_set():
+            raise ProcessCancelledError(time.perf_counter() - started)
+        value = deadline - time.perf_counter()
+        if value <= 0:
+            raise ProcessTimeoutError(timeout_s, time.perf_counter() - started)
+        return min(worker_timeout_s, value)
+
+    def cpu_stage(kind, arguments):
+        command = [
+            sys.executable,
+            "-m",
+            "simready.workflows.semantic_assets",
+            "internal-worker",
+            kind,
+            *map(str, arguments),
+        ]
+        code = _worker(
+            command,
+            out / "logs" / f"{stage}.log",
+            remaining(),
+            **({"cancel_event": cancel_event} if cancel_event is not None else {}),
+        )
+        if code:
+            raise RuntimeError(
+                f"{stage} worker failed with exit {code}; see logs/{stage}.log"
+            )
+
     try:
         tick = time.perf_counter()
+        frozen = [
+            reference(path)
+            for path in (ply, calibration, scene_spec, priors_file, image)
+            if path is not None
+        ]
         if image is not None:
             command = [
                 str(segmentation_python or sys.executable),
@@ -128,7 +237,7 @@ def run_semantic_assets(
                 "--output-dir",
                 str(out / "segmentation"),
                 "--device",
-                device,
+                "cuda:0" if device.startswith("cuda") else device,
                 "--min-area-px",
                 str(min_area_px),
             ]
@@ -137,13 +246,35 @@ def run_semantic_assets(
                     command.extend([key, value])
             if local_files_only:
                 command.append("--local-files-only")
-            if _worker(command, out / "logs" / "segmentation.log", worker_timeout_s):
+            options = {"cancel_event": cancel_event} if cancel_event is not None else {}
+            if device.startswith("cuda"):
+                options.update(
+                    gpu=device.split(":")[-1] if ":" in device else "0",
+                    device_inventory=device_inventory,
+                    lock_dir=lock_dir,
+                )
+            if _worker(
+                command, out / "logs" / "segmentation.log", remaining(), **options
+            ):
                 raise RuntimeError(
                     "Segmentation worker failed; see logs/segmentation.log"
                 )
             segmentation_manifest = out / "segmentation" / "manifest.json"
         else:
             segmentation_manifest = Path(segmentation_manifest).resolve(strict=True)
+        frozen.append(reference(segmentation_manifest))
+        manifest = read_json(segmentation_manifest)
+        for item in [
+            manifest["source_image"],
+            *[row["mask"] for row in manifest["instances"]],
+        ]:
+            path = resolve_ref(item, Path(segmentation_manifest).parent)
+            frozen.append({"path": str(path), "sha256": item["sha256"]})
+        camera = read_json(calibration)
+        if "depth" in camera:
+            path = resolve_ref(camera["depth"], calibration.parent)
+            frozen.append({"path": str(path), "sha256": camera["depth"]["sha256"]})
+        ensure_unchanged(frozen)
         steps.append(
             {
                 "stage": stage,
@@ -152,21 +283,39 @@ def run_semantic_assets(
             }
         )
         stage, tick = "projection_and_priors", time.perf_counter()
-        projection = build_semantic_spec(
+        arguments = [
+            "--ply",
             ply,
+            "--segmentation-manifest",
             segmentation_manifest,
+            "--calibration",
             calibration,
+            "--out",
             out / "projection",
-            scene_spec=scene_spec,
-            priors_file=priors_file,
-            min_points=min_points,
-            min_score=min_score,
-        )
+            "--min-points",
+            min_points,
+            "--min-score",
+            min_score,
+        ]
+        for flag, value in (
+            ("--scene-spec", scene_spec),
+            ("--priors-file", priors_file),
+        ):
+            if value is not None:
+                arguments.extend([flag, value])
+        cpu_stage("projection", arguments)
+        projection = read_json(out / "projection/projection.json")
         steps.append({"stage": stage, "wall_s": time.perf_counter() - tick})
         generated_spec = out / "projection" / "scene_spec.json"
+        spec_sha256 = digest(generated_spec)
+        ensure_unchanged(frozen)
         stage, tick = "usd_authoring", time.perf_counter()
-        prepare_scene(ply, out / "scene", generated_spec)
+        cpu_stage(
+            "authoring",
+            ["--ply", ply, "--out", out / "scene", "--scene-spec", generated_spec],
+        )
         steps.append({"stage": stage, "wall_s": time.perf_counter() - tick})
+        ensure_unchanged(frozen)
         stage, tick = "independent_usd_audit", time.perf_counter()
         code = _worker(
             [
@@ -181,7 +330,8 @@ def run_semantic_assets(
                 str(out / "physical_audit.json"),
             ],
             out / "logs" / "physical_audit.log",
-            worker_timeout_s,
+            remaining(),
+            **({"cancel_event": cancel_event} if cancel_event is not None else {}),
         )
         steps.append(
             {"stage": stage, "wall_s": time.perf_counter() - tick, "exit_code": code}
@@ -191,10 +341,21 @@ def run_semantic_assets(
                 "Independent USD audit failed to run; see logs/physical_audit.log"
             )
         audit = read_json(out / "physical_audit.json")
+        remaining()
+        ensure_unchanged(frozen)
+        if digest(generated_spec) != spec_sha256:
+            raise ValueError(
+                "Generated scene specification changed during authoring/audit"
+            )
+        if code == 0:
+            verify_physical_receipt(
+                audit, directory=out / "scene", scene_spec=generated_spec
+            )
         if any(
             digest(package / name) != value for name, value in implementation.items()
         ):
             raise RuntimeError("Pipeline implementation changed during execution")
+        remaining()
         result.update(
             status="AUDIT_FAILED" if code else projection["status"],
             semantic_manifest={
@@ -218,18 +379,24 @@ def run_semantic_assets(
                 "physical_audit": "physical_audit.json",
             },
         )
-    except Exception as error:
+    except BaseException as error:
         failed_step = {
             "stage": stage,
             "wall_s": time.perf_counter() - tick,
-            "status": "FAILED",
+            "status": "TIMEOUT"
+            if isinstance(error, ProcessTimeoutError)
+            else "CANCELLED"
+            if isinstance(error, ProcessCancelledError)
+            else "FAILED"
+            if isinstance(error, Exception)
+            else "INTERRUPTED",
         }
         if steps and steps[-1]["stage"] == stage:
             steps[-1] = failed_step
         else:
             steps.append(failed_step)
         result.update(
-            status="FAILED",
+            status=failed_step["status"],
             failed_stage=stage,
             error=f"{type(error).__name__}: {error}",
         )
@@ -244,8 +411,45 @@ def run_semantic_assets(
     return result
 
 
+def _internal_worker(argv):
+    """Private CPU stage dispatch; the public workflow owns budgets and receipts."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="stage", required=True)
+    projection = subparsers.add_parser("projection")
+    projection.add_argument("--ply", type=Path, required=True)
+    projection.add_argument("--segmentation-manifest", type=Path, required=True)
+    projection.add_argument("--calibration", type=Path, required=True)
+    projection.add_argument("--out", type=Path, required=True)
+    projection.add_argument("--scene-spec", type=Path)
+    projection.add_argument("--priors-file", type=Path)
+    projection.add_argument("--min-points", type=int, default=16)
+    projection.add_argument("--min-score", type=float, default=0.25)
+    authoring = subparsers.add_parser("authoring")
+    authoring.add_argument("--ply", type=Path, required=True)
+    authoring.add_argument("--out", type=Path, required=True)
+    authoring.add_argument("--scene-spec", type=Path, required=True)
+    args = parser.parse_args(argv)
+    if args.stage == "projection":
+        build_semantic_spec(
+            args.ply,
+            args.segmentation_manifest,
+            args.calibration,
+            args.out,
+            scene_spec=args.scene_spec,
+            priors_file=args.priors_file,
+            min_points=args.min_points,
+            min_score=args.min_score,
+        )
+    else:
+        prepare_scene(args.ply, args.out, args.scene_spec)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI exit 0 means candidate ready; 2 means review/audit blocked, not release."""
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "internal-worker":
+        return _internal_worker(argv[1:])
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ply", type=Path, required=True)
     parser.add_argument("--calibration", type=Path, required=True)
@@ -267,16 +471,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--min-points", type=int, default=16)
     parser.add_argument("--min-score", type=float, default=0.25)
     parser.add_argument("--worker-timeout-s", type=float, default=1200.0)
+    parser.add_argument("--timeout-s", type=float, default=3600.0)
+    parser.add_argument("--device-inventory", type=Path)
+    parser.add_argument("--lock-dir", type=Path, default=Path(DEFAULT_LOCK_DIR))
     args = vars(parser.parse_args(argv))
     args["output_dir"] = args.pop("out")
     try:
+        if args["device_inventory"] is not None:
+            args["device_inventory"] = read_json(args["device_inventory"])
         result = run_semantic_assets(**args)
+    except (ProcessTimeoutError, ProcessCancelledError) as error:
+        print(
+            json.dumps(
+                {
+                    "status": "TIMEOUT"
+                    if isinstance(error, ProcessTimeoutError)
+                    else "CANCELLED",
+                    "error": str(error),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 2
     except (
         ValueError,
         OSError,
         KeyError,
         TypeError,
         RuntimeError,
+        TimeoutError,
         subprocess.SubprocessError,
     ) as error:
         print(

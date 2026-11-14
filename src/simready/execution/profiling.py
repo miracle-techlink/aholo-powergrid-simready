@@ -3,10 +3,11 @@
 import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from threading import Event
 
 from simready.core.artifacts import digest, read_json, write_json
 from simready.core.types import JsonObject, PathLike
-from simready.execution.processes import run_process
+from simready.execution.processes import ProcessCancelledError, run_process
 
 
 def profile_command(
@@ -22,6 +23,7 @@ def profile_command(
     usage_file: PathLike | None = None,
     metadata: JsonObject | None = None,
     pass_fds: Sequence[int] = (),
+    cancel_event: Event | None = None,
 ) -> JsonObject:
     """Run a command once; record failures and unknown usage without claiming zero.
 
@@ -60,17 +62,30 @@ def profile_command(
             stderr=directory / "stderr.log",
             env=None if env is None else dict(env),
             pass_fds=tuple(pass_fds),
+            cancel_event=cancel_event,
         )
         report.update(
             status="SUCCESS" if process.returncode == 0 else "FAILED",
             returncode=process.returncode,
             process_seconds=process.seconds,
         )
+    except ProcessCancelledError as error:
+        report.update(
+            status="CANCELLED",
+            error=str(error),
+            process_seconds=error.seconds,
+        )
     except (OSError, TimeoutError) as error:
         report.update(
             status="TIMEOUT" if isinstance(error, TimeoutError) else "FAILED",
             error=f"{type(error).__name__}: {error}",
         )
+    except BaseException as error:
+        report.update(
+            status="FAILED" if isinstance(error, Exception) else "INTERRUPTED",
+            error=f"{type(error).__name__}: {error}",
+        )
+        raise
     finally:
         report.update(
             ended_unix_s=time.time(),

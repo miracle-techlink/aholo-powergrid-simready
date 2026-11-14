@@ -21,6 +21,8 @@ flowchart LR
 
 ## 一键运行
 
+需要检查动作对物性假设是否敏感时，使用新增[固定控制器鲁棒性入口](../../docs/cup-robustness.md)。`robustness.json` 给出带单位与来源声明的质量/接触摩擦区间，以及不重叠的 development/heldout 种子；它不改变本例的成功阈值，也不会训练策略。
+
 需要已准备资产，Isaac Docker 镜像和模型环境。环境安装、镜像构建见仓库 [Isaac 部署说明](../../docs/deployment.md)。
 
 ```bash

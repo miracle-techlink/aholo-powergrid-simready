@@ -157,11 +157,14 @@ def test_failed_retry_creates_new_receipt_without_overwriting_success(
             "--out",
             str(output),
             "--doctor",
+            "--resource-kind",
+            "cpu",
             "--accept-eula",
         ],
     )
     monkeypatch.setattr(
-        "simready.execution.isaac_container.execute_container", lambda command: 2
+        "simready.execution.isaac_container.execute_container",
+        lambda command, **kwargs: 2,
     )
     assert main() == 2
     assert (output / "launch.json").read_text() == original
@@ -187,7 +190,7 @@ def test_launch_errors_are_distinguished_from_interruptions(
     def fail(*args, **kwargs):
         raise error_type("fixture launch failure")
 
-    monkeypatch.setattr("simready.execution.isaac_launcher.subprocess.run", fail)
+    monkeypatch.setattr("simready.execution.isaac_launcher.run_process", fail)
     with pytest.raises(error_type):
         launch_worker(
             ["-c", "pass"],
@@ -195,6 +198,7 @@ def test_launch_errors_are_distinguished_from_interruptions(
             assets=assets,
             output=output,
             backend="local",
+            resource_kind="cpu",
         )
     receipt = json.loads((output / "launch.json").read_text())
     assert receipt["status"] == status

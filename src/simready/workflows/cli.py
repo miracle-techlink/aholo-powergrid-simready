@@ -13,6 +13,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     import sys
 
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "baseline-matrix":
+        from simready.workflows.baseline_matrix import main as matrix_main
+
+        return matrix_main(argv[1:])
+    if argv and argv[0] == "cup-robustness":
+        from simready.workflows.cup_robustness import main as robustness_main
+
+        return robustness_main(argv[1:])
     if argv and argv[0] == "semantic-assets":
         from simready.workflows.semantic_assets import main as assets_main
 
@@ -23,6 +31,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return scene_main(argv[1:])
     parser = argparse.ArgumentParser(prog="simready workflows", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser(
+        "baseline-matrix",
+        help="Frozen reconstruction backend comparisons with explicit evidence scope",
+    )
+    commands.add_parser(
+        "cup-robustness",
+        help="Frozen mass/contact randomization with independent task audits",
+    )
     commands.add_parser("scene", help="Reproduce a source-bound prepared scene")
     commands.add_parser(
         "semantic-assets",

@@ -8,10 +8,33 @@ import os
 import shutil
 import sys
 import time
+from functools import partial
 from pathlib import Path
 
 from simready.core.artifacts import digest, object_digest, read_json, write_json
 from simready.execution.isaac_launcher import default_repository, launch_worker
+from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
+from simready.workflows.physical_estimation import (
+    estimation_plan,
+    produce_estimation,
+    verify_compilation,
+    verify_estimation,
+)
+from simready.workflows.stage_ledger import VideoStages as VideoStages
+from simready.workflows.stage_ledger import failure_status as _failure_status
+from simready.workflows.video_contracts import (
+    verify_delivery as verify_delivery,
+)
+from simready.workflows.video_contracts import (
+    verify_delivery_result,
+    verify_observations_result,
+    verify_reconstruction_result,
+    verify_worker_inputs,
+)
+
+
+class StageCompletedError(Exception):
+    """Requested intermediate stage completed; no scene-delivery claim."""
 
 
 def implementation_identity():
@@ -65,11 +88,13 @@ def make_plan(args):
     # Scene asset files must be explicitly packaged by a supported spec field.
     if args.scene_spec and output in args.scene_spec.expanduser().resolve().parents:
         raise ValueError("Scene specification must live outside the run directory")
+    worker_timeout = getattr(args, "worker_timeout", 7200.0)
     for name, value in (
         ("observation_fps", args.observation_fps),
         ("timeout", args.reconstruction_timeout),
+        ("worker_timeout", worker_timeout),
     ):
-        if not math.isfinite(value) or value <= 0:
+        if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
             raise ValueError(f"{name} must be finite and positive")
     manifest = args.reconstruction_manifest
     reconstruction = None
@@ -93,76 +118,46 @@ def make_plan(args):
         "spec": spec,
         "reconstruction_manifest": reconstruction,
         "reconstruction_timeout_s": args.reconstruction_timeout,
+        "worker_timeout_s": worker_timeout,
         "observation_fps": args.observation_fps,
         "prepare_only": args.prepare_only,
+        "physical_estimation": estimation_plan(
+            getattr(args, "physical_candidate", None),
+            getattr(args, "physical_estimation_request", None),
+            output,
+            getattr(args, "physical_timeout", 300),
+        ),
         "stages": ["observations", "reconstruction", "worker_inputs", "scene_delivery"],
         "delivery_scope": "Source-bound scene and survey; no automatic robot task or whole-scene certification",
     }
+    if plan["physical_estimation"] is not None:
+        plan["stages"].insert(2, "physical_estimation")
+    configuration = getattr(args, "pipeline_configuration", None)
+    if configuration is not None:
+        from simready.ingestion.reconstruction_providers import plan_provider
+        from simready.workflows.pipeline_spec import (
+            stage_recipes,
+            worker_source_identity,
+        )
+
+        provider = plan_provider(configuration["reconstruction"], video)
+        plan["pipeline"] = {**configuration, "reconstruction": provider}
+        plan["pipeline"]["worker_source"] = worker_source_identity(repo)
+        for ref in provider["dependencies"]:
+            if Path(ref["path"]).is_relative_to(output):
+                raise ValueError(
+                    "Reconstruction provider input must live outside the run"
+                )
+        if configuration.get("decomposition"):
+            for ref in configuration["decomposition"]["dependencies"]:
+                if Path(ref["path"]).is_relative_to(output):
+                    raise ValueError("Decomposition inputs must live outside the run")
+            plan["stages"].insert(2, "decomposition")
+        plan["stage_contracts"] = stage_recipes(plan)
+        if getattr(args, "until", None) and args.until not in plan["stages"]:
+            raise ValueError("Requested stage is not enabled in this pipeline")
     plan["identity"] = object_digest(plan)
     return plan
-
-
-def checked_artifact(root, item):
-    if not isinstance(item.get("path"), str) or Path(item["path"]).is_absolute():
-        raise ValueError("Artifact paths must be relative to their run")
-    if type(item.get("bytes")) is not int or item["bytes"] <= 0:
-        raise ValueError("Stage artifacts must be nonempty files")
-    path = (root / item["path"]).resolve()
-    if not path.is_relative_to(root) or not path.is_file():
-        raise ValueError("Stage artifact escaped its run or is missing")
-    if path.stat().st_size != item["bytes"] or digest(path) != item["sha256"]:
-        raise ValueError(f"Stage artifact changed: {item['path']}")
-    return path
-
-
-def artifact_record(root, path):
-    path = Path(path).resolve()
-    if not path.is_relative_to(root) or not path.is_file():
-        raise ValueError("Stage outputs must be files inside the run")
-    return {
-        "path": str(path.relative_to(root)),
-        "bytes": path.stat().st_size,
-        "sha256": digest(path),
-    }
-
-
-class VideoStages:
-    """Each completed stage is reusable only while all recorded artifacts match."""
-
-    def __init__(self, root, identity):
-        self.root, self.identity, self.history = root, identity, []
-
-    def run(self, name, action):
-        receipt = self.root / "stages" / f"{name}.json"
-        if receipt.exists():
-            old = read_json(receipt)
-            if old["identity"] != self.identity:
-                raise ValueError("Stage identity differs from the current run plan")
-            if not isinstance(old.get("artifacts"), list) or not old["artifacts"]:
-                raise ValueError("Resume stage requires nonempty artifact evidence")
-            for item in old["artifacts"]:
-                checked_artifact(self.root, item)
-            if old.get("name") != name or not isinstance(old.get("result"), dict):
-                raise ValueError("Resume stage name or result is invalid")
-            self.history.append({"name": name, "reused": True, "wall_s": 0.0})
-            print(f"[{name}] REUSED (hash verified)", flush=True)
-            return old["result"]
-        print(f"[{name}] RUNNING", flush=True)
-        started = time.monotonic()
-        result, paths = action()
-        record = {
-            "identity": self.identity,
-            "name": name,
-            "wall_s": time.monotonic() - started,
-            "result": result,
-            "artifacts": [artifact_record(self.root, path) for path in paths],
-        }
-        if not record["artifacts"]:
-            raise ValueError("A successful stage must provide verifiable artifacts")
-        write_json(receipt, record)
-        self.history.append({"name": name, "reused": False, "wall_s": record["wall_s"]})
-        print(f"[{name}] COMPLETE ({record['wall_s']:.2f}s)", flush=True)
-        return result
 
 
 def fresh_attempt(root, name):
@@ -178,86 +173,30 @@ def fresh_attempt(root, name):
     raise RuntimeError("Too many attempts; choose another run directory")
 
 
-def verify_delivery(target, evidence, source, render_config):
-    expected_level = (
-        "SCENE_EXPORTED" if source["prepare_only"] else "SCENE_SURVEY_READY"
-    )
-    if (
-        evidence.get("schema_version") != 1
-        or evidence.get("status") != "COMPLETE"
-        or evidence.get("delivery_level") != expected_level
-        or evidence.get("scene") != "scene/scene.usda"
-        or evidence.get("robot_task_validated") is not False
-        or evidence.get("metric_scale_independently_validated") is not False
-    ):
-        raise ValueError(
-            "Worker delivery contract is incomplete or has unsupported claims"
-        )
-    for field, source_field in (
-        ("source_video_sha256", "source_video_sha256"),
-        ("reconstruction_sha256", "ply_sha256"),
-        ("scene_spec_sha256", "spec_sha256"),
-    ):
-        if evidence.get(field) != source[source_field]:
-            raise ValueError("Scene delivery is bound to different input artifacts")
-    artifacts = evidence.get("artifacts")
-    if not isinstance(artifacts, list) or not artifacts:
-        raise ValueError("Delivery requires nonempty artifact evidence")
-    paths = set()
-    for item in artifacts:
-        if item["path"] in paths:
-            raise ValueError("Repeated delivery artifact")
-        paths.add(item["path"])
-        checked_artifact(target, item)
-    required = {"scene/scene.usda", "scene/preparation.json", "structure-audit.json"}
-    if not source["prepare_only"]:
-        required |= {
-            "render/render.json",
-            "render/camera.json",
-            "render/scene_survey.mp4",
-        }
-    if not required.issubset(paths):
-        raise ValueError(
-            "Delivery is missing required scene, audit or render artifacts"
-        )
-    preparation = read_json(target / "scene/preparation.json")
-    if preparation["source_sha256"] != source["ply_sha256"]:
-        raise ValueError("Prepared scene is bound to another reconstruction")
-    if read_json(target / "structure-audit.json").get("passed") is not True:
-        raise ValueError("Generated scene has no passing structure audit")
-    if source["prepare_only"]:
-        if evidence.get("video") is not None:
-            raise ValueError("Prepare-only run cannot claim a rendered video")
-        return
-    if evidence.get("video") != "render/scene_survey.mp4":
-        raise ValueError("Unexpected or missing survey video")
-    receipt = read_json(target / "render/render.json")
-    if (
-        receipt.get("status") != "COMPLETE"
-        or receipt["video_sha256"] != digest(target / evidence["video"])
-        or receipt["scene_sha256"] != digest(target / evidence["scene"])
-        or receipt["spec_sha256"] != source["spec_sha256"]
-        or any(
-            receipt[key] != render_config[key]
-            for key in ("width", "height", "fps", "frames")
-        )
-    ):
-        raise ValueError("Survey receipt does not match requested inputs or video")
-
-
 def execute_video(args, plan):
     from simready.ingestion.reconstruction_stage import prepare_reconstruction
     from simready.ingestion.video_frames import extract_frames
 
     root, video = Path(plan["out"]), Path(plan["video"])
-    if root.exists() and not args.resume:
+    upgrade = getattr(args, "upgrade", False)
+    normalized = "pipeline" in plan
+    if normalized and (args.resume or upgrade):
+        provider_config = plan["pipeline"]["reconstruction"]["config"]
+        if provider_config.get("environment_identity", {}).get("secret_names"):
+            raise ValueError(
+                "Secret-dependent reconstruction requires a fresh --out; resume/upgrade reuse is disabled"
+            )
+    if upgrade and not normalized:
+        raise ValueError("Upgrade requires a versioned --pipeline configuration")
+    if root.exists() and not (args.resume or upgrade):
         raise FileExistsError(
             "Run exists; use --resume with identical inputs or choose a new --out"
         )
-    if args.resume and not (root / "run-plan.json").is_file():
+    if (args.resume or upgrade) and not (root / "run-plan.json").is_file():
         raise ValueError("Resume requires an existing run-plan.json")
     if (
-        not args.reconstruction_manifest
+        not normalized
+        and not args.reconstruction_manifest
         and not args.submit_reconstruction
         and not any(
             (root / "reconstruction" / name).is_file()
@@ -276,10 +215,21 @@ def execute_video(args, plan):
         if args.resume:
             if read_json(root / "run-plan.json") != plan:
                 raise ValueError(
-                    "Resume input/config changed; create a new run and reuse its reconstruction manifest"
+                    "Resume input/config changed; use --upgrade for a versioned pipeline or a new output"
                 )
+        elif upgrade:
+            previous = read_json(root / "run-plan.json")
+            if "pipeline" not in previous:
+                raise ValueError(
+                    "Legacy runs retain strict resume; use a fresh directory for the normalized pipeline"
+                )
+            write_json(root / "plans" / (previous["identity"] + ".json"), previous)
+            write_json(root / "plans" / (plan["identity"] + ".json"), plan)
+            write_json(root / "run-plan.json", plan)
         else:
             write_json(root / "run-plan.json", plan)
+            if normalized:
+                write_json(root / "plans" / (plan["identity"] + ".json"), plan)
         stages = VideoStages(root, plan["identity"])
         started = time.monotonic()
         state = {
@@ -291,6 +241,34 @@ def execute_video(args, plan):
             "metric_scale_independently_validated": False,
             "scale_provenance_is_user_supplied": True,
         }
+
+        def run_stage(name, action, validate=None):
+            def verify_stage(result, artifacts):
+                if implementation_identity() != plan["implementation_sha256"]:
+                    raise ValueError("Runtime source changed before stage publication")
+                if normalized and name == "scene_delivery":
+                    from simready.workflows.pipeline_spec import verify_worker_identity
+
+                    verify_worker_identity(plan["pipeline"], plan["repo"])
+                if validate is not None:
+                    validate(result, artifacts)
+
+            options = (
+                {"stage_identity": plan["stage_contracts"]["identities"][name]}
+                if normalized
+                else {}
+            )
+            result = stages.run(name, action, verify_stage, **options)
+            if getattr(args, "until", None) == name and name != plan["stages"][-1]:
+                state.update(
+                    status="STAGE_READY",
+                    stage=name,
+                    stage_result=result,
+                    delivery_level="INTERMEDIATE",
+                    completed_pipeline=False,
+                )
+                raise StageCompletedError()
+            return result
 
         def observation():
             target = fresh_attempt(root, "observations")
@@ -306,6 +284,32 @@ def execute_video(args, plan):
             ]
 
         def reconstruction():
+            if normalized:
+                from simready.core.evidence import resolve_ref
+                from simready.ingestion.reconstruction_providers import prepare_provider
+
+                provider = plan["pipeline"]["reconstruction"]
+                for ref in provider["dependencies"]:
+                    resolve_ref(ref, Path.cwd())
+                if provider["config"]["provider"] in {"aholo", "command"}:
+                    target = (
+                        root
+                        / "reconstruction"
+                        / plan["stage_contracts"]["identities"]["reconstruction"]
+                    )
+                else:
+                    target = fresh_attempt(root, "reconstruction")
+                result = prepare_provider(
+                    provider["config"],
+                    video,
+                    target,
+                    args.reconstruction_timeout,
+                    authorize_cloud=args.submit_reconstruction,
+                )
+                paths = [
+                    p for p in target.rglob("*") if p.is_file() and p.stat().st_size
+                ]
+                return result, paths
             result = prepare_reconstruction(
                 video,
                 root / "reconstruction",
@@ -317,13 +321,49 @@ def execute_video(args, plan):
                 raise ValueError("Reconstruction belongs to another source video")
             return result, [Path(result["manifest_path"]), Path(result["ply_path"])]
 
-        def inputs(reconstruction_result):
+        def validate_reconstruction(result, artifacts):
+            # The legacy result contract permits additive provider metadata.
+            legacy = {
+                key: value
+                for key, value in result.items()
+                if key not in {"bundle_path", "execution_mode"}
+            }
+            verify_reconstruction_result(
+                legacy,
+                artifacts,
+                root=root,
+                source_video_sha256=plan["source_video_sha256"],
+            )
+            if normalized:
+                from simready.ingestion.reconstruction_providers import (
+                    verify_provider_bundle,
+                )
+                from simready.workflows.stage_ledger import checked_artifact
+
+                recorded = {checked_artifact(root, row) for row in artifacts}
+                bundle = Path(result["bundle_path"])
+                if bundle not in recorded:
+                    raise ValueError("Provider bundle missing from stage artifacts")
+                verify_provider_bundle(
+                    bundle, source_video_sha256=plan["source_video_sha256"]
+                )
+
+        def inputs(reconstruction_result, compiled_spec, physical_directory=None):
             target = fresh_attempt(root, "worker_inputs")
             target.mkdir()
             shutil.copy2(reconstruction_result["ply_path"], target / "splats.ply")
             if digest(target / "splats.ply") != reconstruction_result["ply_sha256"]:
                 raise ValueError("Reconstruction changed while copying worker inputs")
-            write_json(target / "scene-spec.json", plan["spec"])
+            write_json(target / "scene-spec.json", compiled_spec)
+            physical_binding = {}
+            if physical_directory is not None:
+                shutil.copytree(physical_directory, target / "physical")
+                physical_binding["physical_compilation"] = verify_compilation(
+                    target / "physical",
+                    compiled_spec,
+                    plan["source_video_sha256"],
+                    reconstruction_result["ply_sha256"],
+                )
             write_json(
                 target / "input.json",
                 {
@@ -331,13 +371,23 @@ def execute_video(args, plan):
                     "ply_sha256": reconstruction_result["ply_sha256"],
                     "spec_sha256": digest(target / "scene-spec.json"),
                     "prepare_only": args.prepare_only,
+                    "worker_timeout_s": plan["worker_timeout_s"],
+                    **physical_binding,
                 },
             )
-            return {"path": str(target)}, list(target.iterdir())
+            return {"path": str(target)}, [p for p in target.rglob("*") if p.is_file()]
 
         def delivery(input_result):
+            if normalized:
+                from simready.workflows.pipeline_spec import verify_worker_identity
+
+                verify_worker_identity(plan["pipeline"], plan["repo"])
             target = fresh_attempt(root, "execution")
             assets = Path(input_result["path"])
+            input_hashes = {
+                name: digest(assets / name)
+                for name in ("input.json", "scene-spec.json", "splats.ply")
+            }
             worker_assets, worker_out = (
                 ("/assets", "/output")
                 if args.backend == "docker"
@@ -359,16 +409,29 @@ def execute_video(args, plan):
                 python=args.python,
                 image=args.image,
                 gpu=args.gpu,
+                timeout_s=plan["worker_timeout_s"],
+                resource_kind="cpu" if args.prepare_only else "rtx",
             )
             status_path = target / "pipeline-status.json"
             status = read_json(status_path) if status_path.is_file() else {}
+            if status.get("status") == "TIMEOUT":
+                raise ProcessTimeoutError(
+                    plan["worker_timeout_s"], status.get("wall_s", 0)
+                )
+            if status.get("status") == "CANCELLED":
+                raise ProcessCancelledError(status.get("wall_s", 0))
+            if status.get("status") == "INTERRUPTED":
+                raise KeyboardInterrupt("Scene worker was interrupted")
             if code or status.get("status") != "COMPLETE":
                 raise RuntimeError(
                     f"Scene worker failed at {status.get('stage', 'launch')}; inspect {target}"
                 )
             evidence = read_json(target / "delivery.json")
-            source = read_json(assets / "input.json")
-            verify_delivery(target, evidence, source, plan["spec"]["render"])
+            if any(
+                digest(assets / name) != expected
+                for name, expected in input_hashes.items()
+            ):
+                raise ValueError("Worker changed its frozen inputs during execution")
             return {"execution": str(target), **evidence}, [
                 status_path,
                 target / "delivery.json",
@@ -382,13 +445,105 @@ def execute_video(args, plan):
             ):
                 state["stage"] = name
                 write_json(root / "summary.json", state)
-                result = stages.run(name, action)
+                result = run_stage(
+                    name,
+                    action,
+                    validate_reconstruction
+                    if name == "reconstruction"
+                    else partial(
+                        verify_observations_result,
+                        root=root,
+                        source_video_sha256=plan["source_video_sha256"],
+                        fps=plan["observation_fps"],
+                    ),
+                )
                 if name == "reconstruction":
                     recon = result
+            compiled_spec, physical_directory = plan["spec"], None
+            if normalized and plan["pipeline"].get("decomposition"):
+                from simready.workflows.semantic_stage import (
+                    produce_decomposition,
+                    verify_decomposition,
+                )
+
+                state["stage"] = "decomposition"
+                write_json(root / "summary.json", state)
+                semantic_plan = plan["pipeline"]["decomposition"]
+                semantic = run_stage(
+                    "decomposition",
+                    lambda: produce_decomposition(
+                        semantic_plan,
+                        recon,
+                        plan["spec"],
+                        fresh_attempt(root, "decomposition"),
+                    ),
+                    partial(
+                        verify_decomposition,
+                        root=root,
+                        plan=semantic_plan,
+                        reconstruction=recon,
+                        spec=plan["spec"],
+                    ),
+                )
+                compiled_spec = read_json(semantic["scene_spec"])
+                semantic_binding = read_json(
+                    Path(semantic["directory"]) / "binding.json"
+                )
+                state["decomposition"] = {
+                    "binding": str(Path(semantic["directory"]) / "binding.json"),
+                    "semantic_accuracy": "NOT_EVALUATED",
+                    "status": semantic_binding["status"],
+                    "release_authorized": False,
+                }
+            if plan.get("physical_estimation") is not None:
+                state["stage"] = "physical_estimation"
+                write_json(root / "summary.json", state)
+                physical = run_stage(
+                    "physical_estimation",
+                    lambda: produce_estimation(
+                        plan["physical_estimation"],
+                        compiled_spec,
+                        plan["source_video_sha256"],
+                        recon["ply_sha256"],
+                        fresh_attempt(root, "physical_estimation"),
+                    ),
+                    partial(
+                        verify_estimation,
+                        root=root,
+                        spec=compiled_spec,
+                        video_sha256=plan["source_video_sha256"],
+                        ply_sha256=recon["ply_sha256"],
+                    ),
+                )
+                physical_directory = Path(physical["directory"])
+                compiled_spec = read_json(physical_directory / "compiled-spec.json")
             state["stage"] = "worker_inputs"
-            prepared = stages.run("worker_inputs", lambda: inputs(recon))
+            write_json(root / "summary.json", state)
+            prepared = run_stage(
+                "worker_inputs",
+                lambda: inputs(recon, compiled_spec, physical_directory),
+                partial(
+                    verify_worker_inputs,
+                    root=root,
+                    source_video_sha256=plan["source_video_sha256"],
+                    ply_sha256=recon["ply_sha256"],
+                    scene_spec=compiled_spec,
+                    prepare_only=plan["prepare_only"],
+                    worker_timeout_s=plan["worker_timeout_s"],
+                ),
+            )
             state["stage"] = "scene_delivery"
-            result = stages.run("scene_delivery", lambda: delivery(prepared))
+            write_json(root / "summary.json", state)
+            result = run_stage(
+                "scene_delivery",
+                lambda: delivery(prepared),
+                partial(
+                    verify_delivery_result,
+                    root=root,
+                    inputs=Path(prepared["path"]),
+                    render_config=plan["spec"]["render"],
+                ),
+            )
             if implementation_identity() != plan["implementation_sha256"]:
                 raise ValueError(
                     "Runtime source changed during execution; results are not accepted"
@@ -403,12 +558,21 @@ def execute_video(args, plan):
                 else None,
                 reconstruction_new_submission=recon["new_submission"],
                 metric_scale_verified=result["metric_scale_verified"],
+                physical_asset_validation=result["physical_asset_validation"],
                 limitations=result["limitations"],
+                physical_estimation=result.get("physical_estimation", "NOT_RUN"),
             )
+            return state, 0
+        except StageCompletedError:
+            if implementation_identity() != plan["implementation_sha256"]:
+                state.update(
+                    status="FAILED", error="Runtime source changed during execution"
+                )
+                return state, 2
             return state, 0
         except Exception as error:
             state.update(
-                status="FAILED",
+                status=_failure_status(error),
                 error=str(error),
                 resume="Repeat the identical command with --resume; completed stages are hash-checked",
             )
@@ -432,6 +596,23 @@ def main(argv=None):
         type=Path,
         help="Coordinate/scale, explicit objects and survey camera JSON",
     )
+    physical = parser.add_mutually_exclusive_group()
+    physical.add_argument(
+        "--physical-candidate",
+        type=Path,
+        help="Import an evidence-bound object mass candidate",
+    )
+    physical.add_argument(
+        "--physical-estimation-request",
+        type=Path,
+        help="Run a declared NeRF2Physics estimate before compiling scene physics",
+    )
+    parser.add_argument(
+        "--physical-timeout",
+        type=float,
+        default=300,
+        help="CPU physical-estimation stage execution limit in seconds",
+    )
     parser.add_argument(
         "--reconstruction-manifest",
         type=Path,
@@ -443,6 +624,12 @@ def main(argv=None):
         help="Explicitly upload this video and submit a new Aholo job if no receipt exists",
     )
     parser.add_argument("--reconstruction-timeout", type=float, default=7200)
+    parser.add_argument(
+        "--worker-timeout",
+        type=float,
+        default=7200.0,
+        help="Maximum seconds for the local or Docker scene worker; recorded in the run plan",
+    )
     parser.add_argument("--observation-fps", type=float, default=2)
     parser.add_argument("--backend", choices=("docker", "local"), default="docker")
     parser.add_argument(

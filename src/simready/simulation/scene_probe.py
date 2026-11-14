@@ -31,9 +31,9 @@ def main():
         from pxr import Gf, PhysxSchema, UsdGeom, UsdPhysics, UsdUtils
         from scipy.spatial import cKDTree
 
+        from simready.assets.physics.physical_authoring import bind_contact_material
         from simready.core.artifacts import digest, scene_dependency_hashes, write_json
-        from simready.repair.floor_openings import inside_convex_polygon
-        from simready.simulation.physical_authoring import bind_contact_material
+        from simready.geometry.polygons import inside_convex_polygon
 
         carb.settings.get_settings().set_bool("/physics/updateToUsd", True)
         carb.settings.get_settings().set_bool("/physics/updateVelocitiesToUsd", True)

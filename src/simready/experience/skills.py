@@ -85,12 +85,29 @@ class SkillLibrary:
         good = [
             e
             for e in episodes
-            if e["outcome"] == "ACCEPTED" and e["comparison"]["candidate_passed"]
+            if e["outcome"] == "ACCEPTED"
+            and e["comparison"]["candidate_passed"]
+            and e.get("source_images_sha256")
+            and all(
+                e[key] == skill[key]
+                for key in (
+                    "family",
+                    "policy_key",
+                    "plugin_id",
+                    "plugin_version",
+                    "parameters",
+                )
+            )
+            and sorted(set(e["defect_kinds"])) == skill["defect_kinds"]
         ]
-        # Distinct scenes and a separately declared regression run. No sealed
-        # feedback is exposed and this does not confer scene release authority.
-        return len({e["scene_id"] for e in good}) >= 2 and any(
-            e["role"] == "validation" for e in good
+        # Renaming a scene or replaying the same reference image cannot count as
+        # independent validation. Content diversity does not prove capture origin.
+        return any(
+            a["role"] == "validation"
+            and a["scene_id"] != b["scene_id"]
+            and not set(a["source_images_sha256"]) & set(b["source_images_sha256"])
+            for a in good
+            for b in good
         )
 
     def promote(self, skill_id: str) -> JsonObject:
@@ -99,7 +116,7 @@ class SkillLibrary:
             raise ValueError("Retired skill cannot be silently reactivated")
         if not self.eligible(skill):
             raise ValueError(
-                "Skill needs two distinct passing scenes, including a validation campaign"
+                "Skill needs two distinct passing scenes with disjoint reference images, including a validation campaign"
             )
         with self.episodes.database.transaction() as db:
             changed = db.execute(

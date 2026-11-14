@@ -7,6 +7,14 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from simready.core.validation import number
+from simready.execution.gpu_capability import delegated_capability
+from simready.execution.process_scope import (
+    ChildScope,
+    parent_cancellation,
+    parent_cancelled,
+)
+
 
 @dataclass(frozen=True)
 class ProcessResult:
@@ -20,33 +28,100 @@ class ProcessTimeoutError(TimeoutError):
         self.seconds = seconds
 
 
+class ProcessCancelledError(RuntimeError):
+    def __init__(self, seconds):
+        super().__init__("Worker cancelled by its owner")
+        self.seconds = seconds
+
+
 def run_process(
-    argv, *, cwd, timeout, stdout, stderr, env=None, input_text=None, pass_fds=()
+    argv,
+    *,
+    cwd,
+    timeout,
+    stdout,
+    stderr,
+    env=None,
+    input_text=None,
+    pass_fds=(),
+    cancel_event=None,
+    cancellation_grace_s=20,
+    inherit_cancellation=True,
 ):
+    """Run an owned process group; optional cancellation is polled within 0.1 s.
+
+    Cooperating nested owners receive a private cancellation pipe and at most
+    cancellation_grace_s to unwind their groups and receipts before hard kill.
+    Noncooperating children are killed immediately. OS-level uninterruptible IO
+    can delay the final reap. Deliberately detached, unmanaged sessions are outside
+    this contract. Cleanup commands may explicitly ignore inherited cancellation.
+    """
+    if number(timeout, "timeout") <= 0:
+        raise ValueError("timeout must be positive")
+    number(cancellation_grace_s, "cancellation_grace_s")
+    inherited = parent_cancellation(enabled=inherit_cancellation)
     start = time.monotonic()
+    if parent_cancelled(inherited) or (
+        cancel_event is not None and cancel_event.is_set()
+    ):
+        raise ProcessCancelledError(0.0)
     for path in (stdout, stderr):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with Path(stdout).open("wb") as out, Path(stderr).open("wb") as err:
-        process = subprocess.Popen(
-            argv,
-            cwd=cwd,
-            env=env,
-            stdout=out,
-            stderr=err,
-            stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
-            start_new_session=True,
-            pass_fds=pass_fds,
-        )
-        try:
-            process.communicate(
-                input_text.encode() if input_text is not None else None, timeout=timeout
+    scope = ChildScope()
+    process = None
+    try:
+        with (
+            delegated_capability(
+                dict(os.environ) if env is None else env, pass_fds
+            ) as (child_env, child_fds),
+            Path(stdout).open("wb") as out,
+            Path(stderr).open("wb") as err,
+        ):
+            process = subprocess.Popen(
+                argv,
+                cwd=cwd,
+                env=scope.environment(child_env),
+                stdout=out,
+                stderr=err,
+                stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+                start_new_session=True,
+                pass_fds=tuple(set(child_fds) | set(scope.pass_fds)),
             )
-            return ProcessResult(process.returncode, time.monotonic() - start)
-        except subprocess.TimeoutExpired as error:
-            raise ProcessTimeoutError(timeout, time.monotonic() - start) from error
-        finally:
+            scope.spawned()
             try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
+                payload = input_text.encode() if input_text is not None else None
+                while True:
+                    if parent_cancelled(inherited) or (
+                        cancel_event is not None and cancel_event.is_set()
+                    ):
+                        raise ProcessCancelledError(time.monotonic() - start)
+                    remaining = timeout - (time.monotonic() - start)
+                    if remaining <= 0:
+                        raise ProcessTimeoutError(timeout, time.monotonic() - start)
+                    try:
+                        process.communicate(
+                            payload,
+                            timeout=remaining
+                            if cancel_event is None and inherited is None
+                            else min(remaining, 0.1),
+                        )
+                        break
+                    except subprocess.TimeoutExpired:
+                        # communicate retains partially sent input when retried.
+                        payload = None
+                if parent_cancelled(inherited) or (
+                    cancel_event is not None and cancel_event.is_set()
+                ):
+                    raise ProcessCancelledError(time.monotonic() - start)
+                return ProcessResult(process.returncode, time.monotonic() - start)
+            finally:
+                try:
+                    scope.request_stop(process, cancellation_grace_s)
+                finally:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait()
+    finally:
+        scope.close()

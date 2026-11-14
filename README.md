@@ -29,6 +29,8 @@ Video to SimReady 将视频观测、三维重建、分层场景资产、机器�
 
 新增[星巴克双桌搬杯示例](examples/starbucks_grasp/README.md)：G2_90d 用合成 RGB-D 定位独立重建杯子，经关节驱动抓起并放到另一张桌子，保存接触力、实测位姿和独立验收。它覆盖固定基座与局部修复任务区，尚不代表整店修复或自主导航通过。
 
+新增[物性随机化与搬杯鲁棒性评测](docs/cup-robustness.md)：`simready workflows cup-robustness` 冻结质量、接触摩擦和随机种子，生成独立 USD，在 Isaac 中执行原控制器并保留失败。首轮 4 个参数样本中 3 个通过、1 个出现倾倒/放置偏差超限，详见[实验记录](docs/benchmarks/cup-robustness-20261114/README.md)；这是小样本仿真评测，不是已完成策略训练或实物标定。
+
 [星巴克场景修复与 Sim-Ready 验收](examples/starbucks_simready/README.md)为搬杯和 30 秒巡逻提供统一入口：复用变电站的清晰来源选择与显式资产替换方法，将模糊高斯表面替换为原片约束的桌椅、墙面、地砖和材质，同步生成碰撞、物性来源与承托测试。原模型可恢复；未观测纹理单独标记，真实物性尚未标定。远端巡逻修订恢复原约 4.8 米跨度与固定转向镜头，并加入远端窗区、第二张长桌及全转身角度净空检查；仍属于编排展示。
 
 场景版本已区分：最初的参数化局部背景只作物理验证；原场景模式保留原视频重建的全量高斯与原桌面外观，并用 `--require-original-video` 检查来源。原重建的模糊、残影等问题仍须单独修复和验收。
@@ -177,7 +179,7 @@ flowchart LR
 
 修复工作流另行组合：冻结观测 → 缺陷清单 → 注册方案 → Agent 选择 → 可信插件执行 → 独立复验 → 接受或回退。经验只在版本和评估规则相容时复用，Skill 晋升需要跨场景验证；真实修复插件仍在逐项接入，新视频默认入口不会隐式运行整个循环。
 
-[完整流程图](docs/report/pipeline-overview.md) · [3D 资产如何成为 SimReady](docs/report/asset-to-simready.md) · [十个代码模块的内部构造](docs/software-architecture.md)
+[完整流程图](docs/report/pipeline-overview.md) · [3D 资产如何成为 SimReady](docs/report/asset-to-simready.md) · [代码模块的内部构造](docs/software-architecture.md)
 
 ## 验证结果
 
@@ -207,12 +209,17 @@ flowchart LR
 
 ## 扩展与开发
 
-运行包位于 `src/simready`，按十个领域组织；CLI 只负责分发。完整类、函数、调用链和状态归属见[软件架构](docs/software-architecture.md)。
+运行包位于 `src/simready`，按十一个领域组织；CLI 只负责分发。完整类、函数、调用链和状态归属见[软件架构](docs/software-architecture.md)。
+
+新增[规范 pipeline 与重建 baseline 接入](docs/pipeline.md)：`simready run --pipeline` 配置阶段，`--until/--resume/--upgrade` 支持独立验证与局部升级，`simready workflows baseline-matrix` 冻结比较输入。新增 assets 域和 artifact/aholo/command 重建适配；CPU 示例不代表模型质量。[本轮验收](docs/audits/2026-11-14-modular-pipeline.md)：1055 个测试通过、1 个跳过，实际 CPU 交付、恢复和局部升级通过。
+
+2026-11-14 [此前工程收口](docs/audits/2026-11-14-remaining-delivery.md)归并嵌套取消与 GPU 租约，拆分杯任务运行／控制／记录职责。[NeRF2Physics](docs/nerf2physics.md)数值适配和质量候选已接入视频→USD主链；真实新模型推断及[搬杯反馈候选](docs/cup-stability-candidate.md)的 GPU 成对验证仍待完成。GaussianProperty 尚未接入。模块责任与剩余验收统一见[软件架构](docs/software-architecture.md)。
 
 | 要扩展的能力 | 对应模块 | 入口文档 |
 |---|---|---|
 | 视频输入与重建来源 | `ingestion`、`workflows` | [采集、编排与执行构造](docs/report/code-parts-workflows.md) |
-| 资产、机器人、任务与录像 | `simulation`、`geometry` | [仿真模块构造](docs/report/code-parts-simulation.md) |
+| 外观、对象关联、物性与 USD 编译 | `assets`、`geometry` | [规范 pipeline](docs/pipeline.md) |
+| 机器人、任务与录像 | `simulation`、`geometry` | [仿真模块构造](docs/report/code-parts-simulation.md) |
 | 修复插件与模型决策 | `repair`、`agents` | [质量与决策模块](docs/report/code-parts-quality.md) |
 | 指标、经验和 Skill | `evaluation`、`experience` | [验收与经验机制](docs/report/code-parts-quality.md) |
 | 进程、缓存、资源与证据 | `execution`、`core` | [执行机制](docs/report/code-parts-workflows.md)、[基础模块](docs/report/code-parts-foundation.md) |

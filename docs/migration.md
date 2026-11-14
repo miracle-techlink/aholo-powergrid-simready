@@ -7,6 +7,25 @@ python -m pip install -e '.[test,dev]'
 simready --help
 ```
 
+## 2026-11-14：资产域与规范 pipeline
+
+新入口为 `simready run --pipeline pipeline.json --out <新目录>`；`--video`、`--scene` 及旧资产 CLI 保留。配置和示例见[规范 pipeline](pipeline.md)。这次没有升级 scene spec 或批量改写历史回执。
+
+| 旧模块（仍可导入） | 当前唯一实现 |
+|---|---|
+| `simulation.gaussian_asset` | `assets.appearance.gaussian_asset` |
+| `simulation.semantic_projection` | `assets.association.semantic_projection` |
+| `simulation.physical_spec` / `physical_authoring` / `category_priors` / `physical_candidate` | `assets.physics` 下同名模块 |
+| `simulation.scene_preparation` | `assets.compilation.scene_preparation`，旧 `python -m` 委派新入口 |
+| `simulation.depth_projection` | `geometry.depth_projection` |
+| `workflows.video_pipeline.VideoStages` | `workflows.stage_ledger.VideoStages`，旧导出仍指向同一类 |
+
+资产兼容模块是别名，旧 monkeypatch 和新导入共享状态；并行调用旧／新 CLI 的 USD 字节等价性有 CPU 回归。场景专用 `workflows.appearance_collision` 已移回 `examples/starbucks_simready/appearance_collision.py`，正式运行时不再导入该示例；它不是通用公共接口。
+
+旧运行继续使用原计划严格恢复；进入 `--pipeline` 使用新目录。新配置运行支持 `--resume`（完全同计划）和 `--upgrade`（保存新旧计划、重验阶段身份后局部复用）。按阶段身份保存的成功回执不可覆盖，失败留在独立 attempt。依赖 secret 的 command 需要新输出目录，不支持恢复或升级复用。
+
+新重建研究算法优先接 `ingestion.reconstruction_providers` 的 command 配置，再通过 `baseline-matrix` 冻结比较输入。当前只支持 Gaussian PLY 交付；类型声明和适配空间不代表 mesh、VGGT、AnySplat 等方法已经跑通。
+
 ## 包与公开接口
 
 | 旧接口 / 模块 | 新接口 / 模块 |

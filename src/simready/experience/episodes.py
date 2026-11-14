@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from simready.core.artifacts import digest, object_digest, read_json
+from simready.core.evidence import resolve_ref
 from simready.core.types import JsonObject, PathLike
 from simready.evaluation.regression import compare_scorecards
 from simready.experience.database import ExperienceDatabase
@@ -14,6 +15,24 @@ def verify_reference(reference):
     if not path.is_absolute() or digest(path) != reference["sha256"]:
         raise ValueError("Memory evidence missing or changed")
     return path
+
+
+def source_images(evidence, before):
+    """Bind promotion evidence to reference content, independently of scene labels."""
+    if "protocol" not in evidence:
+        return None  # Legacy episodes remain readable but cannot prove scene diversity.
+    path = verify_reference(evidence["protocol"])
+    if digest(path) != before["protocol_sha256"]:
+        raise ValueError("Memory protocol differs from its scorecard")
+    protocol = read_json(path)
+    if protocol.get("phase") != "development" or not protocol.get("views"):
+        raise ValueError("Memory requires development reference views")
+    hashes = set()
+    for view in protocol["views"]:
+        reference = view["rgb"]
+        resolve_ref(reference, path.parent)
+        hashes.add(reference["sha256"])
+    return sorted(hashes)
 
 
 class EpisodeStore:
@@ -56,6 +75,11 @@ class EpisodeStore:
             or before["candidate_sha256"] != value["candidate_sha256"]
         ):
             raise ValueError("Episode candidate or phase binding mismatch")
+        sources = source_images(evidence, before)
+        if sources is not None:
+            value["source_images_sha256"] = sources
+        else:
+            value.pop("source_images_sha256", None)
         if "after" in evidence:
             after = read_json(evidence["after"]["path"])
             if after.get("phase") != "development":
@@ -92,6 +116,14 @@ class EpisodeStore:
             raise ValueError("Memory payload identity changed")
         for ref in value["evidence"].values():
             verify_reference(ref)
+        # Historical callers could supply a protocol before source hashes were
+        # derived. Keep those records readable without upgrading their evidence.
+        if "source_images_sha256" in value:
+            sources = source_images(
+                value["evidence"], read_json(value["evidence"]["before"]["path"])
+            )
+            if value["source_images_sha256"] != sources:
+                raise ValueError("Memory source evidence changed")
         return dict(value, episode_id=row["episode_id"])
 
     def get(self, episode_id: str) -> JsonObject:

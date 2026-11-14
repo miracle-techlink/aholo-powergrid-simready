@@ -38,6 +38,46 @@ def test_repository_obeys_declared_architecture():
             "import simready_bridge",
             "forbidden runtime import simready_bridge",
         ),
+        (
+            "core/artifacts.py",
+            'import importlib as loader; loader.import_module("simready.workflows.video_pipeline")',
+            "forbidden dependency core -> workflows",
+        ),
+        (
+            "evaluation/protocol.py",
+            'from importlib import import_module as load; load(name="simready.repair.planning")',
+            "forbidden dependency evaluation -> repair",
+        ),
+        (
+            "core/artifacts.py",
+            '__import__("legacy.gaussian_repair")',
+            "forbidden runtime import legacy",
+        ),
+        (
+            "core/artifacts.py",
+            "import importlib; importlib.import_module(requested_module)",
+            "dynamic import requires a declared CLI router",
+        ),
+        (
+            "assets/physics/physical_spec.py",
+            "from simready.simulation import physical_spec",
+            "forbidden dependency assets -> simulation",
+        ),
+        (
+            "assets/association/semantic_projection.py",
+            "from simready.workflows import semantic_assets",
+            "forbidden dependency assets -> workflows",
+        ),
+        (
+            "assets/compilation/scene_preparation.py",
+            "from simready.evaluation import physical_assets",
+            "forbidden dependency assets -> evaluation",
+        ),
+        (
+            "geometry/depth_projection.py",
+            "from simready.assets.appearance import gaussian_asset",
+            "forbidden dependency geometry -> assets",
+        ),
     ],
 )
 def test_checker_rejects_boundary_regressions(tmp_path, module, statement, expected):

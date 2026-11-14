@@ -8,21 +8,132 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from simready.core.artifacts import digest, read_json
+
+_PHASES = [
+    "SETTLE",
+    "APPROACH",
+    "CLOSE",
+    "LIFT",
+    "HOLD",
+    "TRANSFER",
+    "PLACE",
+    "RELEASE",
+    "RETREAT",
+    "VERIFY",
+]
+_CONTACT_FILTERS = [
+    "/World/G2/gripper_r_left_support_link",
+    "/World/G2/gripper_r_right_support_link",
+    "/World/Table",
+    "/World/TableB",
+]
+
+
+def _measurements(path, result):
+    """Require the recorded clock and sensor identities before using sample indices."""
+    with np.load(path, allow_pickle=False) as archive:
+        data = {
+            name: archive[name]
+            for name in (
+                "poses",
+                "joints",
+                "commands",
+                "forces",
+                "environment_forces",
+                "phases",
+                "dt",
+            )
+        }
+    phases = data["phases"]
+    if phases.ndim != 1 or len(phases) == 0:
+        raise ValueError("Rollout requires a nonempty phase vector")
+    count = len(phases)
+    if type(result.get("frames")) is not int or result["frames"] != count:
+        raise ValueError("Rollout frame count differs from the worker receipt")
+    dt = data["dt"]
+    if dt.shape != () or not np.isfinite(dt) or float(dt) <= 0:
+        raise ValueError("Rollout dt must be a positive finite scalar")
+    for key, expected in (("dt_s", float(dt)), ("physics_hz", 1 / float(dt))):
+        value = result.get(key)
+        if type(value) not in (int, float) or not math.isclose(
+            value, expected, rel_tol=1e-9
+        ):
+            raise ValueError("Rollout sampling clock differs from the worker receipt")
+    body_names, joint_names = (
+        result.get("body_names", []),
+        result.get("joint_names", []),
+    )
+    environment = result.get("environment_filters", [])
+    if (
+        not isinstance(body_names, list)
+        or len(body_names) < 2
+        or body_names[-1] != "Cup"
+        or not isinstance(joint_names, list)
+        or not joint_names
+        or not isinstance(environment, list)
+        or not {"/World/Table", "/World/TableB"} <= set(environment)
+        or result.get("contact_filters") != _CONTACT_FILTERS
+    ):
+        raise ValueError("Rollout sensor identities are incomplete or reordered")
+    shapes = {
+        "poses": (count, len(body_names), 7),
+        "joints": (count, len(joint_names)),
+        "commands": (count, len(joint_names)),
+        "forces": (count, len(_CONTACT_FILTERS), 3),
+        "environment_forces": (count, len(body_names) - 1, len(environment), 3),
+    }
+    if any(data[name].shape != shape for name, shape in shapes.items()):
+        raise ValueError("Rollout arrays do not match the recorded sensor inventory")
+    if any(not np.isfinite(data[name]).all() for name in shapes):
+        raise ValueError("Rollout contains nonfinite measurements")
+    return data
+
+
+def _asset_evidence_matches(assets, expected, stage):
+    required = {"task.usda", "plan.json", "robot.usdc", "cup.usdc"}
+    if (assets / "randomization.json").is_file():
+        required.add("randomization.json")
+    if not isinstance(expected, dict) or not required <= set(expected):
+        return False
+    for name, sha in expected.items():
+        path = (assets / name).resolve()
+        if (
+            Path(name).is_absolute()
+            or ".." in Path(name).parts
+            or not path.is_relative_to(assets)
+            or not path.is_file()
+            or digest(path) != sha
+        ):
+            return False
+    if stage.GetCompositionErrors():
+        return False
+    for layer in stage.GetUsedLayers():
+        if layer.anonymous:
+            continue
+        path = Path(layer.realPath).resolve()
+        if not path.is_relative_to(assets) or expected.get(
+            str(path.relative_to(assets))
+        ) != digest(path):
+            return False
+    return True
+
 
 def audit(assets, rollout):
     from pxr import Usd, UsdGeom, UsdPhysics
 
-    assets, rollout = Path(assets), Path(rollout)
-    result = json.loads((rollout / "result.json").read_text())
-    plan = json.loads((assets / "plan.json").read_text())
-    from simready.core.artifacts import digest
-
-    data = np.load(rollout / "rollout.npz", allow_pickle=False)
+    assets, rollout = Path(assets).resolve(), Path(rollout).resolve()
+    result_sha256 = digest(rollout / "result.json")
+    rollout_sha256 = digest(rollout / "rollout.npz")
+    result = read_json(rollout / "result.json")
+    plan = read_json(assets / "plan.json")
+    data = _measurements(rollout / "rollout.npz", result)
     pose = data["poses"][:, -1]
     rotation = Rotation.from_quat(pose[:, 3:])
     upright = np.clip(rotation.as_matrix()[:, 2, 2], -1, 1)
@@ -65,25 +176,16 @@ def audit(assets, rollout):
             if any(str(t).startswith("/World/Cup") for t in targets):
                 attachment.append(str(p.GetPath()))
     checks = {
-        "evidence_hashes_match": bool(result.get("asset_sha256"))
-        and all(
-            digest(assets / name) == value
-            for name, value in result.get("asset_sha256", {}).items()
+        "evidence_hashes_match": _asset_evidence_matches(
+            assets, result.get("asset_sha256"), stage
         )
-        and digest(rollout / "rollout.npz") == result.get("rollout_sha256"),
-        "complete_phase_sequence": list(dict.fromkeys(phases))
-        == [
-            "SETTLE",
-            "APPROACH",
-            "CLOSE",
-            "LIFT",
-            "HOLD",
-            "TRANSFER",
-            "PLACE",
-            "RELEASE",
-            "RETREAT",
-            "VERIFY",
-        ],
+        and rollout_sha256 == result.get("rollout_sha256")
+        and digest(rollout / "result.json") == result_sha256
+        and digest(rollout / "rollout.npz") == rollout_sha256,
+        "complete_phase_sequence": phases[
+            np.r_[True, phases[1:] != phases[:-1]]
+        ].tolist()
+        == _PHASES,
         "finite_measured_arrays": all(
             np.isfinite(data[k]).all()
             for k in ["poses", "joints", "forces", "environment_forces"]
@@ -134,6 +236,9 @@ def audit(assets, rollout):
         "schema_version": 1,
         "status": "PASS" if all(checks.values()) else "FAILED",
         "scope": "fixed-base two-table manipulation only",
+        "result_sha256": result_sha256,
+        "rollout_sha256": rollout_sha256,
+        "asset_sha256": result.get("asset_sha256", {}),
         "checks": checks,
         "metrics": {
             "hold_clearance_min_m": float(bottom[hold].min() - top),

@@ -11,7 +11,7 @@ simready run --video /path/to/input.mp4 --out runs/new-scene \
 
 重建凭据保存在运行目录；API key 只从宿主环境读取，不写入镜像或worker输入。新视频模式的云重建客户端在宿主 CPU 侧执行上传、监控和下载，重建计算由供应商服务执行，随后将已验证PLY与场景规格作为只读输入送入Isaac worker。worker依次导出USD、独立检查结构、渲染巡览。完整参数、CPU导出、恢复和服务器命令见[新视频示例](../examples/new_video/README.md)。
 
-`--scene-spec`填写坐标/尺度来源和显式对象，不是把旧场景参数自动搬到新视频。`--prepare-only --backend local --python /path/to/usd/python`可以只做CPU构建与结构检查；渲染需要Isaac与RTX。当前新视频模式支持本机与Docker；服务器通过SSH执行相同命令，尚无本轮远端实跑结果。
+`--scene-spec`填写坐标/尺度来源和显式对象，不是把旧场景参数自动搬到新视频。含显式对象时，结构检查后还会运行独立物性读回并核对报告哈希；没有对象时该项为 `NOT_EVALUATED`。`--prepare-only --backend local --python /path/to/usd/python`可以只做CPU构建与上述检查；渲染需要Isaac与RTX。当前新视频模式支持本机与Docker；服务器通过SSH执行相同命令，尚无本轮远端实跑结果。统一执行层的迁移目标见[架构收敛设计](software-architecture.md#infra-设计与迁移)。
 
 ## 默认使用统一入口
 
@@ -25,6 +25,10 @@ simready run --scene starbucks --accept-eula
 默认资产为 `data/{scene}`、后端为 Docker；两个任务顺序运行。`--backend local --python /path/to/isaac/python` 选择本机环境，`--backend ssh --ssh-host rtx-server --repo /srv/simready --assets /srv/data/substation` 在已准备的远端检出中调用同一入口。SSH 不自动同步代码或资产，远端环境仍须预先准备。
 
 `--dry-run` 只读取输入和生成计划；`--bundle-spec` 可在启动前导出已有场景。每次使用独立运行目录，根目录的 `summary.json` 给出状态、失败阶段及实际视频路径。完整目录和命令见[场景示例](../examples/scenes/README.md)。下文的 `scripts/launch_isaac.py` 是保留的底层兼容入口，用于检查环境或已有配置。
+
+新视频与已有场景入口均支持 `--worker-timeout`（默认 7200 秒，必须为正有限数），限制一次 Isaac worker 的执行时间；已有场景的 CPU 资产导出另有 `--bundle-timeout`（默认 1200 秒）。期限写入计划，新视频恢复需要保持相同期限。云重建仍使用独立的 `--reconstruction-timeout`，这些值不合并冒充整个管线的单一期限。
+
+底层启动器对应 `--timeout-s` 与 `--cleanup-timeout-s`（默认且最多 15 秒）；Python `launch_worker` 另支持取消事件。执行期限与清理宽限分别记录，超时为 `TIMEOUT`、主动取消为 `CANCELLED`、外部中断为 `INTERRUPTED`。嵌套受管理 worker 通过继承管道接收取消，父进程死亡产生 EOF；已经确认合作的子进程先获得最多 20 秒退出宽限，再清理所属进程组。未遵守协议而主动脱离的进程不在保证范围。新视频失败记录在 `stage-failures/`，成功阶段仍在 `stages/`，失败重验不覆盖原成功回执。
 
 ## 环境分层
 
@@ -61,6 +65,10 @@ python scripts/launch_isaac.py --backend docker --assets data/substation \
 
 每次任务使用新的输出目录；已有 `delivery/` 时拒绝再次运行。输出不能与资产目录重叠，也不能等于或包含源码目录，可放在源码内的 `runs/` 下。首次启动写入独占的 `launch.json`，后续环境检查或失败重试另写 `launch-UUID.json`，保留启动记录历史。
 
+启动器将 worker 输出保存到与启动回执同名的 `.stdout.log` / `.stderr.log`，终端打印路径。Docker 失败 / 超时 / 取消后的清理先检查本次随机 ownership 标签，再按完整 container ID 删除，避免仅凭名称误删别的实例。清理日志与状态单独保留；无法连接 daemon 或确认容器身份时记为未确认，不把“本地客户端退出”当成“容器已删除”。本轮清理验证使用受控 Docker 替身，没有新增真实 GPU 容器实跑。
+
+复用 shader 缓存时使用私有复制：拒绝源 / 目标软链接和相互重叠的缓存目录，先暂存所有文件再发布，普通复制失败不会发布半份新树。缓存预热不提供跨运行共享可写目录，也不表示已经完成性能优化。
+
 镜像不包含场景数据、模型权重、API 密钥或用户账号。镜像首次构建与冷启动单独计时；场景交付记录不混入安装时间。若目标镜像更改了默认 UID/GID、SDK 路径或 Python ABI，先修改部署合同并重新做 doctor。
 
 物理镜像在安装 Isaac Lab 后运行 [repair_sdk_urllib3.py](../deploy/isaac/repair_sdk_urllib3.py)，将 SDK 中受依赖升级影响的 urllib3 副本替换为完整安装分发，并逐文件核对。版本与替换路径记录在镜像内 `/opt/simready/sdk_urllib3_repair.json`；不将不同版本的零散文件混合。镜像重建后的验证范围需重新记录，不能直接沿用旧镜像的任务结果。
@@ -86,6 +94,8 @@ rsync -a rtx-server:/srv/runs/substation-001/delivery/ runs/downloaded-substatio
 ```
 
 SSH 传输只负责执行一个已引用且正确转义的命令，不是分布式集群调度器。输入包和 output 路径都解释为服务器路径。长时间运行建议在服务器的 `tmux`/作业系统中执行同一条 Docker 命令；当前 SSH 连接中断不提供跨节点作业现场恢复。已有 Aholo receipt 的网络恢复是独立功能。
+
+底层 `launch_isaac.py --backend ssh` 将执行 / 清理期限传给远端，并用 `--ssh-local-output` 指定本地 SSH 日志目录（默认在本地 `runs/ssh-launch-<UUID>`）；远程 `--out` 不用作本地目录。SSH 失败、超时或取消时远端状态保持 UNKNOWN，不能据此确认远端已取消。`simready run --scene ... --backend ssh` 会传递 worker / bundle 期限；其 SSH 客户端本身仍是原路径，尚未迁到上述独立本地回执合同。
 
 ## 已验证与未验证
 

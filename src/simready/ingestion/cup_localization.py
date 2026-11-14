@@ -18,15 +18,18 @@ from scipy.ndimage import binary_erosion, label
 from scipy.spatial import cKDTree
 
 from simready.core.artifacts import digest
+from simready.geometry.cameras import pinhole_intrinsics, rigid_inverse
 
 
 def backproject(depth, calibration):
-    k = np.asarray(calibration["intrinsics"], float)
+    depth = np.asarray(depth, dtype=float)
+    if depth.ndim != 2 or not depth.size:
+        raise ValueError("Depth must be a nonempty raster")
+    k = pinhole_intrinsics(calibration["intrinsics"])
     transform = np.asarray(calibration["camera_to_world"], float)
-    if k.shape != (3, 3) or transform.shape != (4, 4):
+    if transform.shape != (4, 4):
         raise ValueError("Invalid camera calibration")
-    if min(k[0, 0], k[1, 1]) <= 0 or not np.isfinite(k).all():
-        raise ValueError("Invalid intrinsics")
+    rigid_inverse(transform)
     y, x = np.indices(depth.shape)
     safe = np.where(np.isfinite(depth) & (depth > 0), depth, np.nan)
     camera = np.stack(
@@ -87,7 +90,7 @@ def propose(observation, output, center, radius, top):
     image.crop((*lo, *hi)).resize(tuple((hi - lo) * scale)).save(output / "image.png")
     cropped = depth[lo[1] : hi[1], lo[0] : hi[0]]
     np.save(output / "depth.npy", np.repeat(np.repeat(cropped, scale, 0), scale, 1))
-    k = np.asarray(calibration["intrinsics"])
+    k = pinhole_intrinsics(calibration["intrinsics"]).copy()
     # Nearest depth resampling preserves the original pixel's center ray.
     k[:2, 2] -= lo
     k[:2] *= scale

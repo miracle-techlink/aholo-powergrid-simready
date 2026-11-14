@@ -46,8 +46,21 @@ def verify_candidate(
         raise ValueError(
             "Independent verifier rejected the evidence; inspect verifier stderr"
         )
+    scorecard = read_json(directory / "scorecard.json")
+    if scorecard.get("phase") == "sealed_release":
+        # Sealed workers deliberately omit defects.json. Absence is not evidence
+        # of a clean candidate, and raw observations must not become repair input.
+        withheld = {
+            "schema_version": 1,
+            "phase": "sealed_release",
+            "status": "WITHHELD",
+            "reason": "Sealed evaluation withholds diagnostic feedback",
+            "protocol_sha256": protocol_hash,
+            "candidate_sha256": digest(candidate),
+        }
+        return scorecard, dict(withheld), dict(withheld)
     return (
-        read_json(directory / "scorecard.json"),
+        scorecard,
         read_json(directory / "defects.json"),
         read_json(directory / "observations.json"),
     )

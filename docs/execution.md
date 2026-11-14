@@ -2,6 +2,28 @@
 
 状态：2026-11-12，v0.4。当前实现单机调度基础和可迁移的验收模块；下面的集群部署与常驻模型池是下一阶段设计，尚未部署。
 
+2026-11-14 可靠性收敛：任务环境已改为显式继承合同，旧计划保留执行能力但关闭未约束环境的缓存；Isaac 本地 / Docker 启动器共用有期限的进程执行器。当前接口见下文及[部署说明](deployment.md)。历史吞吐设计仍保留，性能提速实验保持暂停。
+
+同日后续完成[嵌套取消和统一租约](audits/2026-11-14-remaining-delivery.md)：DAG、worker_groups、launcher 及公开 GPU 工作流复用同一个 ResourcePool。旧执行状态和历史缓存规则保持可追溯；没有增加第二个调度器。
+
+## 单机取消、设备与恢复合同
+
+`run_process` 为每个子进程建立所属进程组，同时通过继承管道向嵌套 owner 传递取消。父进程关闭管道或死亡后，合作 worker 逐层退出并记录终态；收到合作确认后最多等待 20 秒，再回收所属进程组。Docker 清理预算最多 15 秒。刻意绕开协议的 detached 进程、不可中断内核 I/O 和远端 SSH 作业不保证被本地取消回收。
+
+宿主按物理 GPU UUID 获取同目录 `.lease` 锁；已持有租约的嵌套本地 worker 通过密封 capability 和锁 FD 借用，不用环境变量布尔开关跳过检查。DAG 的 MIG inventory 必须声明 `physical_uuid`，同卡 MIG 归并到父设备锁。GPU 发现失败时拒绝执行；`resource_kind="cpu"` 不发现／租用 GPU，CPU Docker 不传 `--gpus`。
+
+公开场景入口和语义 CUDA 推断持租约。容器由宿主 launcher 在整个生命周期持租约；`scene_execution`、`video_execution` 和仿真 worker 是内部执行器，不在容器内重复发现或获取宿主租约。直接调用内部 SDK 不属于调度保证。RTX 不能仅靠 CUDA_VISIBLE_DEVICES 隔离，本地多卡需已审查的 renderer 隔离 inventory。
+
+容器清理未确认时在同一租约文件内隔离设备；后续任务拒绝占用，不默默释放为“可用”。恢复入口：
+
+```bash
+.venv/bin/python -m simready execution recover-device \
+  --gpu-uuid GPU-实际物理UUID --lock-dir /tmp/simready-device-leases \
+  --out runs/device_recovery_01 --timeout-s 15
+```
+
+恢复必须验证本次容器 ownership 后移除，或确认已知完整容器 ID 不存在；否则保留隔离并返回 `NEEDS_REVIEW`。输出目录不可复用。命令不删除其他任务的锁／容器。当前真实 CPU 生命周期和受控设备锁测试已通过，真实 Docker daemon 清理与 GPU 行为仍需目标环境回归。
+
 ## 先提高吞吐，再缩短单场景延迟
 
 不同场景可以同时处理。同一场景则必须遵守相机、重建、资产、渲染和验收之间的依赖。一次修复只应使相关资产、视角和下游物理证据失效，未受影响的任务可复用。最终覆盖检查仍需覆盖全部预声明视角，不能只拍修好的位置。
@@ -49,7 +71,7 @@ NVIDIA 官方列明：无 RT Core 的 A100、H100 不受 Isaac Sim 支持。因�
 - `core/artifacts.py`：IO 与数值模块解耦，使用唯一临时文件及原子 JSON 替换，避免并发写入共用 `.tmp`。
 - `evaluation/`：统一观测、缺陷输出、通用资产一致性及独立进程验收。修复插件注册与计划器由 `repair/` 拥有；验收不依赖修复。执行调度器不修改验收阈值。
 
-锁目录必须由同一主机上的所有调度器共享；容器应挂载同一路径。检测到历史 `/tmp/*.gpu.lock` 时 GPU 任务等待并在队列超时后失败，不删除他人锁或终止他人任务。锁只对遵守协议的进程生效；旧工作负载最好放在独立 GPU/节点中，待迁移后再共享。
+锁目录必须由同一主机上的所有宿主调度器共享；launcher 管理的容器由宿主持锁，不需要容器内再挂载同一路径竞争。检测到历史 `/tmp/*.gpu.lock` 时不删除他人锁：DAG 可等待到队列期限，直接 launcher 则返回资源忙。锁只对遵守协议的进程生效；旧工作负载最好放在独立 GPU/节点中，待迁移后再共享。
 
 CPU、RAM 和云端配额目前按调度进程计算，不是跨进程的系统级硬限制；GPU 锁才是跨进程的。生产中一台主机一个调度器，或使用容器/cgroup 配额。显存值来自受信 inventory，未知显存不会当作无限容量；GB10 统一内存应由实测可用预算填写。
 
@@ -65,13 +87,19 @@ CPU、RAM 和云端配额目前按调度进程计算，不是跨进程的系统�
 | `outputs` | 相对于任务产物目录的显式文件名；不允许越界路径或输出文件符号链接 |
 | `runtime_identity` | 固定镜像摘要、驱动、依赖与设备架构身份；必须由部署端正确填写 |
 | `seed`, `parameters`, `quality_profile`, `env` | 进入缓存键的执行配置；worker 必须实际消费这些配置 |
+| `environment.inherit` | 显式允许继承的非秘密变量名；图启动时冻结，最终有效值的摘要进入缓存身份 |
+| `environment.secrets` | 必需凭据变量名；只在内存中读取值，不将值或值摘要写入环境回执；此任务禁用缓存 |
 | `resources` | `kind=cpu/cuda/rtx/cloud`、`cpu`、`ram_gb`；GPU 另需 `vram_gb` |
 | `timeout_s`, `queue_timeout_s` | 运行期限和资源等待期限 |
 | `cache` | 可复现的纯计算任务可开启；付费提交、外部副作用和最终独立验收应关闭 |
 
 `SIMREADY_SEED` 和 `SIMREADY_OUT` 被传入 worker。CUDA worker 通过 `CUDA_VISIBLE_DEVICES=<UUID>` 看到所选设备（内部通常是逻辑卡 0）。RTX inventory 必须声明外部已完成隔离 `rtx_isolated=true`，例如专用单卡渲染容器；这不是自动 Vulkan 隔离或兼容性检测。
 
-任务是可信代码，当前执行器不是安全沙箱。运行时环境继承自父进程：部署端需要固定镜像、环境和输入依赖闭包，不能把可变的系统依赖写成一个长期不变的标识后期待缓存仍正确。敏感密钥通过运行环境注入，不放在计划、`argv` 或仓库中。
+任务是可信代码，当前执行器不是安全沙箱。显式声明 `environment` 后，仅继承 `inherit` / `secrets` 所列变量，再应用非秘密 `env` 字面量和调度器设备 / 输出 / 种子绑定；不会自动继承 PATH、HOME 或 PYTHONPATH。`{"environment":{"inherit":[]}}` 适用于使用绝对解释器路径且无宿主环境依赖的 CPU 夹具。普通部署可按实际需要列出 PATH、LANG、动态库路径等，并固定这些路径指向的运行环境与输入闭包；环境字符串的摘要不能证明磁盘依赖内容未变。
+
+未声明 `environment` 的旧 v1 计划保持完整宿主继承，在图启动时冻结快照，但不读取或发布缓存，回执给出 `legacy_environment_untracked`。显式 `secrets` 同样关闭缓存，原因是 `secret_environment`；既有 `cache=false` 仍有效。普通变量缺失与空字符串有不同身份；`env` 覆盖同名普通继承值，以最终有效值计算身份。秘密变量必须存在，且不能与 `inherit` / `env` 重复；所有合同都不能覆盖调度器保留键。
+
+计划中的 `env` 仅允许非秘密设置。保存到运行目录的 `plan.json` 会脱敏这些字面量并标记 `environment_values_redacted`，标记后的回执不能作为可重放计划提交；应保留原始配置并重新提供凭据环境。秘密值不进入环境元数据或摘要；可信 worker 自己输出的日志不属于自动脱敏范围。密钥不要放在计划、`argv` 或仓库中。
 
 每次执行使用新的 `--out`。重启时使用相同 `--cache` 复用已完成阶段；失败阶段重新执行。云端提交不自动重试，生产适配器还必须实现提供商任务 ID 的持久化及幂等去重。阶段成功表示命令与产物合同成立，**不表示场景验收通过**。
 

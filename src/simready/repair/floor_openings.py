@@ -6,6 +6,8 @@ stair opening from retaining an invisible flat collision floor underneath it.
 
 import numpy as np
 
+from simready.geometry.polygons import inside_convex_polygon as inside_convex_polygon
+
 
 def clip_polygon(vertices, axis, bound, keep_greater):
     """Sutherland–Hodgman clipping against one axis-aligned half plane."""
@@ -102,12 +104,3 @@ def cut_floor_mesh(mesh, local_to_reference, openings):
     )
     mesh.SetNormalsInterpolation("faceVarying")
     return True
-
-
-def inside_convex_polygon(point, polygon):
-    """Boundary-inclusive 2D test, independent of winding direction."""
-    p = np.asarray(polygon, float)
-    edges = np.roll(p, -1, axis=0) - p
-    delta = np.asarray(point, float) - p
-    cross = edges[:, 0] * delta[:, 1] - edges[:, 1] * delta[:, 0]
-    return bool((cross >= -1e-8).all() or (cross <= 1e-8).all())

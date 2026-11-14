@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "task": "fixed-base-cup-contact-v1",
+  "source": "Exploratory simulation hypotheses around the unmeasured demo presets; not measured material intervals or a calibrated distribution.",
+  "parameters": {
+    "cup_mass_kg": {
+      "unit": "kg",
+      "low": 0.06,
+      "high": 0.12
+    },
+    "cup_static_friction": {
+      "unit": "1",
+      "low": 0.55,
+      "high": 1.0
+    },
+    "gripper_static_friction": {
+      "unit": "1",
+      "low": 0.6,
+      "high": 0.95
+    },
+    "table_static_friction": {
+      "unit": "1",
+      "low": 0.4,
+      "high": 0.8
+    },
+    "dynamic_static_ratio": {
+      "unit": "1",
+      "low": 0.7,
+      "high": 0.9
+    }
+  },
+  "episodes": [
+    {
+      "id": "dev-01",
+      "split": "development",
+      "seed": 101
+    },
+    {
+      "id": "dev-02",
+      "split": "development",
+      "seed": 102
+    }
+  ]
+}

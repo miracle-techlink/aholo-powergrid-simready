@@ -3,13 +3,14 @@
 import json
 import os
 import sys
+import time
 
 import pytest
 
 from simready.execution.worker_groups import run_worker_group
 
 
-def test_children_share_owned_lease_with_bounded_overlap(tmp_path):
+def test_children_share_owned_lease_with_bounded_overlap(tmp_path, device_inventory):
     script = tmp_path / "worker.py"
     script.write_text(
         "import json,time,sys\n"
@@ -32,7 +33,11 @@ def test_children_share_owned_lease_with_bounded_overlap(tmp_path):
         for i in range(3)
     ]
     report = run_worker_group(
-        jobs, directory=tmp_path / "group", max_workers=2, lock_dir=tmp_path / "locks"
+        jobs,
+        directory=tmp_path / "group",
+        max_workers=2,
+        lock_dir=tmp_path / "locks",
+        device_inventory=device_inventory,
     )
     assert report["status"] == "SUCCESS"
     spans = [json.loads((tmp_path / f"span{i}.json").read_text()) for i in range(3)]
@@ -81,7 +86,7 @@ def test_plain_file_or_environment_cannot_bypass_exclusive_lease(tmp_path):
     assert fake.exists()
 
 
-def test_failed_child_releases_only_its_group_lock(tmp_path):
+def test_failed_child_releases_only_its_group_lock(tmp_path, device_inventory):
     report = run_worker_group(
         [
             {
@@ -92,7 +97,59 @@ def test_failed_child_releases_only_its_group_lock(tmp_path):
             }
         ],
         directory=tmp_path / "group",
+        device_inventory=device_inventory,
         lock_dir=tmp_path / "locks",
     )
     assert report["status"] == "FAILED"
     assert not (tmp_path / "locks/simready_runtime.gpu.lock").exists()
+
+
+def test_interrupted_group_cancels_owned_workers_before_releasing_lease(
+    tmp_path, monkeypatch, device_inventory
+):
+    from simready.execution import worker_groups
+
+    ready, late = tmp_path / "ready", tmp_path / "late"
+    profile = worker_groups.profile_command
+
+    def interrupt_after_worker_start(*args, **kwargs):
+        if kwargs["name"] == "interruptor":
+            deadline = time.monotonic() + 5
+            while not ready.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert ready.exists()
+            raise KeyboardInterrupt("fixture group interruption")
+        return profile(*args, **kwargs)
+
+    monkeypatch.setattr(worker_groups, "profile_command", interrupt_after_worker_start)
+    code = f"import pathlib,time; pathlib.Path({str(ready)!r}).touch(); time.sleep(.7); pathlib.Path({str(late)!r}).touch(); time.sleep(10)"
+    jobs = [
+        {
+            "name": name,
+            "argv": [sys.executable, "-c", code],
+            "cwd": tmp_path,
+            "timeout_s": 3,
+        }
+        for name in ["interruptor", "running"]
+    ]
+    start = time.monotonic()
+    with pytest.raises(KeyboardInterrupt):
+        run_worker_group(
+            jobs,
+            directory=tmp_path / "group",
+            device_inventory=device_inventory,
+            max_workers=2,
+            lock_dir=tmp_path / "locks",
+        )
+    assert time.monotonic() - start < 2
+    report = json.loads((tmp_path / "group/group.json").read_text())
+    assert report["status"] == "INTERRUPTED"
+    assert report["summary"]["stage_count"] == 2
+    assert set(report["summary"]["failed_stages"]) == {"interruptor", "running"}
+    assert (
+        json.loads((tmp_path / "group/running/profile.json").read_text())["status"]
+        == "CANCELLED"
+    )
+    assert not (tmp_path / "locks/simready_runtime.gpu.lock").exists()
+    time.sleep(0.8)
+    assert not late.exists()

@@ -1,6 +1,5 @@
 """Execute one prepared task, verify its outputs and publish its cache entry."""
 
-import os
 import re
 import shutil
 import sys
@@ -11,7 +10,11 @@ from pathlib import Path
 from simready.core.artifacts import digest, write_json
 from simready.execution.artifact_cache import cache_hit as _cache_hit
 from simready.execution.artifact_cache import hash_outputs as _hash_outputs
-from simready.execution.processes import ProcessTimeoutError, run_process
+from simready.execution.processes import (
+    ProcessCancelledError,
+    ProcessTimeoutError,
+    run_process,
+)
 
 
 def _command(task, inputs, results, output):
@@ -35,9 +38,11 @@ def _command(task, inputs, results, output):
     ]
 
 
-def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
+def execute_task(
+    task, prepared, results, cache, task_dir, lease, queue_s, cancel_event=None
+):
     started = time.monotonic()
-    inputs, hashes, dependencies, key = prepared
+    inputs, hashes, dependencies, key, environment = prepared
     output = task_dir / "files"
     record = dict(
         task_id=task["id"],
@@ -53,6 +58,7 @@ def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
         provider_cost=None,
         token_usage=None,
         peak_vram_bytes=None,
+        **environment.receipt(),
     )
     try:
         output.mkdir(parents=True)
@@ -65,14 +71,16 @@ def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
             ):
                 raise ValueError("Dependency changed while waiting for resources")
         command = _command(task, inputs, results, output)
-        env = dict(os.environ)
-        env.update(task.get("env", {}))
+        env = dict(environment.values)
         env["SIMREADY_OUT"] = str(output)
         env["SIMREADY_SEED"] = str(task.get("seed", 0))
         # A declared CPU/cloud task cannot accidentally initialize a CUDA model.
         env["CUDA_VISIBLE_DEVICES"] = lease.gpu["uuid"] if lease.gpu else ""
         if lease.gpu:
             env["SIMREADY_GPU_UUID"] = lease.gpu["uuid"]
+            env.update(lease.environment)
+        else:
+            env.pop("SIMREADY_GPU_UUID", None)
         try:
             elapsed = run_process(
                 command,
@@ -82,15 +90,21 @@ def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
                 stdout=task_dir / "stdout.log",
                 stderr=task_dir / "stderr.log",
                 pass_fds=lease.pass_fds,
+                cancel_event=cancel_event,
             )
             code = elapsed.returncode
             record["process_seconds"] = elapsed.seconds
         except ProcessTimeoutError as error:
             record.update(status="TIMEOUT", process_seconds=error.seconds)
             raise
+        except ProcessCancelledError as error:
+            record.update(status="CANCELLED", process_seconds=error.seconds)
+            raise
         record["returncode"] = code
         if code != 0:
             raise ValueError(f"Worker exited with code {code}; see stderr.log")
+        if lease.quarantined:
+            raise ValueError("GPU lease was quarantined by a nested worker")
         if {name: digest(path) for name, path in inputs.items()} != hashes:
             raise ValueError("Input changed while worker was running")
         for dep, expected in dependencies.items():
@@ -100,8 +114,11 @@ def execute_task(task, prepared, results, cache, task_dir, lease, queue_s):
             ):
                 raise ValueError("Dependency changed while worker was running")
         produced = _hash_outputs(output, task["outputs"])
+        if cancel_event is not None and cancel_event.is_set():
+            record["status"] = "CANCELLED"
+            raise ProcessCancelledError(time.monotonic() - started)
         artifacts = str(output)
-        if task.get("cache", True):
+        if environment.cache_enabled:
             # Publish only complete declared files. Corrupt entries are never
             # overwritten or silently repaired: use a new cache root to recover.
             destination = cache / key

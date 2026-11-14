@@ -7,6 +7,22 @@ right, up, backward. Gaussian files use xyzw; gsplat and PLY use wxyz.
 import numpy as np
 
 
+def pinhole_intrinsics(value):
+    """Validate the unskewed +Z pinhole convention used by depth consumers."""
+    matrix = np.asarray(value, dtype=float)
+    if (
+        matrix.shape != (3, 3)
+        or not np.isfinite(matrix).all()
+        or not np.allclose(matrix[2], [0, 0, 1])
+        or matrix[0, 1] != 0
+        or matrix[1, 0] != 0
+        or matrix[0, 0] <= 0
+        or matrix[1, 1] <= 0
+    ):
+        raise ValueError("intrinsics must be a finite unskewed pinhole matrix")
+    return matrix
+
+
 def look_at_c2w(eye, target, up=(0, 0, 1)):
     eye, target, up = (np.asarray(v, dtype=float) for v in (eye, target, up))
     if any(v.shape != (3,) or not np.isfinite(v).all() for v in (eye, target, up)):

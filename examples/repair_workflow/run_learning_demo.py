@@ -120,6 +120,7 @@ def prepare(root, scene, *, role="development", provider="rules", model=None):
                         outputs=["candidate.json", "model.json", "render.png"],
                         runtime_identity=f"fixture-python-{sys.version.split()[0]}",
                         timeout_s=30,
+                        environment={"inherit": []},
                         resources={"kind": "cpu", "cpu": 1, "ram_gb": 1},
                     )
                 ],

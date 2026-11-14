@@ -9,8 +9,28 @@ from types import SimpleNamespace
 
 import pytest
 
-from simready.core.artifacts import digest, read_json, write_json
-from simready.workflows import scene_execution, scene_pipeline
+from simready.core.artifacts import digest, object_digest, read_json, write_json
+from simready.workflows import scene_delivery, scene_execution, scene_pipeline
+
+
+@pytest.mark.parametrize("status", ["TIMEOUT", "CANCELLED", "INTERRUPTED"])
+def test_inner_worker_terminal_state_reaches_scene_summary(
+    tmp_path, monkeypatch, status
+):
+    assets = make_bundle(tmp_path / "assets")
+    output = tmp_path / "output"
+
+    def launch(*args, **kwargs):
+        write_json(
+            Path(kwargs["output"]) / "pipeline-status.json",
+            {"status": status, "stage": "render", "error": "stopped"},
+        )
+        return 2
+
+    monkeypatch.setattr(scene_pipeline, "launch_worker", launch)
+    assert scene_pipeline.main(arguments(assets, output)) == 2
+    receipt = read_json(output / "summary.json")
+    assert receipt["status"] == status and receipt["stage"] == "render"
 
 
 def make_bundle(root, scene="starbucks"):
@@ -45,13 +65,24 @@ def make_bundle(root, scene="starbucks"):
     return root
 
 
-def complete_receipts(execution):
+def complete_receipts(execution, assets):
     """Fake only GPU outputs; production completion checks consume real files."""
     execution = Path(execution)
     config = read_json(execution / "scene.json")
     scene, render = config["scene"], config["render"]
     delivery = execution / "delivery"
     (delivery / "render").mkdir(parents=True)
+    write_json(
+        delivery / "plan.json",
+        {
+            "scene": scene,
+            "bundle_sha256": digest(Path(assets) / "bundle.json"),
+            "source_video_sha256": read_json(Path(assets) / "bundle.json")[
+                "source_video_sha256"
+            ],
+            "config_identity": object_digest(config),
+        },
+    )
     name = (
         "g2_starbucks_4k.mp4"
         if scene == "starbucks"
@@ -326,7 +357,7 @@ def test_success_requires_and_reports_bound_delivery_receipts(
 
     def launch(worker, **kwargs):
         assert kwargs["python"] == "/chosen/venv/bin/python"
-        complete_receipts(kwargs["output"])
+        complete_receipts(kwargs["output"], kwargs["assets"])
         return 0
 
     monkeypatch.setattr(scene_pipeline, "launch_worker", launch)
@@ -341,6 +372,38 @@ def test_success_requires_and_reports_bound_delivery_receipts(
     assert result["physics_validated"] == (scene == "substation")
     assert Path(result["video"]).is_relative_to(output / "execution/delivery")
     assert result["bundle_sha256"] == digest(assets / "bundle.json")
+
+
+@pytest.mark.parametrize(
+    "corruption", ["plan_bundle", "plan_config", "asset_content", "worker_config"]
+)
+def test_reviewed_scene_cannot_complete_with_rebound_or_changed_inputs(
+    tmp_path, monkeypatch, corruption
+):
+    assets = make_bundle(tmp_path / "assets")
+    output = tmp_path / "out"
+
+    def launch(worker, **kwargs):
+        execution = Path(kwargs["output"])
+        complete_receipts(execution, kwargs["assets"])
+        if corruption == "asset_content":
+            (assets / "scene.usda").write_bytes(b"different scene")
+        elif corruption == "worker_config":
+            config = read_json(execution / "scene.json")
+            config["scope"] = "different source configuration"
+            write_json(execution / "scene.json", config)
+        else:
+            path = execution / "delivery/plan.json"
+            plan = read_json(path)
+            plan[
+                "bundle_sha256" if corruption == "plan_bundle" else "config_identity"
+            ] = "other-input"
+            write_json(path, plan)
+        return 0
+
+    monkeypatch.setattr(scene_pipeline, "launch_worker", launch)
+    assert scene_pipeline.main(arguments(assets, output)) == 2
+    assert read_json(output / "summary.json")["status"] == "FAILED"
 
 
 @pytest.mark.parametrize(
@@ -362,7 +425,7 @@ def test_zero_exit_alone_never_marks_delivery_successful(
 
     def launch(worker, **kwargs):
         execution = Path(kwargs["output"])
-        complete_receipts(execution)
+        complete_receipts(execution, kwargs["assets"])
         if failure == "missing_completion":
             (execution / "pipeline-status.json").unlink()
         elif failure == "failed_completion":
@@ -407,10 +470,10 @@ def test_environment_failure_prevents_observations_and_physics(tmp_path, monkeyp
 
     def process(command, **kwargs):
         calls.append(command)
-        json.dump({"passed": True, "ffmpeg": False}, kwargs["stdout"])
+        write_json(kwargs["stdout"], {"passed": True, "ffmpeg": False})
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr(scene_execution.subprocess, "run", process)
+    monkeypatch.setattr(scene_execution, "run_process", process)
     monkeypatch.setattr(
         scene_pipeline,
         "launch_worker",
@@ -434,11 +497,12 @@ def test_physics_failure_stops_audit_and_render_with_stage_evidence(
     def process(command, **kwargs):
         called.append(command)
         if command[2] == "simready.simulation.environment_check":
-            json.dump({"passed": True, "ffmpeg": True}, kwargs["stdout"])
+            write_json(kwargs["stdout"], {"passed": True, "ffmpeg": True})
             return SimpleNamespace(returncode=0)
         return SimpleNamespace(returncode=2 if "mission" in command else 0)
 
-    monkeypatch.setattr(scene_execution.subprocess, "run", process)
+    monkeypatch.setattr(scene_execution, "run_process", process)
+    monkeypatch.setattr(scene_delivery, "run_process", process)
     monkeypatch.setattr(
         scene_pipeline,
         "launch_worker",
@@ -456,12 +520,33 @@ def test_physics_failure_stops_audit_and_render_with_stage_evidence(
 
 
 def test_docker_command_keeps_input_readonly_and_spaces_literal(tmp_path, monkeypatch):
-    from simready.execution import isaac_container
+    from simready.execution import isaac_container, isaac_launcher
 
     assets = make_bundle(tmp_path / "assets with spaces")
     output = tmp_path / "run $(literal); spaces"
+    inventory = {
+        "schema_version": 1,
+        "cpu_slots": 1,
+        "ram_gb": 1,
+        "gpus": [
+            {
+                "index": 0,
+                "uuid": "GPU-fixture-scene",
+                "vram_gb": 16,
+                "capabilities": ["cuda", "rtx"],
+                "rtx_isolated": True,
+            }
+        ],
+    }
 
-    def execute(command):
+    def launch(*args, **kwargs):
+        return isaac_launcher.launch_worker(
+            *args, **kwargs, device_inventory=inventory, lock_dir=tmp_path / "leases"
+        )
+
+    monkeypatch.setattr(scene_pipeline, "launch_worker", launch)
+
+    def execute(command, **kwargs):
         mounts = [
             command[i + 1] for i, value in enumerate(command) if value == "--mount"
         ]
@@ -475,7 +560,8 @@ def test_docker_command_keeps_input_readonly_and_spaces_literal(tmp_path, monkey
             "--out",
             "/output",
         ]
-        complete_receipts(output / "execution")
+        complete_receipts(output / "execution", assets)
+        kwargs["details"]["cleanup"] = {"status": "NOT_REQUIRED_ON_SUCCESS"}
         return 0
 
     monkeypatch.setattr(isaac_container, "execute_container", execute)
@@ -545,7 +631,7 @@ def test_one_command_exports_real_usd_before_mocked_gpu_execution(
 
         assert verify_bundle(kwargs["assets"])["scene"] == "starbucks"
         validate_paths(kwargs["repo"], kwargs["assets"], kwargs["output"])
-        complete_receipts(kwargs["output"])
+        complete_receipts(kwargs["output"], kwargs["assets"])
         return 0
 
     monkeypatch.setattr(scene_pipeline, "launch_worker", launch)
@@ -576,7 +662,7 @@ def test_bundle_export_failure_is_reported_without_worker_start(tmp_path, monkey
     spec = prepared_spec(tmp_path)
     output = tmp_path / "run"
     monkeypatch.setattr(
-        scene_pipeline.subprocess, "run", lambda *a, **k: SimpleNamespace(returncode=2)
+        scene_pipeline, "run_process", lambda *a, **k: SimpleNamespace(returncode=2)
     )
     monkeypatch.setattr(
         scene_pipeline,

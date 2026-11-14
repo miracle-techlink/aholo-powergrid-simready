@@ -757,6 +757,21 @@ def inspect_physical_assets(
             observed_bodies,
             sorted(paths["rigid_body_prims"]),
         )
+        observed_joints = (
+            sorted(
+                str(prim.GetPath())
+                for prim in Usd.PrimRange(root_prim)
+                if prim.IsA(UsdPhysics.Joint)
+            )
+            if root_prim
+            else []
+        )
+        _value(
+            checks,
+            key + ".joint_inventory",
+            observed_joints,
+            [usd_root + "/Joint"] if obj["type"] == "button" else [],
+        )
         _geometry(stage, checks, obj, usd_root)
         passed = all(check["passed"] for check in checks[start:])
         report["assets"].append(

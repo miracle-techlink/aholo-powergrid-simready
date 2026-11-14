@@ -20,7 +20,7 @@ import numpy as np
 
 from simready.core.artifacts import digest, object_digest, read_json, write_json
 from simready.geometry.cameras import rigid_inverse
-from simready.simulation.gaussian_asset import validate_sim3
+from simready.geometry.transforms_validation import validate_sim3
 
 DEPTH_DOCUMENTATION = (
     "https://docs.omniverse.nvidia.com/kit/docs/omni_replicator/1.12.16/"

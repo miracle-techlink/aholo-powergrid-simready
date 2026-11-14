@@ -708,7 +708,10 @@ def main():
 
         case_floor_openings = apply_case_floor_opening(stage, contract, record, c, t)
     # New detailed furniture collision is static and shares the visible geometry.
-    from simready.workflows.appearance_collision import author_replacement_collision
+    if __package__:
+        from .appearance_collision import author_replacement_collision
+    else:
+        from appearance_collision import author_replacement_collision
 
     collision_paths, support_overrides = author_replacement_collision(
         stage, d, contract, t, c, record["regions"], replacement_mask

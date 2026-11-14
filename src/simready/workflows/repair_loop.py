@@ -129,18 +129,20 @@ def run_repair_workflow(
             }
             write_json(round_dir / "context.json", context)
             result["agent_calls"] += 1
+            result["usage_complete"] = False
             response = provider.decide(
                 context,
                 round_dir / "agent",
                 timeout=remaining(budget["agent_timeout_s"]),
             )
             write_json(round_dir / "decision.json", asdict(response))
-            decision = RepairDecision.parse(asdict(response.decision), context)
             usage = normalize_usage(response.usage)
             if usage is None:
                 result.update(status="USAGE_UNKNOWN", usage_complete=False)
                 break
+            result["usage_complete"] = True
             result["total_tokens"] += usage["total_tokens"]
+            decision = RepairDecision.parse(asdict(response.decision), context)
             if result["total_tokens"] > budget["max_total_tokens"]:
                 result["status"] = "BUDGET_EXHAUSTED"
                 break
@@ -166,7 +168,10 @@ def run_repair_workflow(
                 role=config["role"],
                 policy_key=policy_key,
                 candidate_sha256=digest(current),
-                evidence={"before": reference(accepted_report)},
+                evidence={
+                    "before": reference(accepted_report),
+                    "protocol": reference(paths["protocol"]),
+                },
                 agent_usage=response.usage,
                 reused_skill_id=proposal["skill_id"],
             )
@@ -233,11 +238,15 @@ def run_repair_workflow(
         result.update(status="BUDGET_EXHAUSTED", error=str(error))
     except Exception as error:
         result.update(status="FAILED", error=f"{type(error).__name__}: {error}")
-    result.update(
-        candidate=str(current),
-        candidate_sha256=digest(current) if current.is_file() else None,
-        scorecard=str(accepted_report),
-        wall_seconds=time.monotonic() - started,
-    )
-    write_json(out / "result.json", result)
+    except BaseException as error:
+        result.update(status="INTERRUPTED", error=type(error).__name__)
+        raise
+    finally:
+        result.update(
+            candidate=str(current),
+            candidate_sha256=digest(current) if current.is_file() else None,
+            scorecard=str(accepted_report),
+            wall_seconds=time.monotonic() - started,
+        )
+        write_json(out / "result.json", result)
     return result

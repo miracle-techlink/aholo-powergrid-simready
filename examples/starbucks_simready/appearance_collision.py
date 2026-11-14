@@ -1,4 +1,4 @@
-"""Keep visible replacements, static collision and route occupancy consistent."""
+"""Cafe-specific replacement collision and occupancy; excluded from the runtime wheel."""
 
 import numpy as np
 from pxr import Gf, UsdGeom, UsdPhysics, Vt

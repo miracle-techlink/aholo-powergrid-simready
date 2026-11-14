@@ -46,6 +46,7 @@ for scene in range(4):
             seed=12,
             quality_profile="synthetic-scheduling-only",
             cache=True,
+            environment={"inherit": []},
         )
         tasks.append(task)
         previous = task_id

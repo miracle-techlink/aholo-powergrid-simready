@@ -9,7 +9,7 @@ from PIL import Image
 
 from simready.core.artifacts import digest, object_digest
 from simready.geometry.cameras import look_at_c2w
-from simready.simulation.gaussian_asset import validate_sim3
+from simready.geometry.transforms_validation import validate_sim3
 
 
 def rendered_camera_calibration(
