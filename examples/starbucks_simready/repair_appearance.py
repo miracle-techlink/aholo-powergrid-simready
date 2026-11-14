@@ -702,6 +702,11 @@ def main():
         from refine_wide_patrol import level_case_tables
 
         case_table_leveling = level_case_tables(stage, record, t @ c)
+    case_floor_openings = []
+    if record.get("far_left"):
+        from restore_far_left import apply_case_floor_opening
+
+        case_floor_openings = apply_case_floor_opening(stage, contract, record, c, t)
     # New detailed furniture collision is static and shares the visible geometry.
     from simready.workflows.appearance_collision import author_replacement_collision
 
@@ -720,7 +725,11 @@ def main():
             "Benches": "bench",
             "Walls": "wall",
             "Props": "cup",
+            "Stairs": "stairwell",
+            "Railings": "guardrail",
         }.get(name.split("_")[0], "static_furniture")
+        if name == "Props_StairBin":
+            category = "bin"
         asset = {
             "id": name,
             "category": category,
@@ -811,6 +820,7 @@ def main():
             "source_fidelity_verified": False,
             "residual_gaussian_background_visible": not args.editable_patrol_background,
             "case_table_leveling": case_table_leveling,
+            "case_floor_openings": case_floor_openings,
         },
     )
     print(

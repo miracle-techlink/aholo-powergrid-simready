@@ -32,6 +32,7 @@ def main():
         from scipy.spatial import cKDTree
 
         from simready.core.artifacts import digest, scene_dependency_hashes, write_json
+        from simready.repair.floor_openings import inside_convex_polygon
         from simready.simulation.physical_authoring import bind_contact_material
 
         carb.settings.get_settings().set_bool("/physics/updateToUsd", True)
@@ -62,8 +63,16 @@ def main():
         physx_scene.CreateBroadphaseTypeAttr("MBP")
         physx_scene.CreateSolverTypeAttr("TGS")
         targets = []
+        contract = json.loads((args.assets / "scene/scene_contract.json").read_text())
+        floor_openings = contract.get("floor_opening_polygons_old", [])
+        excluded_floor_sites = []
         for x in np.linspace(-3.8, 4.1, 9):
             for y in [-3.1, -2.5, -1.6, -0.7, 0.3, 1.5, 2.3]:
+                if any(
+                    inside_convex_polygon([x, y], polygon) for polygon in floor_openings
+                ):
+                    excluded_floor_sites.append([float(x), float(y)])
+                    continue
                 if tree is not None and tree.query([x, y])[0] < 0.25:
                     continue
                 old = np.array([x, y, np.array([x, y, 1]) @ floor])
@@ -76,10 +85,12 @@ def main():
                     }
                 )
         manifest = json.loads((args.assets / "scene/physical_assets.json").read_text())
-        contract = json.loads((args.assets / "scene/scene_contract.json").read_text())
         for i, xy in enumerate(contract.get("additional_support_sites_old", [])):
             if len(xy) != 2 or not np.isfinite(xy).all():
                 raise ValueError("Invalid additional floor probe site")
+            if any(inside_convex_polygon(xy, polygon) for polygon in floor_openings):
+                excluded_floor_sites.append(list(xy))
+                continue
             old = np.r_[xy, np.r_[xy, 1] @ floor]
             point = old @ t[:3, :3].T + t[:3, 3]
             targets.append(
@@ -89,6 +100,15 @@ def main():
                     "point": point.tolist(),
                 }
             )
+        for target in contract.get("additional_support_targets_world", []):
+            if (
+                target.get("surface") != "stair_tread"
+                or len(target.get("point", [])) != 3
+                or not np.isfinite(target["point"]).all()
+                or not target.get("id", "").replace("_", "").isalnum()
+            ):
+                raise ValueError("Invalid explicitly declared stair probe target")
+            targets.append(target)
         for asset in manifest["assets"]:
             if asset["category"] == "table":
                 targets.append(
@@ -105,9 +125,12 @@ def main():
             path = "/World/Probes/" + target["id"]
             sphere = UsdGeom.Sphere.Define(stage, path)
             sphere.CreateRadiusAttr(0.035)
-            sphere.AddTranslateOp().Set(
-                Gf.Vec3d(*(np.asarray(target["point"]) + [0, 0, 0.25]))
-            )
+            start = np.asarray(target["point"]) + [0, 0, 0.25]
+            if target["surface"] == "stair_tread":
+                # Start above the upper floor, so a stale invisible flat floor
+                # catches the ball and fails the lower-tread height check.
+                start[2] = max(start[2], 0.25)
+            sphere.AddTranslateOp().Set(Gf.Vec3d(*start))
             UsdPhysics.CollisionAPI.Apply(sphere.GetPrim())
             UsdPhysics.RigidBodyAPI.Apply(sphere.GetPrim())
             UsdPhysics.MassAPI.Apply(sphere.GetPrim()).CreateMassAttr(0.05)
@@ -164,6 +187,8 @@ def main():
             "scope": "static support drop probes on the actual composed collision scene",
             "checks": checks,
             "fallback_ground": False,
+            "excluded_flat_floor_sites_in_declared_openings": excluded_floor_sites,
+            "stair_tread_probes": sum(t["surface"] == "stair_tread" for t in targets),
             "simulated_seconds": 2,
             "probe_count": len(checks),
             "passed_count": sum(c["passed"] for c in checks),

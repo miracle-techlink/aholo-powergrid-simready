@@ -108,6 +108,39 @@ python examples/starbucks_simready/run.py --case tour \
 
 碰撞必须从**结构基础资产**重新生成，不可复用旧可见家具版本的占用图；新增远端地面也加入实际碰撞和落体采样。最终文件中的 `appearance_reference.json` 保留平面拟合点数、局部对齐偏移、原片索引及估计区域说明。
 
+### 远端左侧：楼梯口和遗漏座位
+
+后续原片核查发现，长路线版本虽然显示了远端长桌，却遗漏了门边圆桌、楼梯口座位、木饰面侧墙和金属网护栏。碰撞测试通过不能证明资产种类齐全。`restore_far_left.py` 使用原片 0–3 秒与 74–84 秒的观测补回这些独立资产；木饰面采用来源点云平面拟合与多帧纹理投影。后墙原始投影中混入了前景护栏和椅子，这些像素不进入最终后墙渲染，原始诊断图保留。
+
+楼梯的可见入口与护栏有原片依据；更深处的 11 级台阶、级高、级宽和下层平台属于显式参数化估计，不能作为实测尺寸或机器人上下楼能力的证据。`floor_openings.py` 同时裁切可见地板和原碰撞面，保持实际高差。台阶验收从上层地面上方投放刚体，检查其是否落到三个不同深度的台阶；如果保留了隐形平地，测试会失败。独立审计重新核对起始高度、最终高度与资产中的目标位置。
+
+```bash
+python examples/starbucks_simready/fit_far_left_layout.py \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --sfm-root /path/to/scene_rsi_v3 --out runs/far-left-layout-fits.json
+
+python examples/starbucks_simready/restore_far_left.py \
+  --reference runs/wide-reference-aligned \
+  --reference-assets /path/to/structurally_repaired_grasp \
+  --case-assets /path/to/structurally_repaired_patrol \
+  --reference-to-case /path/to/reference_to_aholo.json \
+  --sfm-root /path/to/scene_rsi_v3 \
+  --layout-evidence runs/far-left-layout-fits.json --out runs/far-left-reference
+```
+
+随后将 `runs/far-left-reference` 作为 `repair_appearance.py --reuse-reference` 的输入，从结构基础资产重建碰撞。`layout_fits.json` 保存指定区域内平面拟合的系数、点数、残差和支持不足记录；它是该场景的证据输入，不是通用布局模板。
+
+可选的 `focus_far_left.py` 仅改变镜头：前后保留原视角，6–12 秒平滑侧移，12–18 秒观察楼梯区，18–24 秒回到原镜头。机器人位置和转向不变，最后依然通过 `run.py` 对新资产重新检查完整 900 帧路线。
+
+```bash
+python examples/starbucks_simready/focus_far_left.py \
+  --trajectory /path/to/original_trajectory.json \
+  --reference-manifest runs/far-left-reference/appearance_reference.json \
+  --out /path/to/new_assets/source_trajectory.json
+```
+
+输出路径必须不存在；先保留旧轨迹，再写入新轨迹及相邻的 `.camera.json` 来源记录。准备好的新资产继续使用本页开头的 `run.py --case tour --render` 一键验收与录制。
+
 ## 原理与模块
 
 ```mermaid

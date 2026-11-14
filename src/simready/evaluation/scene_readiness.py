@@ -165,6 +165,30 @@ def audit_scene(assets, probe, route=None, task=None):
     checks["probe_final_samples_match"] = np.allclose(
         positions[-1], [c["final"] for c in measured["checks"]], atol=1e-8
     )
+    declared_stairs = contract.get("additional_support_targets_world", [])
+    if declared_stairs:
+        indices = [
+            i
+            for i, item in enumerate(measured["checks"])
+            if item["surface"] == "stair_tread"
+        ]
+        actual = [measured["checks"][i] for i in indices]
+        checks["stair_probe_targets_match_contract"] = len(actual) == len(
+            declared_stairs
+        ) and all(
+            a["id"] == b["id"] and np.allclose(a["point"], b["point"], atol=1e-8)
+            for a, b in zip(actual, declared_stairs, strict=True)
+        )
+        checks["stair_probes_started_above_upper_floor"] = bool(indices) and bool(
+            (positions[0, indices, 2] >= 0.249).all()
+        )
+        # Recompute height from actual samples; stale flat floors would stop
+        # these probes near zero instead of at their negative tread heights.
+        checks["stair_treads_measured_below_upper_floor"] = bool(actual) and all(
+            target["point"][2] < -0.1
+            and abs(positions[-1, index, 2] - target["point"][2] - 0.035) < 0.025
+            for index, target in zip(indices, actual, strict=True)
+        )
     checks["actual_scene_probe_passed"] = (
         measured["status"] == "PASS"
         and measured["probe_count"] >= 12

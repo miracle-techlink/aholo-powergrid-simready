@@ -252,7 +252,11 @@ def main():
         report["camera_mode"] = (
             "elevated follow with gentle lateral orbit"
             if args.follow_camera
-            else "original fixed camera"
+            else (
+                "source trajectory camera (moving)"
+                if np.ptp([row["eye"] for row in selected[0]], axis=0).max() > 1e-6
+                else "original fixed camera"
+            )
         )
         (args.out / "trajectory.json").write_text(
             json.dumps(selected[0], indent=2) + "\n"
