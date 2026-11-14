@@ -76,15 +76,15 @@ python examples/starbucks_grasp/run.py \
 | 模块 | 输入、处理与输出 |
 |---|---|
 | `prepare.py` | 展平引用、复制纹理、设置质量/摩擦/关节驱动，按真实 USD 关节坐标求解右臂 7-DOF 路径；输出 portable USD 与计划 |
-| `prepare_cafe.py` | 将本地训练 30,000 步的 3DGS 候选对齐到两个桌面锚点；检查两处锚点同时吻合，保留原模型 |
 | `align_original_scene.py` | 从原 3DGS 拟合地面与两张桌子，保持全量原高斯外观，生成隐藏碰撞代理、来源合同与 `task_layout.json`；原场景模式使用此入口 |
-| `repair_corner.py` | 从配准原片投影墙画、提取木纹；按明确记录的尺寸估计补建局部墙面、地砖、长椅；输出静态碰撞体与来源记录 |
 | `cup_localization.py` | 合成 RGB-D、支撑面/尺寸约束、DINO/SAM、裁剪相机内参更新、带离群点剔除的模型配准；不读取杯子真值位姿 |
 | `articulated_kinematics.py` | 解析父子关节坐标，提供 FK 和有限位 IK；数值求解成功不等于碰撞通过 |
 | `cup_grasp.py` | CPU PhysX TGS，240 Hz，32/8 次位置/速度迭代；驱动原生关节，记录真实刚体状态与接触力 |
 | `cup_transfer.py` | 不导入控制器；独立重算杯碰撞网格位置、离桌高度、承托、倾角、释放和环境擦碰，校验文件哈希 |
 | `grasp_video.py` | 初始 RGB-D 采集或实测轨迹渲染；回放时禁用动力学，避免二次仿真改变已验证轨迹 |
 | `run.py` | 按依赖顺序运行，任一步失败即停止，逐段写入 `timing.json` |
+
+旧 `annotate.py`、`prepare_cafe.py`、`repair_corner.py` 不参与当前任务链，已移除；历史源码见[固定提交](https://github.com/miracle-techlink/video-to-simready/tree/6574907ded8aa8dac34de90d988303aede07d8b3/examples/starbucks_grasp)。原场景准备使用上面的 `align_original_scene.py`。
 
 输出 `artifacts/physics/rollout.npz` 保存 5,400 个物理采样点，包含关节实际值、驱动目标、杯子与机器人刚体位姿、接触力以及阶段标签。`artifacts/audit.json` 是独立验收；`G2_two_table_transfer.mp4` 为 22.5 秒、30 fps 的演示。`timing.json` 区分模型、规划、仿真、渲染与编码耗时。
 

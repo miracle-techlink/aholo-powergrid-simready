@@ -1,16 +1,11 @@
 import copy
-import json
 
 import pytest
 
 from simready.core.artifacts import digest, object_digest, read_json, write_json
 from simready.evaluation.cup_robustness import inspect_parameters
 from simready.simulation.cup_randomization import prepare_episode, sample_protocol
-from tests.paths import REPOSITORY_ROOT
-
-PROTOCOL = json.loads(
-    (REPOSITORY_ROOT / "examples/starbucks_grasp/robustness.json").read_text()
-)
+from tests.fixtures.cup_assets import PROTOCOL, fixture_assets
 
 
 def test_samples_are_order_independent_and_splits_do_not_overlap():
@@ -33,35 +28,6 @@ def test_invalid_mass_ranges_are_rejected(bad):
     value["parameters"]["cup_mass_kg"]["low"] = bad
     with pytest.raises(ValueError):
         sample_protocol(value)
-
-
-def fixture_assets(tmp_path, explicit_inertia):
-    from pxr import Gf, Usd, UsdGeom, UsdPhysics
-
-    assets = tmp_path / "source"
-    assets.mkdir()
-    stage = Usd.Stage.CreateNew(str(assets / "task.usda"))
-    UsdGeom.Xform.Define(stage, "/World")
-    cup = UsdGeom.Xform.Define(stage, "/World/Cup").GetPrim()
-    UsdPhysics.RigidBodyAPI.Apply(cup)
-    mass = UsdPhysics.MassAPI.Apply(cup)
-    mass.CreateMassAttr(0.085)
-    if explicit_inertia:
-        mass.CreateDiagonalInertiaAttr(Gf.Vec3f(0.001, 0.002, 0.002))
-    for path in [
-        "/World/Cup/collision",
-        "/World/G2/gripper_r_inner/shape",
-        "/World/Table",
-        "/World/TableB",
-    ]:
-        prim = UsdGeom.Cube.Define(stage, path).GetPrim()
-        UsdPhysics.CollisionAPI.Apply(prim)
-    stage.GetRootLayer().Save()
-    for name in ("robot.usdc", "cup.usdc"):
-        dependency = Usd.Stage.CreateNew(str(assets / name))
-        dependency.GetRootLayer().Save()
-    (assets / "plan.json").write_text('{"nominal_control": "unchanged"}')
-    return assets
 
 
 @pytest.mark.parametrize("explicit", [True, False])

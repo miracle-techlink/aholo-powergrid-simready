@@ -18,7 +18,7 @@ from simready.workflows import video_pipeline
 from simready.workflows.pipeline_spec import load_pipeline
 from simready.workflows.semantic_stage import verify_decomposition
 from simready.workflows.stage_ledger import artifact_record
-from tests.workflows.test_pipeline_config import configured as configured
+from tests.fixtures.pipeline import configured as configured
 
 
 def _update_manifest(path, ply):

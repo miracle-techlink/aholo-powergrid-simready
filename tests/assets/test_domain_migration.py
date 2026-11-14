@@ -80,7 +80,7 @@ def test_geometry_projection_imports_no_asset_layer():
 def test_legacy_module_patch_reaches_canonical_preparation(tmp_path, monkeypatch):
     from simready.assets.compilation.scene_preparation import prepare_scene
     from simready.simulation import scene_preparation as legacy
-    from tests.simulation.test_scene_preparation import cloud, write_ply
+    from tests.fixtures.scene_preparation import cloud, write_ply
 
     def fail(*args):
         raise RuntimeError("canonical write intercepted through legacy module")
@@ -93,7 +93,7 @@ def test_legacy_module_patch_reaches_canonical_preparation(tmp_path, monkeypatch
 
 def test_both_cli_paths_compile_identical_real_usd_and_pass_independent_audit(tmp_path):
     from simready.evaluation.physical_assets import inspect_physical_assets
-    from tests.simulation.test_scene_preparation import cloud, write_ply
+    from tests.fixtures.scene_preparation import cloud, write_ply
 
     pytest.importorskip("pxr")
     ply = write_ply(tmp_path / "source.ply", cloud())

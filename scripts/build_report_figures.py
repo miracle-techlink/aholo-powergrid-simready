@@ -1,15 +1,18 @@
-"""Rebuild the report's vector figures from published DOT, CSV and evidence."""
+"""Rebuild the historical report's measured plots from published CSV and evidence."""
 
 import argparse
 import csv
 import json
-import subprocess
 from pathlib import Path
 
 
-def build_plots(root):
+def build_plots(root, output=None, *, export_png=False):
     """Render the two published data plots without changing their source data."""
-    figures = root / "figures"
+    figures = output if output is not None else root / "figures"
+    figures.mkdir(parents=True, exist_ok=True)
+    png_dir = Path(__file__).resolve().parents[1] / "dist/report-figures"
+    if export_png:
+        png_dir.mkdir(parents=True, exist_ok=True)
     import matplotlib
 
     matplotlib.use("Agg")
@@ -55,8 +58,10 @@ def build_plots(root):
         axis.spines[["top", "right"]].set_visible(False)
     axes[-1].set_xlabel("仿真时间（秒）")
     generated = []
-    for extension in ("pdf", "svg"):
-        target = figures / f"contact_trace.{extension}"
+    for extension in ("pdf", "svg") + (("png",) if export_png else ()):
+        target = (
+            png_dir if extension == "png" else figures
+        ) / f"contact_trace.{extension}"
         figure.savefig(target)
         generated.append(target)
     plt.close(figure)
@@ -85,8 +90,8 @@ def build_plots(root):
     axis.spines[["top", "right"]].set_visible(False)
     for index, value in enumerate(values.values()):
         axis.text(value + 15, index, f"{value:.2f} 秒", va="center", fontsize=10)
-    for extension in ("pdf", "svg"):
-        target = figures / f"timing.{extension}"
+    for extension in ("pdf", "svg") + (("png",) if export_png else ()):
+        target = (png_dir if extension == "png" else figures) / f"timing.{extension}"
         figure.savefig(target)
         generated.append(target)
     plt.close(figure)
@@ -98,21 +103,17 @@ def main(argv=None):
     parser.add_argument(
         "--plots-only",
         action="store_true",
-        help="仅生成接触曲线与耗时图，不重建 DOT 图",
+        help="兼容旧命令；当前仅生成接触曲线与耗时图",
+    )
+    parser.add_argument("--out", type=Path)
+    parser.add_argument(
+        "--export-png",
+        action="store_true",
+        help="Also export PNGs to dist/report-figures",
     )
     args = parser.parse_args(argv)
     root = Path(__file__).resolve().parents[1] / "docs/report"
-    generated = []
-    if not args.plots_only:
-        for source in sorted((root / "figures").glob("*.dot")):
-            for extension in ("svg", "pdf"):
-                target = source.with_suffix(f".{extension}")
-                subprocess.run(
-                    ["dot", f"-T{extension}", str(source), "-o", str(target)],
-                    check=True,
-                )
-                generated.append(target)
-    generated.extend(build_plots(root))
+    generated = build_plots(root, args.out, export_png=args.export_png)
     for source in generated:
         if source.suffix != ".svg":
             continue

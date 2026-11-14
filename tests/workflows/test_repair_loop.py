@@ -13,14 +13,7 @@ from simready.evaluation.regression import compare_scorecards
 from simready.experience import EpisodeStore, SkillLibrary
 from simready.repair import RepairPluginRegistry
 from simready.workflows import run_repair_workflow
-
-
-def campaign(tmp_path, scene=0, **options):
-    config, base = prepare(tmp_path, scene, **options)
-    result = run_repair_workflow(
-        config, base_dir=base, output_dir=tmp_path / f"run_{scene}"
-    )
-    return config, base, result
+from tests.fixtures.repair_campaign import campaign
 
 
 def test_learning_validation_and_reuse_across_scenes(tmp_path):

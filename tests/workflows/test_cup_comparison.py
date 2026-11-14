@@ -16,7 +16,7 @@ from simready.workflows.cup_robustness import (
     run_comparison,
     runtime_configuration,
 )
-from tests.simulation.test_cup_randomization import PROTOCOL, fixture_assets
+from tests.fixtures.cup_assets import PROTOCOL, fixture_assets
 
 
 def test_prepared_comparison_keeps_same_parameters_without_claiming_trials(tmp_path):

@@ -169,7 +169,7 @@ flowchart TD
 | `clean_transients.py` | 多帧人物候选与深度约束关联高斯；保护地面/墙面附近点；只通过透明度覆盖层抑制候选，保留原始 USD 与索引；同步重建碰撞代理 |
 | `repair_appearance.py` / `finish_materials.py` | 当前咖啡店布局配置、独立可见几何及有记录的材质补全；按替换区域抑制旧高斯，避免两套家具重叠 |
 | `repair/source_texture.py` | 复用变电站清晰源选择、边界羽化与 SIFT/MAGSAC 配准；保留来源索引，隔离每第七个相机作为留出视角 |
-| `repair/visible_geometry.py` / `workflows/appearance_collision.py` | 可编辑倒角几何、UV、法线与 PBR；聚合静态碰撞并从新几何生成保守占用地图 |
+| `repair/visible_geometry.py` / `examples/starbucks_simready/appearance_collision.py` | 可编辑倒角几何、UV、法线与 PBR；聚合静态碰撞并从新几何生成保守占用地图 |
 | `prepare_nav_pose.py` | 使用原 G2 USD 的关节坐标及限位收拢双臂，导出导航展示姿态与分层外形包络；不声称通过全身动力学与自碰撞验证 |
 | `check_route.py` | 用分层机器人包络、体素体积和 2 cm 额外裕量检查全部 900 帧；必要时在原通道内搜索连续中心线，并再次检查完整轨迹 |
 | `simulation/scene_probe.py` | 在实际组合场景中投放刚体，记录 240 步后的承托高度与运动；没有通用兜底地面，碰撞缺失会直接暴露 |

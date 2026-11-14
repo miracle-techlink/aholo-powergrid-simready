@@ -9,7 +9,7 @@ from simready.core.artifacts import digest, read_json, write_json
 from simready.evaluation.physical_receipt import verify_physical_receipt
 from simready.execution.processes import ProcessCancelledError, ProcessTimeoutError
 from simready.workflows import semantic_assets, video_execution, video_pipeline
-from tests.workflows.test_video_execution import worker_inputs
+from tests.fixtures.video_worker import worker_inputs
 
 
 @pytest.fixture

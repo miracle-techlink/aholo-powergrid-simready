@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs/report"
+HISTORICAL_REVISION = "6574907"
 
 
 def load_report(path, ancestors=()):
@@ -69,7 +70,9 @@ def inline(text):
             if not target.startswith(("https://", "http://")):
                 relative = (REPORT / target).resolve().relative_to(ROOT)
                 target = (
-                    "https://github.com/miracle-techlink/video-to-simready/blob/main/"
+                    "https://github.com/miracle-techlink/video-to-simready/blob/"
+                    + HISTORICAL_REVISION
+                    + "/"
                     + quote(str(relative))
                 )
             result.append(r"\href{" + target + "}{" + escape(label) + "}")
@@ -281,11 +284,21 @@ def main():
 \begin{document}
 """
     text = load_report(REPORT / "technical-report.md")
-    (REPORT / "main.tex").write_text(preamble + render(text) + "\n\\end{document}\n")
+    build = ROOT / "dist/report-build"
+    build.mkdir(parents=True, exist_ok=True)
+    source = build / "main.tex"
+    source.write_text(preamble + render(text) + "\n\\end{document}\n")
     for iteration in range(3):
-        with (REPORT / f"build_pass{iteration + 1}.log").open("w") as log:
+        with (build / f"build_pass{iteration + 1}.log").open("w") as log:
             subprocess.run(
-                ["xelatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
+                [
+                    "xelatex",
+                    "-interaction=nonstopmode",
+                    "-halt-on-error",
+                    "-output-directory",
+                    str(build),
+                    str(source),
+                ],
                 cwd=REPORT,
                 stdout=log,
                 stderr=subprocess.STDOUT,
@@ -294,7 +307,7 @@ def main():
     destination = ROOT / "dist/simready-technical-report-zh.pdf"
     destination.parent.mkdir(exist_ok=True)
     temporary = destination.with_suffix(".pdf.tmp")
-    shutil.copy2(REPORT / "main.pdf", temporary)
+    shutil.copy2(build / "main.pdf", temporary)
     temporary.replace(destination)
     print(destination)
 

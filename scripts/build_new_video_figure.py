@@ -1,5 +1,6 @@
 """绘制适合竖版技术白皮书的新视频执行路径；输出可编辑矢量图。"""
 
+import argparse
 from pathlib import Path
 
 import matplotlib as mpl
@@ -17,7 +18,7 @@ AMBER = "#ae792b"
 TEAL = "#2c837c"
 
 
-def build():
+def build(output=OUTPUT, *, export_png=False):
     mpl.rcParams.update(
         {
             "font.family": ["Noto Sans CJK SC", "DejaVu Sans"],
@@ -167,13 +168,16 @@ def build():
         MUTED,
     )
 
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    stem = OUTPUT / "new_video_pipeline"
+    output.mkdir(parents=True, exist_ok=True)
+    stem = output / "new_video_pipeline"
     fig.savefig(stem.with_suffix(".svg"), metadata={"Date": None})
     fig.savefig(
         stem.with_suffix(".pdf"), metadata={"CreationDate": None, "ModDate": None}
     )
-    fig.savefig(stem.with_suffix(".png"), dpi=240)
+    if export_png:
+        png_dir = ROOT / "dist/report-figures"
+        png_dir.mkdir(parents=True, exist_ok=True)
+        fig.savefig(png_dir / "new_video_pipeline.png", dpi=240)
     stem.with_suffix(".svg").write_text(
         "\n".join(
             line.rstrip() for line in stem.with_suffix(".svg").read_text().splitlines()
@@ -185,4 +189,12 @@ def build():
 
 
 if __name__ == "__main__":
-    build()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", type=Path, default=OUTPUT)
+    parser.add_argument(
+        "--export-png",
+        action="store_true",
+        help="Also export PNGs to dist/report-figures",
+    )
+    args = parser.parse_args()
+    build(args.out, export_png=args.export_png)

@@ -730,15 +730,23 @@ def main():
         type=Path,
         default=Path(__file__).resolve().parents[1] / "docs/report/figures",
     )
+    parser.add_argument(
+        "--export-png",
+        action="store_true",
+        help="Also export PNGs to dist/report-figures",
+    )
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    png_dir = Path(__file__).resolve().parents[1] / "dist/report-figures"
+    if args.export_png:
+        png_dir.mkdir(parents=True, exist_ok=True)
     for name, builder in (
         ("architecture_overview", overview),
         ("repair_closed_loop", repair),
         ("robot_control_runtime", robot),
     ):
         fig = builder()
-        for suffix in ("svg", "pdf", "png"):
+        for suffix in ("svg", "pdf") + (("png",) if args.export_png else ()):
             metadata = {
                 "Creator": "SimReady Chinese portrait architecture figure builder"
             }
@@ -746,7 +754,7 @@ def main():
                 metadata.update(CreationDate=None, ModDate=None)
             elif suffix == "svg":
                 metadata["Date"] = None
-            output = args.out / f"{name}.{suffix}"
+            output = (png_dir if suffix == "png" else args.out) / f"{name}.{suffix}"
             fig.savefig(output, dpi=240, metadata=metadata)
             if suffix == "svg":
                 output.write_text(
@@ -754,7 +762,7 @@ def main():
                     + "\n"
                 )
         plt.close(fig)
-        print(f"{name}: portrait; editable Chinese SVG / vector PDF / PNG")
+        print(f"{name}: portrait; editable Chinese SVG / vector PDF")
 
 
 if __name__ == "__main__":

@@ -288,14 +288,22 @@ def calls():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("docs/report/figures"))
+    parser.add_argument(
+        "--export-png",
+        action="store_true",
+        help="Also export PNGs to dist/report-figures",
+    )
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    png_dir = Path(__file__).resolve().parents[1] / "dist/report-figures"
+    if args.export_png:
+        png_dir.mkdir(parents=True, exist_ok=True)
     for name, build in (
         ("software_composition", composition),
         ("software_call_chain", calls),
     ):
         fig = build()
-        for extension in ("svg", "pdf", "png"):
+        for extension in ("svg", "pdf") + (("png",) if args.export_png else ()):
             metadata = (
                 {"Date": None}
                 if extension == "svg"
@@ -303,7 +311,7 @@ def main():
                 if extension == "pdf"
                 else None
             )
-            path = args.out / f"{name}.{extension}"
+            path = (png_dir if extension == "png" else args.out) / f"{name}.{extension}"
             fig.savefig(path, dpi=240, metadata=metadata)
             if extension == "svg":
                 path.write_text(

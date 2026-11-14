@@ -11,7 +11,7 @@ simready run --video /path/to/input.mp4 --out runs/new-scene \
 
 重建凭据保存在运行目录；API key 只从宿主环境读取，不写入镜像或worker输入。新视频模式的云重建客户端在宿主 CPU 侧执行上传、监控和下载，重建计算由供应商服务执行，随后将已验证PLY与场景规格作为只读输入送入Isaac worker。worker依次导出USD、独立检查结构、渲染巡览。完整参数、CPU导出、恢复和服务器命令见[新视频示例](../examples/new_video/README.md)。
 
-`--scene-spec`填写坐标/尺度来源和显式对象，不是把旧场景参数自动搬到新视频。含显式对象时，结构检查后还会运行独立物性读回并核对报告哈希；没有对象时该项为 `NOT_EVALUATED`。`--prepare-only --backend local --python /path/to/usd/python`可以只做CPU构建与上述检查；渲染需要Isaac与RTX。当前新视频模式支持本机与Docker；服务器通过SSH执行相同命令，尚无本轮远端实跑结果。统一执行层的迁移目标见[架构收敛设计](software-architecture.md#infra-设计与迁移)。
+`--scene-spec`填写坐标/尺度来源和显式对象，不是把旧场景参数自动搬到新视频。含显式对象时，结构检查后还会运行独立物性读回并核对报告哈希；没有对象时该项为 `NOT_EVALUATED`。`--prepare-only --backend local --python /path/to/usd/python`可以只做CPU构建与上述检查；渲染需要Isaac与RTX。当前新视频模式支持本机与Docker；服务器通过SSH执行相同命令，尚无本轮远端实跑结果。进程、取消与设备租约见[执行合同](execution.md)。
 
 ## 默认使用统一入口
 

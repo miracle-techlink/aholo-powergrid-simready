@@ -37,7 +37,7 @@ include = ["simready*"]
 version = {attr = "simready.__version__"}
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "legacy/scene_evaluation"]
+testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.ruff]

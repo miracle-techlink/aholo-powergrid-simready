@@ -7,7 +7,7 @@ import pytest
 
 from simready.core.artifacts import object_digest
 from simready.experience import EpisodeStore, SkillLibrary
-from tests.workflows.test_repair_loop import campaign
+from tests.fixtures.repair_campaign import campaign
 
 
 def copy_episode(memory, key):
